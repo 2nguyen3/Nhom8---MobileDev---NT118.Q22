@@ -1,7 +1,4 @@
-# Nhom8---MobileDev---NT118.Q22
-Ứng dụng chăm sóc sức khỏe tinh thần và kết nối cộng đồng ẩn danh
-
-# Nhóm 8 - NT118.Q22 | Hệ thống hỗ trợ cân bằng cảm xúc
+# Nhóm 8 - NT118.Q22 | Ứng dụng chăm sóc sức khỏe tinh thần và kết nối cộng đồng ẩn danh
 Ứng dụng chăm sóc sức khỏe tinh thần và kết nối cộng đồng ẩn danh trên Android, tập trung vào các bài toán kỹ thuật:
 - **AI On-device (TensorFlow Lite)**: nhận diện cảm xúc từ khuôn mặt (offline, bảo vệ quyền riêng tư)
 - **Multimedia + Foreground Service**: phát nhạc trị liệu/podcast/white noise chạy nền, tắt màn hình vẫn hoạt động
