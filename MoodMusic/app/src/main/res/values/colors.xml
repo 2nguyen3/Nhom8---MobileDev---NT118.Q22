@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mood UI Colors -->
+    <color name="mm_purple">#8B4CFC</color>
+    <color name="mm_bg1">#EEF0FF</color>
+    <color name="mm_bg2">#FFFFFF</color>
+    <color name="mm_text">#100F11</color>
+    <color name="mm_text_60">#99100F11</color>
+
+    <color name="mm_chip_bg">#CCFFFFFF</color>
+    <color name="mm_white">#FFFFFF</color>
+    <color name="mm_wave_purple">#CFC6FF</color>
+</resources>
