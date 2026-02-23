@@ -37,9 +37,6 @@ public class MainActivity extends AppCompatActivity {
         // Default label (emoji đã nằm trong XML qua @string/emoji_*)
         updateLabelFromCenter();
 
-        // (Tuỳ chọn) mở app phát nhạc vui luôn
-        playMusic(R.raw.happy);
-
         emoSad.setOnClickListener(v -> {
             if (isAnimating) return;
             swapEmojiSmooth(emoSad);
