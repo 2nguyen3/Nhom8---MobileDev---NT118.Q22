@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">MoodMusic</string>
+
+    <string name="today">Hôm nay</string>
+    <string name="close">✕</string>
+
+    <string name="title_mood">Bạn đang cảm thấy thế nào?</string>
+    <string name="subtitle_mood">Chọn cảm xúc phản ánh đúng nhất những gì bạn đang cảm nhận.</string>
+
+    <string name="emoji_happy">😊</string>
+    <string name="emoji_sad">😔</string>
+    <string name="emoji_stress">😵‍💫</string>
+
+    <string name="mood_unknown">Cảm xúc</string>
+    <string name="mood_happy">Vui</string>
+    <string name="mood_sad">Buồn</string>
+    <string name="mood_stress">Căng thẳng</string>
+
+    <string name="stop_music">Dừng nhạc</string>
+</resources>
