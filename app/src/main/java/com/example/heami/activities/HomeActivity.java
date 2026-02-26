@@ -20,6 +20,8 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        BottomNavManager.setup(this, BottomNavManager.TAB_HOME);
+
         applyStaticStyles();
         startHomeAnimations();
     }
