@@ -114,7 +114,7 @@ public class RegisterActivity extends AppCompatActivity {
                 Toast.makeText(this, status.replace("SUCCESS_REGISTER_PHONE:", ""), Toast.LENGTH_LONG).show();
 
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                    Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="onboarding_orange">#FF9E7D</color>
+    <color name="onboarding_light_bg">#FFD8CC</color>
+    <color name="onboarding_accent_teal">#66C2C2</color>
+    <color name="onboarding_text_primary">#4A4A4A</color>
+    <color name="onboarding_text_secondary">#BDBDBD</color>
+    <color name="onboarding_white">#FFFFFF</color>
+    <color name="onboarding_black">#000000</color>
+    <color name="onboarding_gray_border">#E0E0E0</color>    </resources>
