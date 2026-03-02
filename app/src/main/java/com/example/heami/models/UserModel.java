@@ -1,35 +1,51 @@
 package com.example.heami.models;
 
+import com.google.firebase.Timestamp;
+import java.util.List;
+
 public class UserModel {
-    private String uid;
-    private String email;
+    private String user_id;
     private String nickname;
-    private String role;
-    private long createdAt;
+    private String avatar_url;
+    private String motto;
+    private List<String> mood_goals;
+    private Double hr_baseline;
+    private boolean is_protected_mode;
+    private Timestamp created_at;
 
     public UserModel() {}
 
-    public UserModel(String uid, String email, String nickname, String role, long createdAt) {
-        this.uid = uid;
-        this.email = email;
+    public UserModel(String user_id, String nickname, String avatar_url, Timestamp created_at) {
+        this.user_id = user_id;
         this.nickname = nickname;
-        this.role = role;
-        this.createdAt = createdAt;
+        this.avatar_url = avatar_url;
+        this.created_at = created_at;
+        this.is_protected_mode = false; // Mặc định tắt
+        this.hr_baseline = 0.0;
     }
 
     // Getter và Setter
-    public String getUid() { return uid; }
-    public void setUid(String uid) { this.uid = uid; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getUser_id() { return user_id; }
+    public void setUser_id(String user_id) { this.user_id = user_id; }
 
     public String getNickname() { return nickname; }
     public void setNickname(String nickname) { this.nickname = nickname; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public String getAvatar_url() { return avatar_url; }
+    public void setAvatar_url(String avatar_url) { this.avatar_url = avatar_url; }
 
-    public long getCreatedAt() { return createdAt; }
-    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
+    public String getMotto() { return motto; }
+    public void setMotto(String motto) { this.motto = motto; }
+
+    public List<String> getMood_goals() { return mood_goals; }
+    public void setMood_goals(List<String> mood_goals) { this.mood_goals = mood_goals; }
+
+    public Double getHr_baseline() { return hr_baseline; }
+    public void setHr_baseline(Double hr_baseline) { this.hr_baseline = hr_baseline; }
+
+    public boolean is_protected_mode() { return is_protected_mode; }
+    public void setIs_protected_mode(boolean is_protected_mode) { this.is_protected_mode = is_protected_mode; }
+
+    public Timestamp getCreated_at() { return created_at; }
+    public void setCreated_at(Timestamp created_at) { this.created_at = created_at; }
 }
