@@ -14,8 +14,7 @@
 
         <activity
             android:name=".activities.LoginActivity"
-            android:exported="true">
-
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -29,6 +28,10 @@
 
         <activity
             android:name=".activities.CommunityActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.DoctorActivity"
             android:exported="false" />
 
         <activity

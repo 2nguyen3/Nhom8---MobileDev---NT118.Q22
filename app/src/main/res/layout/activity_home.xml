@@ -173,15 +173,15 @@
                 android:id="@+id/layoutHeroTop"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="22dp"
+                android:paddingStart="30dp"
                 android:paddingTop="14dp"
-                android:paddingEnd="22dp"
-                android:paddingBottom="13dp">
+                android:paddingEnd="50dp"
+                android:paddingBottom="5dp">
 
                 <ImageView
                     android:id="@+id/imgHeamiCloud"
-                    android:layout_width="118dp"
-                    android:layout_height="118dp"
+                    android:layout_width="135dp"
+                    android:layout_height="135dp"
                     android:adjustViewBounds="true"
                     android:src="@drawable/ic_heami_cloud"
                     android:contentDescription="cloud"
@@ -268,6 +268,7 @@
                 android:layout_height="wrap_content"
                 android:paddingStart="18dp"
                 android:paddingEnd="18dp"
+                android:paddingTop="9dp"
                 android:clipChildren="false"
                 android:clipToPadding="false">
 
@@ -1022,7 +1023,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:scaleType="centerCrop"
-                                android:src="@drawable/img_doctor_1"
+                                android:src="@drawable/img_home_doctor_1"
                                 android:contentDescription="doctor 1" />
 
                             <View
@@ -1125,7 +1126,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:scaleType="centerCrop"
-                                android:src="@drawable/img_doctor_2"
+                                android:src="@drawable/img_home_doctor_2"
                                 android:contentDescription="doctor 2" />
 
                             <View

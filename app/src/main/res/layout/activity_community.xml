@@ -80,7 +80,7 @@
                     android:contentDescription="Quay lại"
                     android:padding="8dp"
                     android:scaleType="centerInside"
-                    android:src="@drawable/ic_back_community" />
+                    android:src="@drawable/ic_back" />
 
                 <LinearLayout
                     android:layout_width="0dp"

@@ -90,7 +90,11 @@ public class BottomNavManager {
 
         if (navDoctor != null) {
             navDoctor.setOnClickListener(v -> {
-                // Màn chưa làm xong, tạm để trống
+                if (!(activity instanceof DoctorActivity)) {
+                    activity.startActivity(new Intent(activity, DoctorActivity.class));
+                    activity.overridePendingTransition(0, 0);
+                    activity.finish();
+                }
             });
         }
 
@@ -107,6 +111,8 @@ public class BottomNavManager {
         }
         if (icon != null) {
             icon.setImageResource(iconRes);
+            icon.setScaleX(1f);
+            icon.setScaleY(1f);
         }
         if (text != null) {
             text.setTextColor(0xFFB5BFD1);
@@ -116,10 +122,42 @@ public class BottomNavManager {
     private static void setActiveItem(LinearLayout item, ImageView icon, TextView text, int iconRes) {
         if (item != null) {
             item.setBackgroundResource(R.drawable.bg_nav_item_active);
+
+            item.setScaleX(0.95f);
+            item.setScaleY(0.95f);
+            item.setAlpha(0.88f);
+
+            item.animate()
+                    .scaleX(1.03f)
+                    .scaleY(1.03f)
+                    .alpha(1f)
+                    .setDuration(140)
+                    .withEndAction(() -> item.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(90)
+                            .start())
+                    .start();
         }
+
         if (icon != null) {
             icon.setImageResource(iconRes);
+
+            icon.setScaleX(0.92f);
+            icon.setScaleY(0.92f);
+
+            icon.animate()
+                    .scaleX(1.06f)
+                    .scaleY(1.06f)
+                    .setDuration(140)
+                    .withEndAction(() -> icon.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(90)
+                            .start())
+                    .start();
         }
+
         if (text != null) {
             text.setTextColor(0xFFE86FA0);
         }
