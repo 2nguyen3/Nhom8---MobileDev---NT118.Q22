@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/shareFeelingRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#4D2D1B47">
+
+    <FrameLayout
+        android:id="@+id/layoutShareFeelingSheet"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="230dp"
+        android:background="@drawable/bg_share_feeling_sheet"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <View
+            android:id="@+id/viewShareFeelingTopLine"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginStart="38dp"
+            android:layout_marginEnd="38dp"
+            android:background="@drawable/bg_share_feeling_top_line" />
+
+        <ScrollView
+            android:id="@+id/scrollShareFeeling"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:paddingStart="22dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:id="@+id/layoutShareFeelingContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <View
+                    android:id="@+id/viewShareFeelingHandle"
+                    android:layout_width="38dp"
+                    android:layout_height="7dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="22dp"
+                    android:background="@drawable/bg_share_feeling_handle" />
+
+                <LinearLayout
+                    android:id="@+id/layoutShareFeelingHeaderRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/txtShareFeelingTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Chia sẻ cảm xúc"
+                        android:textColor="#342152"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutAnonymousBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:background="@drawable/bg_share_feeling_anonymous_badge"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp">
+
+                        <TextView
+                            android:id="@+id/txtAnonymousIcon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🛡️"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/txtAnonymousLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Ẩn danh"
+                            android:textColor="#76C7BB"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/txtShareFeelingSectionLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:text="BẠN ĐANG CẢM THẤY?"
+                    android:textColor="#A89BBB"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <GridLayout
+                    android:id="@+id/gridShareFeelingMoods"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:alignmentMode="alignMargins"
+                    android:columnCount="3"
+                    android:useDefaultMargins="false">
+
+                    <!-- Mood 1 -->
+                    <LinearLayout
+                        android:id="@+id/cardMoodHappy"
+                        android:layout_width="0dp"
+                        android:layout_height="85dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginEnd="6dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_share_mood_happy_active"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🌻"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodHappy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Vui vẻ"
+                            android:textColor="#E0A03D"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Mood 2 -->
+                    <LinearLayout
+                        android:id="@+id/cardMoodSad"
+                        android:layout_width="0dp"
+                        android:layout_height="85dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_share_mood_default"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🌧️"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodSad"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Buồn"
+                            android:textColor="#9EB8E8"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Mood 3 -->
+                    <LinearLayout
+                        android:id="@+id/cardMoodStress"
+                        android:layout_width="0dp"
+                        android:layout_height="85dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_share_mood_default"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🌪️"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodStress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Stress"
+                            android:textColor="#B79AC9"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Mood 4 -->
+                    <LinearLayout
+                        android:id="@+id/cardMoodFear"
+                        android:layout_width="0dp"
+                        android:layout_height="85dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_share_mood_default"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="😰"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodFear"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Sợ hãi"
+                            android:textColor="#9EC7C4"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Mood 5 -->
+                    <LinearLayout
+                        android:id="@+id/cardMoodDisgust"
+                        android:layout_width="0dp"
+                        android:layout_height="85dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_share_mood_default"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🤢"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodDisgust"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Ghê tởm"
+                            android:textColor="#A2BB8F"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Mood 6 -->
+                    <LinearLayout
+                        android:id="@+id/cardMoodAngry"
+                        android:layout_width="0dp"
+                        android:layout_height="85dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_share_mood_default"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="😠"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodAngry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Tức giận"
+                            android:textColor="#E49797"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </GridLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutShareFeelingBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_share_feeling_box"
+                    android:gravity="top"
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="20dp">
+
+                    <EditText
+                        android:id="@+id/edtShareFeeling"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/transparent"
+                        android:gravity="top|start"
+                        android:hint="Hôm nay bạn cảm thấy thế nào? Không cần phải ổn, chỉ cần thật lòng thôi... 🌿"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="5"
+                        android:textColor="#9E93AD"
+                        android:textColorHint="#9E93AD"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnSubmitAnonymous"
+                    android:layout_width="match_parent"
+                    android:layout_height="68dp"
+                    android:layout_marginTop="24dp"
+                    android:background="@drawable/bg_share_feeling_submit"
+                    android:backgroundTint="@null"
+                    app:backgroundTint="@null"
+                    android:text="Đăng ẩn danh"
+                    android:textAllCaps="false"
+                    android:textColor="#B39CCC"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

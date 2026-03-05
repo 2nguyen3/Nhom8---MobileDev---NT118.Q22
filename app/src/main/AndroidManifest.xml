@@ -19,7 +19,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
         <activity
@@ -29,6 +28,14 @@
         <activity
             android:name=".activities.CommunityActivity"
             android:exported="false" />
+
+            <activity
+                android:name=".activities.MoodMatchActivity"
+                android:exported="false" />
+
+            <activity
+                android:name=".activities.ShareFeelingActivity"
+                android:exported="false" />
 
         <activity
             android:name=".activities.DoctorActivity"

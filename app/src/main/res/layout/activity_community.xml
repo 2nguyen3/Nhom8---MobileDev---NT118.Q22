@@ -658,7 +658,7 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/btnShareYourStory"
+                    android:id="@+id/btnShareYourFeeling"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_share_btn"
@@ -677,7 +677,7 @@
                         android:src="@drawable/ic_share_edit" />
 
                     <TextView
-                        android:id="@+id/txtShareYourStory"
+                        android:id="@+id/txtShareYourFeeling"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"

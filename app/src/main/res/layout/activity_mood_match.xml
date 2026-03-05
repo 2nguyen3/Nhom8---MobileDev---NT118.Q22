@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/moodMatchRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#4D2D1B47">
+
+    <FrameLayout
+        android:id="@+id/layoutMoodMatchSheet"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="150dp"
+        android:background="@drawable/bg_mood_match_sheet"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <View
+            android:id="@+id/viewMoodMatchTopGradient"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginStart="38dp"
+            android:layout_marginEnd="38dp"
+            android:background="@drawable/bg_mood_match_top_gradient" />
+
+        <ScrollView
+            android:id="@+id/scrollMoodMatch"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:paddingStart="22dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="10dp">
+
+            <LinearLayout
+                android:id="@+id/layoutMoodMatchContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <View
+                    android:id="@+id/viewMoodMatchHandle"
+                    android:layout_width="46dp"
+                    android:layout_height="5dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="18dp"
+                    android:background="@drawable/bg_mood_match_handle" />
+
+                <LinearLayout
+                    android:id="@+id/layoutMoodMatchHero"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:id="@+id/layoutMoodHeroPulseWrap"
+                        android:layout_width="160dp"
+                        android:layout_height="160dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <View
+                            android:id="@+id/viewMoodHeroRingOuter"
+                            android:layout_width="130dp"
+                            android:layout_height="130dp"
+                            android:layout_gravity="center"
+                            android:alpha="0.20"
+                            android:background="@drawable/bg_mood_hero_ring_outer" />
+
+                        <View
+                            android:id="@+id/viewMoodHeroRingInner"
+                            android:layout_width="92dp"
+                            android:layout_height="92dp"
+                            android:layout_gravity="center"
+                            android:alpha="0.28"
+                            android:background="@drawable/bg_mood_hero_ring_inner" />
+
+                        <FrameLayout
+                            android:id="@+id/layoutMoodMatchHeroIconWrap"
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/bg_mood_match_hero_icon_wrap">
+
+                            <ImageView
+                                android:id="@+id/imgMoodMatchHeroIcon"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Mood Match icon"
+                                android:src="@drawable/ic_mood_match_shuffle" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/txtMoodMatchTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mood Match 1-1"
+                        android:textColor="#342152"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtMoodMatchSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Ghép cặp với người đang cùng cảm xúc với bạn.&#10;Nói chuyện ẩn danh, an toàn, không phán xét."
+                        android:textColor="#8F80A7"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/layoutMoodMatchStateCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="180dp"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_mood_match_state_card"
+                    android:paddingStart="18dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="18dp"
+                    android:paddingBottom="16dp">
+
+                    <LinearLayout
+                        android:id="@+id/layoutStateSearching"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ProgressBar
+                            android:id="@+id/progressMoodSearching"
+                            style="?android:attr/progressBarStyleLarge"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:indeterminate="true" />
+
+                        <TextView
+                            android:id="@+id/txtSearchingTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="18dp"
+                            android:text="Đang tìm người cùng tần số..."
+                            android:textColor="#5A4773"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtSearchingSubtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center"
+                            android:text="Heami đang tìm một người phù hợp&#10;để trò chuyện cùng bạn"
+                            android:textColor="#9B8DAF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutStateAnalyzing"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <ProgressBar
+                            android:id="@+id/progressMoodAnalyzing"
+                            style="?android:attr/progressBarStyleLarge"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:indeterminate="true" />
+
+                        <TextView
+                            android:id="@+id/txtAnalyzingTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="18dp"
+                            android:text="Đang phân tích mood tương thích..."
+                            android:textColor="#5A4773"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtAnalyzingSubtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center"
+                            android:text="Đảm bảo kết nối nhẹ nhàng, an toàn&#10;và phù hợp với cảm xúc hiện tại"
+                            android:textColor="#9B8DAF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutStateSuccess"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/txtSuccessFlower"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🌸"
+                            android:textSize="46sp" />
+
+                        <TextView
+                            android:id="@+id/txtSuccessTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Kết nối thành công!"
+                            android:textColor="#5A4773"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutMoodMatchRules"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/ruleItem1"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/bg_mood_match_rule_item"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="🎭"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:text="100% ẩn danh — không lộ tên, ảnh"
+                            android:textColor="#8F80A7"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/ruleItem2"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_mood_match_rule_item"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="🤝"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:text="Nói chuyện lành mạnh, không phán xét"
+                            android:textColor="#8F80A7"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/ruleItem3"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:background="@drawable/bg_mood_match_rule_item"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="🛡️"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:text="Bất cứ lúc nào bạn có thể kết thúc"
+                            android:textColor="#8F80A7"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnMoodMatchCTA"
+                    android:layout_width="match_parent"
+                    android:layout_height="58dp"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_mood_match_cta"
+                    android:backgroundTint="@null"
+                    app:backgroundTint="@null"
+                    android:text="Vào phòng trò chuyện"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtBackToCommunity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="18dp"
+                    android:text="Trở lại community feed"
+                    android:textColor="#B29AC9"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

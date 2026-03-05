@@ -3,10 +3,13 @@ package com.example.heami.activities;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +18,8 @@ import com.example.heami.R;
 
 public class CommunityActivity extends AppCompatActivity {
 
+    private LinearLayout layoutPostsContainer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,10 +27,23 @@ public class CommunityActivity extends AppCompatActivity {
 
         BottomNavManager.setup(this, BottomNavManager.TAB_COMMUNITY);
 
+        bindViews();
         allowOverflow();
         setupActions();
         setupFilters();
+        handleSharedPostIntent();
         startCommunityAnimations();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleSharedPostIntent();
+    }
+
+    private void bindViews() {
+        layoutPostsContainer = findViewById(R.id.layoutPostsContainer);
     }
 
     private void allowOverflow() {
@@ -47,6 +65,24 @@ public class CommunityActivity extends AppCompatActivity {
         View btnBack = findViewById(R.id.btnBackCommunity);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
+        }
+
+        View moodMatchCard = findViewById(R.id.layoutMoodMatchCard);
+        if (moodMatchCard != null) {
+            moodMatchCard.setOnClickListener(v -> {
+                Intent intent = new Intent(CommunityActivity.this, MoodMatchActivity.class);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+            });
+        }
+
+        View btnShareYourFeeling = findViewById(R.id.btnShareYourFeeling);
+        if (btnShareYourFeeling != null) {
+            btnShareYourFeeling.setOnClickListener(v -> {
+                Intent intent = new Intent(CommunityActivity.this, ShareFeelingActivity.class);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+            });
         }
     }
 
@@ -116,30 +152,215 @@ public class CommunityActivity extends AppCompatActivity {
         }
     }
 
+    private void handleSharedPostIntent() {
+        Intent intent = getIntent();
+        if (intent == null) return;
+
+        boolean fromShareFeeling = intent.getBooleanExtra("from_share_feeling", false);
+        if (!fromShareFeeling) return;
+
+        String content = intent.getStringExtra("new_post_content");
+        String mood = intent.getStringExtra("new_post_mood");
+
+        if (content == null || content.trim().isEmpty()) return;
+
+        addNewSharedPost(content, mood);
+
+        intent.removeExtra("from_share_feeling");
+        intent.removeExtra("new_post_content");
+        intent.removeExtra("new_post_mood");
+    }
+
+    private void addNewSharedPost(String content, String mood) {
+        if (layoutPostsContainer == null) return;
+
+        View postView = getLayoutInflater().inflate(R.layout.item_post_shared, layoutPostsContainer, false);
+
+        View accent = postView.findViewById(R.id.viewPostAccent);
+        View avatarStatus = postView.findViewById(R.id.viewPostAvatarStatus);
+
+        TextView txtAvatarEmoji = postView.findViewById(R.id.txtPostAvatarEmoji);
+        TextView txtUserName = postView.findViewById(R.id.txtPostUserName);
+        TextView txtMoodTag = postView.findViewById(R.id.txtPostMoodTag);
+        TextView txtPostTime = postView.findViewById(R.id.txtPostTime);
+        TextView txtPostContent = postView.findViewById(R.id.txtPostContent);
+        TextView txtPostHugCount = postView.findViewById(R.id.txtPostHugCount);
+        TextView txtPostCommentCount = postView.findViewById(R.id.txtPostCommentCount);
+
+        txtUserName.setText(getAnonymousNameByMood(mood));
+        txtMoodTag.setText(getMoodLabel(mood));
+        txtMoodTag.setBackgroundResource(getMoodTagBackground(mood));
+        txtMoodTag.setTextColor(getMoodTextColor(mood));
+        txtPostTime.setText("· Vừa xong");
+        txtPostContent.setText(content);
+        txtPostHugCount.setText("Ôm 0");
+        txtPostCommentCount.setText("0");
+
+        applyPostMoodStyle(mood, accent, txtAvatarEmoji, avatarStatus);
+
+        layoutPostsContainer.addView(postView, 0);
+    }
+
+    private void applyPostMoodStyle(String mood, View accent, TextView avatarEmoji, View avatarStatus) {
+        if (accent == null || avatarEmoji == null || avatarStatus == null) return;
+
+        if (mood == null) mood = "stress";
+
+        switch (mood) {
+            case "happy":
+                accent.setBackgroundResource(R.drawable.bg_post_accent_orange);
+                avatarEmoji.setBackgroundResource(R.drawable.bg_avatar_box_orange);
+                avatarEmoji.setText("🌻");
+                avatarStatus.setBackgroundResource(R.drawable.bg_avatar_status_orange);
+                break;
+
+            case "sad":
+                accent.setBackgroundResource(R.drawable.bg_post_accent_blue);
+                avatarEmoji.setBackgroundResource(R.drawable.bg_avatar_box_blue);
+                avatarEmoji.setText("🌧️");
+                avatarStatus.setBackgroundResource(R.drawable.bg_avatar_status_blue);
+                break;
+
+            case "stress":
+                accent.setBackgroundResource(R.drawable.bg_post_accent_purple);
+                avatarEmoji.setBackgroundResource(R.drawable.bg_avatar_box_purple);
+                avatarEmoji.setText("🌪️");
+                avatarStatus.setBackgroundResource(R.drawable.bg_avatar_status_purple);
+                break;
+
+            case "fear":
+                accent.setBackgroundResource(R.drawable.bg_post_accent_mint);
+                avatarEmoji.setBackgroundResource(R.drawable.bg_avatar_box_mint);
+                avatarEmoji.setText("😰");
+                avatarStatus.setBackgroundResource(R.drawable.bg_avatar_status_mint);
+                break;
+
+            case "disgust":
+                accent.setBackgroundResource(R.drawable.bg_post_accent_green);
+                avatarEmoji.setBackgroundResource(R.drawable.bg_avatar_box_green);
+                avatarEmoji.setText("🤢");
+                avatarStatus.setBackgroundResource(R.drawable.bg_avatar_status_green);
+                break;
+
+            case "angry":
+                accent.setBackgroundResource(R.drawable.bg_post_accent_red);
+                avatarEmoji.setBackgroundResource(R.drawable.bg_avatar_box_red);
+                avatarEmoji.setText("😠");
+                avatarStatus.setBackgroundResource(R.drawable.bg_avatar_status_red);
+                break;
+
+            default:
+                accent.setBackgroundResource(R.drawable.bg_post_accent_purple);
+                avatarEmoji.setBackgroundResource(R.drawable.bg_avatar_box_purple);
+                avatarEmoji.setText("🌪️");
+                avatarStatus.setBackgroundResource(R.drawable.bg_avatar_status_purple);
+                break;
+        }
+    }
+
+    private String getAnonymousNameByMood(String mood) {
+        if (mood == null) return "Người bạn ẩn danh";
+
+        switch (mood) {
+            case "happy":
+                return "Hoa nắng nhỏ";
+            case "sad":
+                return "Mây chiều xanh";
+            case "stress":
+                return "Lá dương xỉ";
+            case "fear":
+                return "Sương đêm mỏng";
+            case "disgust":
+                return "Chiếc lá lặng";
+            case "angry":
+                return "Đốm lửa nhỏ";
+            default:
+                return "Người bạn ẩn danh";
+        }
+    }
+
+    private String getMoodLabel(String mood) {
+        if (mood == null) return "Cảm xúc";
+
+        switch (mood) {
+            case "happy":
+                return "Đang vui";
+            case "sad":
+                return "Đang buồn";
+            case "stress":
+                return "Đang stress";
+            case "fear":
+                return "Đang sợ hãi";
+            case "disgust":
+                return "Đang ghê tởm";
+            case "angry":
+                return "Đang tức giận";
+            default:
+                return "Cảm xúc";
+        }
+    }
+
+    private int getMoodTagBackground(String mood) {
+        if (mood == null) return R.drawable.bg_mood_tag_stress;
+
+        switch (mood) {
+            case "happy":
+                return R.drawable.bg_mood_tag_happy;
+            case "sad":
+                return R.drawable.bg_mood_tag_sad;
+            case "stress":
+                return R.drawable.bg_mood_tag_stress;
+            case "fear":
+                return R.drawable.bg_mood_tag_fear;
+            case "disgust":
+                return R.drawable.bg_mood_tag_disgust;
+            case "angry":
+                return R.drawable.bg_mood_tag_angry;
+            default:
+                return R.drawable.bg_mood_tag_stress;
+        }
+    }
+
+    private int getMoodTextColor(String mood) {
+        if (mood == null) return 0xFFB06ED8;
+
+        switch (mood) {
+            case "happy":
+                return 0xFFF5A623;
+            case "sad":
+                return 0xFF6B9EE8;
+            case "stress":
+                return 0xFFB06ED8;
+            case "fear":
+                return 0xFF4BBBAD;
+            case "disgust":
+                return 0xFF7FA56A;
+            case "angry":
+                return 0xFFE49797;
+            default:
+                return 0xFFB06ED8;
+        }
+    }
+
     private void startCommunityAnimations() {
-        // Background blobs
         startBlobFloat(findViewById(R.id.blobRoseTop), -10f, 8f, 1.04f, 8000, 0);
         startBlobFloat(findViewById(R.id.blobVioletMid), 8f, -10f, 1.05f, 9000, 400);
         startBlobFloat(findViewById(R.id.blobCyanMid), -8f, 10f, 1.05f, 8600, 700);
 
-        // Online badge
         startSubtleFloat(findViewById(R.id.layoutOnlineBadge), 1.5f, 4200, 0);
         startPulseDot(findViewById(R.id.viewOnlineDot), 0.92f, 1.18f, 1900);
 
-        // Mood match card
         startPulseFadeExpand(findViewById(R.id.viewShuffleRingOuter), 0.82f, 1.32f, 0.22f, 0f, 1800, 0);
         startPulseFadeExpand(findViewById(R.id.viewShuffleRingInner), 0.90f, 1.22f, 0.30f, 0f, 1350, 120);
 
         startFloatRotateScale(findViewById(R.id.layoutShuffleIconBox), 3f, 3f, 1.05f, 1900, 0);
         startPulseDot(findViewById(R.id.viewMoodActiveDot), 0.92f, 1.25f, 1150);
 
-        // Sparkles
         startSparkle(findViewById(R.id.imgSparkle1), 1.7f, 0);
         startSparkle(findViewById(R.id.imgSparkle2), 1.7f, 200);
         startSparkle(findViewById(R.id.imgSparkle3), 1.7f, 450);
         startSparkle(findViewById(R.id.imgSparkle4), 1.7f, 700);
 
-        // Stat chips
         startStatBreath(findViewById(R.id.statChip1), 4400, 0);
         startStatBreath(findViewById(R.id.statChip2), 4400, 350);
         startStatBreath(findViewById(R.id.statChip3), 4400, 700);
@@ -338,6 +559,10 @@ public class CommunityActivity extends AppCompatActivity {
         moveY.setRepeatCount(ValueAnimator.INFINITE);
         moveY.setInterpolator(new AccelerateDecelerateInterpolator());
         moveY.start();
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private float dp(float value) {
