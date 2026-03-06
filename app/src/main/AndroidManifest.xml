@@ -26,62 +26,23 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".activities.HomeActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.CommunityActivity"
-            android:exported="false" />
-            <activity
-                android:name=".activities.MoodMatchActivity"
-                android:exported="false" />
-            <activity
-                android:name=".activities.ShareFeelingActivity"
-                android:exported="false" />
-            <activity
-                android:name=".activities.PostCommentActivity"
-                android:exported="false" />
-
-        <activity
-            android:name=".activities.DoctorActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.ProfileActivity"
-            android:exported="false" />
-            <activity
-                android:name=".activities.StatsActivity"
-                android:exported="false" />
-            <activity
-                android:name=".activities.ConsultationsActivity"
-                android:exported="false" />
-            <activity
-                android:name=".activities.SosActivity"
-                android:exported="false" />
-
-        <activity
-            android:name=".activities.OnboardingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.PermissionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupAvatarActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupBioActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupGoalsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.RegisterActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.ForgotPasswordActivity"
-            android:exported="false" />
+        <activity android:name=".activities.ProfileActivity" android:exported="false" />
+        <activity android:name=".activities.StatsActivity" android:exported="false" />
+        <activity android:name=".activities.ConsultationsActivity" android:exported="false" />
+        <activity android:name=".activities.SosActivity" android:exported="false" />
+        <activity android:name=".activities.OnboardingActivity" android:exported="false" />
+        <activity android:name=".activities.PermissionActivity" android:exported="false" />
+        <activity android:name=".activities.SetupAvatarActivity" android:exported="false" />
+        <activity android:name=".activities.SetupBioActivity" android:exported="false" />
+        <activity android:name=".activities.SetupGoalsActivity" android:exported="false" />
+        <activity android:name=".activities.HomeActivity" android:exported="false" />
+        <activity android:name=".activities.RegisterActivity" android:exported="false" />
+        <activity android:name=".activities.ForgotPasswordActivity" android:exported="false" />
+        <activity android:name=".activities.CommunityActivity" android:exported="false" />
+        <activity android:name=".activities.MoodMatchActivity" android:exported="false" />
+        <activity android:name=".activities.ShareFeelingActivity" android:exported="false" />
+        <activity android:name=".activities.PostCommentActivity" android:exported="false" />
+        <activity android:name=".activities.DoctorActivity" android:exported="false" />
 
         <meta-data
             android:name="preloaded_fonts"
