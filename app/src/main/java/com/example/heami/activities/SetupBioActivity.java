@@ -1,6 +1,7 @@
 package com.example.heami.activities;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
@@ -22,18 +23,22 @@ public class SetupBioActivity extends AppCompatActivity {
     private MaterialButton btnNextStep2;
     private ImageButton btnBack;
 
+    private String currentAvatar;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setup_bio);
 
-        // 1. Ánh xạ View
         initViews();
 
-        // 2. Nhận Avatar từ Step 1
-        String selectedAvatar = getIntent().getStringExtra("selected_avatar");
-        if (selectedAvatar != null) {
-            tvPreviewAvatar.setText(selectedAvatar);
+        // LẤY DỮ LIỆU TỪ SHAREDPREFERENCES
+        SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+        currentAvatar = prefs.getString("user_avatar_emoji", "🌸"); // Mặc định là hoa nếu chưa có
+
+        if (tvPreviewAvatar != null) {
+            tvPreviewAvatar.setText(currentAvatar);
         }
 
         // 3. Khởi tạo trạng thái nút (Ban đầu bị khóa)

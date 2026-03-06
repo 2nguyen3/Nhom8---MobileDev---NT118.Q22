@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.GridLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import android.content.SharedPreferences;
 
 import com.example.heami.R;
 import com.google.android.material.button.MaterialButton;
@@ -31,15 +32,17 @@ public class SetupAvatarActivity extends AppCompatActivity {
         setupAvatarSelection();
 
         // 3. Xử lý khi bấm nút "Tiếp theo"
-        btnNextStep1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Chuyển sang BioActivity (Step 2)
-                Intent intent = new Intent(SetupAvatarActivity.this, SetupBioActivity.class);
-                // Gửi kèm avatar đã chọn để trang sau hiển thị lại
-                intent.putExtra("selected_avatar", selectedAvatar);
-                startActivity(intent);
-            }
+        // Trong onCreate của SetupAvatarActivity.java
+        btnNextStep1.setOnClickListener(v -> {
+            String avatarToPass = tvSelectedAvatar.getText().toString();
+
+            // LƯU VÀO BỘ NHỚ MÁY (SharedPreferences)
+            SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+            prefs.edit().putString("user_avatar_emoji", avatarToPass).apply();
+
+            // Chuyển sang Bio
+            Intent intent = new Intent(SetupAvatarActivity.this, SetupBioActivity.class);
+            startActivity(intent);
         });
     }
 

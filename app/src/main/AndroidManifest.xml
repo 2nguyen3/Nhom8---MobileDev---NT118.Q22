@@ -3,9 +3,7 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -19,12 +17,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Heami">
 
-        <activity android:name=".activities.OnboardingActivity" android:exported="false" />
-        <activity android:name=".activities.PermissionActivity" android:exported="false" />
-        <activity android:name=".activities.SetupAvatarActivity" android:exported="false" />
-        <activity android:name=".activities.SetupBioActivity" android:exported="false" />
-        <activity android:name=".activities.SetupGoalsActivity" android:exported="false" />
-
         <activity
             android:name=".activities.LoginActivity"
             android:exported="true">
@@ -34,20 +26,24 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".activities.HomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.RegisterActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.ForgotPasswordActivity"
-            android:exported="false" />
+        <activity android:name=".activities.ProfileActivity" android:exported="false" />
+        <activity android:name=".activities.StatsActivity" android:exported="false" />
+        <activity android:name=".activities.ConsultationsActivity" android:exported="false" />
+        <activity android:name=".activities.SosActivity" android:exported="false" />
+
+        <activity android:name=".activities.OnboardingActivity" android:exported="false" />
+        <activity android:name=".activities.PermissionActivity" android:exported="false" />
+        <activity android:name=".activities.SetupAvatarActivity" android:exported="false" />
+        <activity android:name=".activities.SetupBioActivity" android:exported="false" />
+        <activity android:name=".activities.SetupGoalsActivity" android:exported="false" />
+
+        <activity android:name=".activities.HomeActivity" android:exported="false" />
+        <activity android:name=".activities.RegisterActivity" android:exported="false" />
+        <activity android:name=".activities.ForgotPasswordActivity" android:exported="false" />
 
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
 
     </application>
-
 </manifest>

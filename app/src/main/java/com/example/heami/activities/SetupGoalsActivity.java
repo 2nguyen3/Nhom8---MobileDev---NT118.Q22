@@ -116,12 +116,17 @@ public class SetupGoalsActivity extends AppCompatActivity {
     }
 
     private void navigateToHome() {
-        // Chuyển hướng sang màn hình chính
-        // Lưu ý: Đảm bảo bạn đã tạo HomeActivity
-        Intent intent = new Intent(this, HomeActivity.class);
+        // Sửa HomeActivity.class thành ProfileActivity.class
+        Intent intent = new Intent(this, ProfileActivity.class);
+
+        // Giữ nguyên các Flag này để xóa lịch sử các trang setup cũ
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
         startActivity(intent);
+
+        // Hiệu ứng chuyển cảnh mờ dần
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+
         finish();
     }
 }
