@@ -100,7 +100,11 @@ public class BottomNavManager {
 
         if (navProfile != null) {
             navProfile.setOnClickListener(v -> {
-                // Màn chưa làm xong, tạm để trống
+                if (!(activity instanceof ProfileActivity)) {
+                    activity.startActivity(new Intent(activity, ProfileActivity.class));
+                    activity.overridePendingTransition(0, 0);
+                    activity.finish();
+                }
             });
         }
     }

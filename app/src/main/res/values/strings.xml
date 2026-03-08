@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Heami</string>
+    <string name="status_on">Đang bật</string>
+    <string name="status_off">Đang tắt</string>
 </resources>

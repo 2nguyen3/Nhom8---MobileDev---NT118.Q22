@@ -92,7 +92,7 @@ public class LoginActivity extends AppCompatActivity {
         authViewModel.getAuthStatus().observe(this, status -> {
             if (status != null && status.startsWith("SUCCESS")) {
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+                    startActivity(new Intent(LoginActivity.this, OnboardingActivity.class));
                     finish();
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 }, 500);
