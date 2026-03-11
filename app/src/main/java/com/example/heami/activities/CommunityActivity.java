@@ -3,6 +3,7 @@ package com.example.heami.activities;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -11,6 +12,8 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.RadioGroup;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -19,6 +22,19 @@ import com.example.heami.R;
 public class CommunityActivity extends AppCompatActivity {
 
     private LinearLayout layoutPostsContainer;
+
+    private View btnHugPost1;
+    private TextView txtHugCountPost1;
+    private boolean isHuggedPost1 = false;
+    private int hugCountPost1 = 24;
+
+    private View btnCommentPost1;
+    private TextView txtCommentCountPost1;
+
+    private View btnEmpathyPost1;
+    private boolean isEmpathyPost1Active = false;
+
+    private View btnReportPost1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +47,10 @@ public class CommunityActivity extends AppCompatActivity {
         allowOverflow();
         setupActions();
         setupFilters();
+        setupHugActions();
+        setupCommentActions();
+        setupEmpathyActions();
+        setupReportActions();
         handleSharedPostIntent();
         startCommunityAnimations();
     }
@@ -44,6 +64,16 @@ public class CommunityActivity extends AppCompatActivity {
 
     private void bindViews() {
         layoutPostsContainer = findViewById(R.id.layoutPostsContainer);
+
+        btnHugPost1 = findViewById(R.id.btnHugPost1);
+        txtHugCountPost1 = findViewById(R.id.txtHugCountPost1);
+
+        btnCommentPost1 = findViewById(R.id.btnCommentPost1);
+        txtCommentCountPost1 = findViewById(R.id.txtCommentCountPost1);
+
+        btnEmpathyPost1 = findViewById(R.id.btnEmpathyPost1);
+
+        btnReportPost1 = findViewById(R.id.btnReportPost1);
     }
 
     private void allowOverflow() {
@@ -567,5 +597,154 @@ public class CommunityActivity extends AppCompatActivity {
 
     private float dp(float value) {
         return value * getResources().getDisplayMetrics().density;
+    }
+
+    private void setupHugActions() {
+        if (btnHugPost1 != null) {
+            btnHugPost1.setOnClickListener(v -> toggleHugPost1());
+        }
+
+        refreshHugPost1UI();
+    }
+
+    private void toggleHugPost1() {
+        if (isHuggedPost1) {
+            hugCountPost1--;
+            isHuggedPost1 = false;
+        } else {
+            hugCountPost1++;
+            isHuggedPost1 = true;
+        }
+
+        refreshHugPost1UI();
+
+        if (isHuggedPost1 && btnHugPost1 != null) {
+            btnHugPost1.animate()
+                    .scaleX(1.06f)
+                    .scaleY(1.06f)
+                    .setDuration(120)
+                    .withEndAction(() -> btnHugPost1.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(120)
+                            .start())
+                    .start();
+        }
+    }
+
+    private void refreshHugPost1UI() {
+        if (txtHugCountPost1 != null) {
+            txtHugCountPost1.setText("Ôm " + hugCountPost1);
+        }
+
+        if (btnHugPost1 != null) {
+            if (isHuggedPost1) {
+                btnHugPost1.setBackgroundResource(R.drawable.bg_action_btn_active);
+            } else {
+                btnHugPost1.setBackgroundResource(R.drawable.bg_action_btn);
+            }
+        }
+    }
+
+    private void setupCommentActions() {
+        if (btnCommentPost1 != null) {
+            btnCommentPost1.setOnClickListener(v -> openPost1Comments());
+        }
+    }
+
+    private void openPost1Comments() {
+        Intent intent = new Intent(CommunityActivity.this, PostCommentActivity.class);
+        startActivity(intent);
+        overridePendingTransition(0, 0);
+    }
+
+    private void setupEmpathyActions() {
+        if (btnEmpathyPost1 != null) {
+            btnEmpathyPost1.setOnClickListener(v -> toggleEmpathyPost1());
+        }
+
+        refreshEmpathyPost1UI();
+    }
+
+    private void toggleEmpathyPost1() {
+        isEmpathyPost1Active = !isEmpathyPost1Active;
+        refreshEmpathyPost1UI();
+
+        if (isEmpathyPost1Active && btnEmpathyPost1 != null) {
+            btnEmpathyPost1.animate()
+                    .scaleX(1.06f)
+                    .scaleY(1.06f)
+                    .setDuration(120)
+                    .withEndAction(() -> btnEmpathyPost1.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(120)
+                            .start())
+                    .start();
+        }
+    }
+
+    private void refreshEmpathyPost1UI() {
+        if (btnEmpathyPost1 == null) return;
+
+        if (isEmpathyPost1Active) {
+            btnEmpathyPost1.setBackgroundResource(R.drawable.bg_empathy_btn_active);
+            btnEmpathyPost1.setAlpha(1f);
+        } else {
+            btnEmpathyPost1.setBackgroundResource(R.drawable.bg_empathy_btn);
+            btnEmpathyPost1.setAlpha(1f);
+        }
+    }
+
+    private void setupReportActions() {
+        if (btnReportPost1 != null) {
+            btnReportPost1.setOnClickListener(v -> showReportDialog());
+        }
+    }
+
+    private void showReportDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_post_report, null, false);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        View btnCancel = dialogView.findViewById(R.id.btnCancelReport);
+        View btnSubmit = dialogView.findViewById(R.id.btnSubmitReport);
+        android.widget.RadioGroup radioGroup = dialogView.findViewById(R.id.radioGroupReportReason);
+
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnSubmit != null) {
+            btnSubmit.setOnClickListener(v -> {
+                int checkedId = radioGroup != null ? radioGroup.getCheckedRadioButtonId() : -1;
+
+                if (checkedId == -1) {
+                    android.widget.Toast.makeText(
+                            CommunityActivity.this,
+                            "Bạn hãy chọn lý do báo cáo nhé",
+                            android.widget.Toast.LENGTH_SHORT
+                    ).show();
+                    return;
+                }
+
+                android.widget.Toast.makeText(
+                        CommunityActivity.this,
+                        "Đã gửi báo cáo. Cảm ơn bạn đã giúp giữ cộng đồng an toàn.",
+                        android.widget.Toast.LENGTH_SHORT
+                ).show();
+
+                dialog.dismiss();
+            });
+        }
+
+        dialog.setCancelable(true);
+        dialog.show();
     }
 }

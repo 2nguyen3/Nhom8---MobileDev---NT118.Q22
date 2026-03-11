@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/postCommentRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#4D2D1B47">
+
+    <LinearLayout
+        android:id="@+id/layoutPostCommentSheet"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="250dp"
+        android:background="@drawable/bg_post_comment_sheet"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/layoutPostCommentHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingTop="22dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="14dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/imgCommentHeaderIcon"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:contentDescription="comment"
+                    android:src="@drawable/ic_comment_header" />
+
+                <TextView
+                    android:id="@+id/txtPostCommentTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="2 bình luận"
+                    android:textColor="#3B2A58"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btnClosePostComment"
+                android:layout_width="33dp"
+                android:layout_height="33dp"
+                android:background="@drawable/bg_post_comment_close_btn"
+                android:padding="7dp"
+                android:src="@drawable/ic_close_comment"
+                android:contentDescription="Đóng"
+                android:scaleType="centerInside"
+                app:tint="#AEA1BE" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEE6F2" />
+
+        <LinearLayout
+            android:id="@+id/layoutPostPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:orientation="horizontal"
+            android:paddingStart="26dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="18dp">
+
+            <TextView
+                android:id="@+id/txtPreviewAvatar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🦊"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/txtPreviewContent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="Hôm nay nhận tin không vui từ gia đình. Không biết chia sẻ với ai, nên ra đây vi..."
+                android:textColor="#6F6188"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEE6F2" />
+
+        <ScrollView
+            android:id="@+id/scrollPostComments"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingStart="22dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="8dp">
+
+            <LinearLayout
+                android:id="@+id/layoutCommentsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/commentItem1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="18dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_post_comment_avatar_wrap">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:text="🐥"
+                                android:textSize="22sp" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/txtCommentBubble1"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_post_comment_bubble"
+                            android:paddingStart="18dp"
+                            android:paddingTop="14dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="14dp"
+                            android:text="Mình hiểu cảm giác đó, ở đây với bạn nha 💙"
+                            android:textColor="#3B2A58"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/txtCommentTime1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="70dp"
+                        android:layout_marginTop="10dp"
+                        android:text="3 phút trước"
+                        android:textColor="#C5B1DB"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/commentItem2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="18dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_post_comment_avatar_wrap">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:text="🌼"
+                                android:textSize="22sp" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/txtCommentBubble2"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_post_comment_bubble"
+                            android:paddingStart="18dp"
+                            android:paddingTop="14dp"
+                            android:paddingEnd="18dp"
+                            android:paddingBottom="14dp"
+                            android:text="Gửi bạn một cái ôm thật chặt 🫂 Rồi sẽ ổn thôi!"
+                            android:textColor="#3B2A58"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/txtCommentTime2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="70dp"
+                        android:layout_marginTop="10dp"
+                        android:text="1 phút trước"
+                        android:textColor="#C5B1DB"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <LinearLayout
+            android:id="@+id/layoutComposerWrap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#F3EEF6"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="22dp">
+
+            <LinearLayout
+                android:id="@+id/layoutComposerRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/txtComposerFlower"
+                    android:layout_width="30dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="🌸"
+                    android:textSize="26sp" />
+
+                <LinearLayout
+                    android:id="@+id/layoutInputShell"
+                    android:layout_width="0dp"
+                    android:layout_height="45dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_post_comment_input_shell"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="10dp">
+
+                    <EditText
+                        android:id="@+id/edtPostComment"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="Gửi lời động viên ẩn danh..."
+                        android:inputType="textCapSentences|textMultiLine"
+                        android:maxLines="3"
+                        android:textColor="#7F7292"
+                        android:textColorHint="#B2A3BF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <FrameLayout
+                        android:id="@+id/btnSendComment"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_post_comment_send_btn">
+
+                        <ImageView
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="send"
+                            android:src="@drawable/ic_send_comment" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

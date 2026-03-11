@@ -37,6 +37,10 @@
                 android:name=".activities.ShareFeelingActivity"
                 android:exported="false" />
 
+            <activity
+                android:name=".activities.PostCommentActivity"
+                android:exported="false" />
+
         <activity
             android:name=".activities.DoctorActivity"
             android:exported="false" />

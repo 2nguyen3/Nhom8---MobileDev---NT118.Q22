@@ -792,6 +792,7 @@
                             </LinearLayout>
 
                             <ImageButton
+                                android:id="@+id/btnReportPost1"
                                 android:layout_width="30dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/bg_report_btn"
@@ -825,6 +826,7 @@
                             android:orientation="horizontal">
 
                             <LinearLayout
+                                android:id="@+id/btnHugPost1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:background="@drawable/bg_action_btn"
@@ -842,6 +844,7 @@
                                     android:textSize="15sp" />
 
                                 <TextView
+                                    android:id="@+id/txtHugCountPost1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="6dp"
@@ -852,6 +855,7 @@
                             </LinearLayout>
 
                             <LinearLayout
+                                android:id="@+id/btnCommentPost1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="6dp"
@@ -870,6 +874,7 @@
                                     android:src="@drawable/ic_comment_bubble" />
 
                                 <TextView
+                                    android:id="@+id/txtCommentCountPost1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="6dp"
@@ -880,6 +885,7 @@
                             </LinearLayout>
 
                             <LinearLayout
+                                android:id="@+id/btnEmpathyPost1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="6dp"
