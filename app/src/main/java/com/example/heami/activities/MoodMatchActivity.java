@@ -3,6 +3,7 @@ package com.example.heami.activities;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -28,6 +29,8 @@ public class MoodMatchActivity extends AppCompatActivity {
 
     private Button btnMoodMatchCTA;
     private TextView txtBackToCommunity;
+
+    private View moodMatchRoot;
 
     private final Runnable showAnalyzingRunnable = this::showAnalyzingStateAnimated;
     private final Runnable showSuccessRunnable = this::showSuccessStateAnimated;
@@ -55,6 +58,7 @@ public class MoodMatchActivity extends AppCompatActivity {
         viewMoodHeroRingInner = findViewById(R.id.viewMoodHeroRingInner);
         btnMoodMatchCTA = findViewById(R.id.btnMoodMatchCTA);
         txtBackToCommunity = findViewById(R.id.txtBackToCommunity);
+        moodMatchRoot = findViewById(R.id.moodMatchRoot);
     }
 
     private void prepareSheetIntro() {
@@ -78,12 +82,19 @@ public class MoodMatchActivity extends AppCompatActivity {
             btnMoodMatchCTA.setEnabled(false);
             btnMoodMatchCTA.setAlpha(0.6f);
             btnMoodMatchCTA.setOnClickListener(v -> {
-                // Tạm thời chưa vào chat room ở bước này
+                if (!btnMoodMatchCTA.isEnabled()) return;
+
+                Intent intent = new Intent(MoodMatchActivity.this, MoodMatchChatActivity.class);
+                startActivity(intent);
             });
         }
 
         if (txtBackToCommunity != null) {
             txtBackToCommunity.setOnClickListener(v -> finish());
+        }
+
+        if (moodMatchRoot != null) {
+            moodMatchRoot.setOnClickListener(v -> finish());
         }
     }
 

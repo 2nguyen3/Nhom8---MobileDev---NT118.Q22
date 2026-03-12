@@ -61,17 +61,6 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <ImageButton
-                    android:id="@+id/btnBackDoctor"
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="@drawable/bg_back_btn_community"
-                    android:padding="8dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_back"
-                    android:contentDescription="Quay lại" />
-
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -93,7 +82,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Bác sĩ tư vấn"
-                        android:textColor="#2D1B47"
+                        android:textColor="#2B1C45"
                         android:textSize="22sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -103,10 +92,10 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="@drawable/bg_back_btn_community"
+                    android:contentDescription="Tuỳ chọn"
                     android:padding="10dp"
                     android:scaleType="centerInside"
-                    android:src="@drawable/ic_doctor_menu"
-                    android:contentDescription="Tuỳ chọn" />
+                    android:src="@drawable/ic_doctor_menu" />
             </LinearLayout>
 
             <!-- Ready notice -->

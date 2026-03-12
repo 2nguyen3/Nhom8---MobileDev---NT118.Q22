@@ -3,6 +3,7 @@ package com.example.heami.activities;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -23,14 +24,12 @@ public class DoctorActivity extends AppCompatActivity {
 
         setupActions();
         setupDoctorFilters();
+        setupDoctorCardClicks();
         startDoctorAnimations();
     }
 
     private void setupActions() {
-        View btnBackDoctor = findViewById(R.id.btnBackDoctor);
-        if (btnBackDoctor != null) {
-            btnBackDoctor.setOnClickListener(v -> finish());
-        }
+
     }
 
     private void setupDoctorFilters() {
@@ -136,5 +135,107 @@ public class DoctorActivity extends AppCompatActivity {
         AnimatorSet set = new AnimatorSet();
         set.playTogether(scaleX, scaleY, alpha);
         set.start();
+    }
+
+    private void setupDoctorCardClicks() {
+        View cardDoctor1 = findViewById(R.id.cardDoctor1);
+        View cardDoctor2 = findViewById(R.id.cardDoctor2);
+        View cardDoctor3 = findViewById(R.id.cardDoctor3);
+        View cardDoctor4 = findViewById(R.id.cardDoctor4);
+        View cardDoctor5 = findViewById(R.id.cardDoctor5);
+
+        if (cardDoctor1 != null) {
+            cardDoctor1.setOnClickListener(v -> openDoctorDetail(
+                    "TS. Nguyễn Minh Anh",
+                    "Tiến sĩ Tâm lý học",
+                    "Tâm lý lâm sàng",
+                    "Hà Nội",
+                    "4.9",
+                    "312+",
+                    "10 năm",
+                    "Với hơn 10 năm kinh nghiệm trong lĩnh vực tâm lý lâm sàng, tôi chuyên hỗ trợ các vấn đề về lo âu, trầm cảm, stress. Phương pháp tiếp cận của tôi tập trung vào sự lắng nghe, thấu hiểu và đồng hành cùng bạn trên hành trình chữa lành.",
+                    R.drawable.img_doctor_1
+            ));
+        }
+
+        if (cardDoctor2 != null) {
+            cardDoctor2.setOnClickListener(v -> openDoctorDetail(
+                    "CN. Lê Thị Hương",
+                    "Chuyên gia Tâm lý trị liệu",
+                    "Tâm lý trị liệu",
+                    "Đà Nẵng",
+                    "4.9",
+                    "445+",
+                    "8 năm",
+                    "Tôi tập trung hỗ trợ chữa lành cảm xúc, các vấn đề trong mối quan hệ, stress kéo dài và sự mất cân bằng trong cuộc sống. Phong cách đồng hành của tôi nhẹ nhàng, gần gũi và thực tế.",
+                    R.drawable.img_doctor_2
+            ));
+        }
+
+        if (cardDoctor3 != null) {
+            cardDoctor3.setOnClickListener(v -> openDoctorDetail(
+                    "ThS. Trần Văn Hùng",
+                    "Thạc sĩ Tâm thần học",
+                    "Tâm thần học",
+                    "TP. HCM",
+                    "4.8",
+                    "198+",
+                    "9 năm",
+                    "Tôi có kinh nghiệm trong việc đánh giá và hỗ trợ các vấn đề tâm thần thường gặp như mất ngủ, lo âu, rối loạn cảm xúc và áp lực kéo dài. Mục tiêu là giúp bạn hiểu rõ tình trạng của mình và tìm hướng đi phù hợp.",
+                    R.drawable.img_doctor_3
+            ));
+        }
+
+        if (cardDoctor4 != null) {
+            cardDoctor4.setOnClickListener(v -> openDoctorDetail(
+                    "ThS. Vũ Thị Lan",
+                    "Thạc sĩ Chăm sóc tâm lý",
+                    "Chăm sóc tâm lý",
+                    "TP. HCM",
+                    "4.8",
+                    "189+",
+                    "7 năm",
+                    "Tôi đồng hành cùng người trẻ trong các giai đoạn nhiều áp lực, hỗ trợ xây dựng lại nhịp sống ổn định, cân bằng cảm xúc và cải thiện sức khỏe tinh thần hằng ngày.",
+                    R.drawable.img_doctor_4
+            ));
+        }
+
+        if (cardDoctor5 != null) {
+            cardDoctor5.setOnClickListener(v -> openDoctorDetail(
+                    "TS. Phạm Quốc Bảo",
+                    "Tiến sĩ Tâm lý tích cực",
+                    "Tâm lý tích cực",
+                    "Hà Nội",
+                    "4.7",
+                    "267+",
+                    "10 năm",
+                    "Tôi hướng đến việc giúp bạn phục hồi nội lực, phát triển tư duy tích cực, xây dựng thói quen tốt và tìm lại động lực sống thông qua các phương pháp tâm lý hiện đại.",
+                    R.drawable.img_doctor_5
+            ));
+        }
+    }
+
+    private void openDoctorDetail(
+            String name,
+            String degree,
+            String specialty,
+            String location,
+            String rating,
+            String sessions,
+            String experience,
+            String intro,
+            int imageRes
+    ) {
+        Intent intent = new Intent(DoctorActivity.this, DoctorDetailActivity.class);
+        intent.putExtra("doctor_name", name);
+        intent.putExtra("doctor_degree", degree);
+        intent.putExtra("doctor_specialty", specialty);
+        intent.putExtra("doctor_location", location);
+        intent.putExtra("doctor_rating", rating);
+        intent.putExtra("doctor_sessions", sessions);
+        intent.putExtra("doctor_experience", experience);
+        intent.putExtra("doctor_intro", intro);
+        intent.putExtra("doctor_image", imageRes);
+        startActivity(intent);
     }
 }

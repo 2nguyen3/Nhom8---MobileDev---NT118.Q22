@@ -42,10 +42,16 @@
             <activity
                 android:name=".activities.PostCommentActivity"
                 android:exported="false" />
+            <activity
+                android:name=".activities.MoodMatchChatActivity"
+                android:exported="false" />
 
         <activity
             android:name=".activities.DoctorActivity"
             android:exported="false" />
+            <activity
+                android:name=".activities.DoctorDetailActivity"
+                android:exported="false" />
 
         <activity
             android:name=".activities.ProfileActivity"

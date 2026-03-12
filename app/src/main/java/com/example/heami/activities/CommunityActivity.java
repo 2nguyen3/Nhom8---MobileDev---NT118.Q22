@@ -92,11 +92,6 @@ public class CommunityActivity extends AppCompatActivity {
     }
 
     private void setupActions() {
-        View btnBack = findViewById(R.id.btnBackCommunity);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
-
         View moodMatchCard = findViewById(R.id.layoutMoodMatchCard);
         if (moodMatchCard != null) {
             moodMatchCard.setOnClickListener(v -> {

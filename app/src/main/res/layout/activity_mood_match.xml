@@ -4,16 +4,20 @@
     android:id="@+id/moodMatchRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#4D2D1B47">
+    android:background="#4D2D1B47"
+    android:clickable="true"
+    android:focusable="true">
 
     <FrameLayout
         android:id="@+id/layoutMoodMatchSheet"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="150dp"
+        android:layout_marginTop="140dp"
         android:background="@drawable/bg_mood_match_sheet"
         android:clipChildren="false"
         android:clipToPadding="false"
+        android:clickable="true"
+        android:focusable="true"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

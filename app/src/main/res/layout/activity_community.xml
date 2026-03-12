@@ -71,17 +71,6 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <ImageButton
-                    android:id="@+id/btnBackCommunity"
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="@drawable/bg_back_btn_community"
-                    android:contentDescription="Quay lại"
-                    android:padding="8dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_back" />
-
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -158,7 +147,7 @@
 
                     <ImageView
                         android:layout_width="14dp"
-                        android:layout_height="14dp"
+                        android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:contentDescription="safety"
                         android:src="@drawable/ic_safety_shield" />

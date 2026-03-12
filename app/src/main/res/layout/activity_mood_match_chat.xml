@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/moodMatchChatRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F5FF">
+
+    <!-- TOP AREA -->
+    <LinearLayout
+        android:id="@+id/layoutTopArea"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="52dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        android:background="#EBFFFFFF"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Top row -->
+        <LinearLayout
+            android:id="@+id/layoutTopRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageButton
+                android:id="@+id/btnBackMoodChat"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_back_btn_community"
+                android:contentDescription="Quay lại"
+                android:padding="8dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_back" />
+
+            <FrameLayout
+                android:id="@+id/layoutAvatarWrap"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/bg_mood_chat_avatar_stub">
+
+                <TextView
+                    android:id="@+id/txtAvatarEmoji"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="🦊"
+                    android:textSize="22sp" />
+
+                <View
+                    android:id="@+id/viewOnlineDot"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_gravity="bottom|end"
+                    android:background="@drawable/bg_dot_green" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutProfileMeta"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtChatName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cáo nhỏ hồng"
+                    android:textColor="#2D3A5E"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💙"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/txtChatMood"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="Đang buồn"
+                        android:textColor="#6B9EE8"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="· Ẩn danh"
+                        android:textColor="#C0BACA"
+                        android:textSize="10sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/btnMoreMoodChat"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_mood_chat_more_stub">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="⋮"
+                    android:textColor="#9EAFC2"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Safety banner -->
+        <LinearLayout
+            android:id="@+id/layoutSafetyBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingStart="12dp"
+            android:paddingTop="5dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="5dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_mood_chat_safe_banner_stub">
+
+            <ImageView
+                android:layout_width="8dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:contentDescription="safety"
+                android:src="@drawable/ic_safety_shield" />
+
+            <TextView
+                android:id="@+id/txtSafetyBanner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:text="Cuộc trò chuyện ẩn danh &amp; bảo mật hoàn toàn"
+                android:textColor="#4BBBAD"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- CENTER CHAT AREA -->
+    <LinearLayout
+        android:id="@+id/layoutChatArea"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutTopArea"
+        app:layout_constraintBottom_toTopOf="@id/layoutBottomArea"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- System card -->
+        <LinearLayout
+            android:id="@+id/layoutSystemCardWrap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp">
+
+            <LinearLayout
+                android:id="@+id/layoutSystemCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="14dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="10dp"
+                android:background="@drawable/bg_mood_chat_system_card_stub">
+
+                <TextView
+                    android:id="@+id/txtSystemCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Heami đã kết nối bạn với Cáo nhỏ hồng — người đang có cùng tâm trạng với bạn hôm nay. Cuộc trò chuyện này hoàn toàn ẩn danh 🛡️"
+                    android:textColor="#5A8A8A"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Incoming message -->
+        <LinearLayout
+            android:id="@+id/layoutIncomingRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="bottom">
+
+            <FrameLayout
+                android:id="@+id/layoutIncomingAvatar"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/bg_mood_chat_avatar_stub">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="🦊"
+                    android:textSize="18sp" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutIncomingBubble"
+                android:layout_width="258dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:orientation="vertical"
+                android:paddingStart="14dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="10dp"
+                android:background="@drawable/bg_mood_chat_bubble_stub">
+
+                <TextView
+                    android:id="@+id/txtIncomingMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Heami nói mình có thể chia sẻ ở đây... Bạn cũng đang không ổn lắm à?"
+                    android:textColor="#3A2A4A"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtIncomingTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="10:32"
+                    android:textColor="#C0A8D0"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- BOTTOM AREA -->
+    <LinearLayout
+        android:id="@+id/layoutBottomArea"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="36dp"
+        android:background="#EBFFFFFF"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Composer -->
+        <LinearLayout
+            android:id="@+id/layoutComposerRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="bottom">
+
+            <EditText
+                android:id="@+id/edtMoodChatInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="44dp"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="10dp"
+                android:background="@drawable/bg_mood_chat_input_stub"
+                android:hint="Chia sẻ với Cáo nhỏ hồng..."
+                android:textColor="#3A2A4A"
+                android:textColorHint="#803A2949"
+                android:textSize="13sp"
+                android:maxLines="4"
+                android:inputType="textCapSentences|textMultiLine"
+                android:scrollHorizontally="false" />
+
+            <FrameLayout
+                android:id="@+id/btnSendMoodChat"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/bg_mood_chat_send_inactive"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgSendMoodChat"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="send"
+                    android:src="@drawable/ic_send_comment"
+                    app:tint="#FFFFFF" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Reaction row -->
+        <LinearLayout
+            android:id="@+id/layoutReactionRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/btnReactionHug"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:gravity="center"
+                android:text="🤗"
+                android:textSize="18sp"
+                android:background="@drawable/bg_mood_chat_reaction_stub" />
+
+            <TextView
+                android:id="@+id/btnReactionHeart"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:text="💙"
+                android:textSize="18sp"
+                android:background="@drawable/bg_mood_chat_reaction_stub" />
+
+            <TextView
+                android:id="@+id/btnReactionFlower"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:text="🌸"
+                android:textSize="18sp"
+                android:background="@drawable/bg_mood_chat_reaction_stub" />
+
+            <TextView
+                android:id="@+id/btnReactionSparkle"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:text="✨"
+                android:textSize="18sp"
+                android:background="@drawable/bg_mood_chat_reaction_stub" />
+
+            <TextView
+                android:id="@+id/btnReactionPray"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:text="🙏"
+                android:textSize="18sp"
+                android:background="@drawable/bg_mood_chat_reaction_stub" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnEndMoodChat"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:layout_marginStart="80dp"
+                android:minWidth="88dp"
+                android:minHeight="38dp"
+                android:background="@drawable/bg_mood_chat_end_stub"
+                android:backgroundTint="@null"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="× Kết thúc"
+                android:textAllCaps="false"
+                android:textColor="#FF6B6B"
+                android:textSize="11.5sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
