@@ -2,4 +2,32 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="bg">#FDFDFD</color>
+    <color name="stroke">#E0E0E0</color>
+    <color name="grey">#2D2D2D</color>
+
+    <color name="orange">#FF9E7D</color>
+    <color name="orange_light">#FFD8CC</color>
+    <color name="pink">#F8BBD0</color>
+    <color name="teal">#66C2C2</color>
+    <color name="teal_light">#A2DEDD</color>
+    <color name="teal_dark">#4A9292</color>
+
+    <color name="joy">#FFF4A3</color>
+    <color name="happy">#FFD1BA</color>
+    <color name="calm">#B8E1DD</color>
+    <color name="peace">#D0F0C0</color>
+    <color name="energy">#E1F5FE</color>
+    <color name="sad">#D1D9E0</color>
+    <color name="lonely">#E1BEE7</color>
+    <color name="stress">#FFCFD2</color>
+    <color name="tired">#ECEFF1</color>
+
+    <!--  Text color  -->
+    <color name="text_primary">#4A4A4A</color>
+    <color name="text_hint">#BDBDBD</color>
+    <color name="success">#81C784</color>
+    <color name="error">#E57373</color>
+    <color name="link_blue">#64B5F6</color>
 </resources>
