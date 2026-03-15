@@ -1,27 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFF5EE"
     android:padding="24dp">
-
-    <TextView
-        android:id="@+id/btnSkip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:background="@drawable/bg_white_rounded_button"
-        android:fontFamily="@font/quicksand_bold"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="8dp"
-        android:text="Bỏ qua"
-        android:textColor="#313866"
-        android:textSize="14sp"
-        android:elevation="4dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/layout_center_community"
@@ -112,9 +96,10 @@
         android:padding="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_back_arrow"
-        app:tint="#313866"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:tint="#313866"
+        tools:ignore="SpeakableTextPresentCheck" />
 
     <TextView
         android:id="@+id/btnStart"
@@ -126,7 +111,7 @@
         android:backgroundTint="#FF9E5E"
         android:fontFamily="@font/quicksand_bold"
         android:gravity="center"
-        android:text="Bắt đầu hành trình 🌸"
+        android:text="Bắt đầu hành trình"
         android:textColor="@color/white"
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@id/btnBackCommunity"

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FDF8FA"
@@ -11,6 +12,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="20dp">
+
+        <ImageButton
+            android:id="@+id/btnBackProfile"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back_arrow"
+            app:tint="#313866"
+            tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -87,7 +98,8 @@
                         app:chipBackgroundColor="#FEE4F0"
                         app:chipCornerRadius="16dp"
                         app:chipStrokeWidth="0dp"
-                        app:fontFamily="@font/quicksand_bold" />
+                        app:fontFamily="@font/quicksand_bold"
+                        tools:ignore="TouchTargetSizeCheck" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipSleep"
@@ -101,7 +113,8 @@
                         app:chipBackgroundColor="#FEE4F0"
                         app:chipCornerRadius="16dp"
                         app:chipStrokeWidth="0dp"
-                        app:fontFamily="@font/quicksand_bold" />
+                        app:fontFamily="@font/quicksand_bold"
+                        tools:ignore="TouchTargetSizeCheck" />
                 </LinearLayout>
             </LinearLayout>
         </RelativeLayout>
@@ -793,7 +806,6 @@
             android:textSize="12sp" />
 
         <androidx.cardview.widget.CardView
-            android:id="@+id/cardAccount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
@@ -807,46 +819,36 @@
                 android:orientation="vertical"
                 android:padding="8dp">
 
+                <!-- Nút Đăng xuất -->
                 <RelativeLayout
                     android:id="@+id/layoutLogout"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="12dp"
+                    android:layout_height="64dp"
+                    android:background="?attr/selectableItemBackground"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:paddingHorizontal="12dp">
 
                     <ImageView
-                        android:id="@+id/iconLogoutMenu"
+                        android:id="@+id/iconLogout"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
+                        android:layout_centerVertical="true"
                         android:background="@drawable/bg_light_gray_circle"
                         android:padding="10dp"
                         android:src="@drawable/ic_logout"
                         app:tint="#7D8BB7" />
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconLogoutMenu"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="Đăng xuất"
-                            android:textColor="#313866"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Thoát khỏi phiên bản hiện tại"
-                            android:textColor="#7D8BB7"
-                            android:textSize="12sp" />
-                    </LinearLayout>
+                        android:layout_toEndOf="@id/iconLogout"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Đăng xuất"
+                        android:textColor="#313866"
+                        android:textSize="15sp" />
                 </RelativeLayout>
 
                 <View
@@ -855,46 +857,36 @@
                     android:layout_marginHorizontal="12dp"
                     android:background="#F5F5F5" />
 
+                <!-- Nút Xóa tài khoản -->
                 <RelativeLayout
                     android:id="@+id/layoutDeleteAccount"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="12dp"
+                    android:layout_height="64dp"
+                    android:background="?attr/selectableItemBackground"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:paddingHorizontal="12dp">
 
                     <ImageView
-                        android:id="@+id/iconDeleteAccMenu"
+                        android:id="@+id/iconDelete"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
+                        android:layout_centerVertical="true"
                         android:background="@drawable/bg_light_red_circle"
                         android:padding="10dp"
                         android:src="@drawable/ic_delete"
                         app:tint="#FF6B6B" />
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconDeleteAccMenu"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="Xóa tài khoản"
-                            android:textColor="#FF6B6B"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Không thể hoàn tác"
-                            android:textColor="#7D8BB7"
-                            android:textSize="12sp" />
-                    </LinearLayout>
+                        android:layout_toEndOf="@id/iconDelete"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Xóa tài khoản"
+                        android:textColor="#FF6B6B"
+                        android:textSize="15sp" />
                 </RelativeLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>

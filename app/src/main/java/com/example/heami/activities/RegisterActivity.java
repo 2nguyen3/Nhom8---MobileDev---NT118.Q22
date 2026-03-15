@@ -47,6 +47,8 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText edtNickname, edtPhoneOrEmail, edtPass;
     private CheckBox cbTerms;
     private TextView txtErrorNickname, txtErrorAccount, txtErrorPassword, txtErrorTerms;
+    private View layoutLoading;
+    private Button btnRegister;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,9 +66,10 @@ public class RegisterActivity extends AppCompatActivity {
         ImageView imgShowHide = findViewById(R.id.imgRegShowHide);
         cbTerms = findViewById(R.id.cbTerms);
         TextView txtTerms = findViewById(R.id.txtTerms);
-        Button btnRegister = findViewById(R.id.btnRegister);
+        btnRegister = findViewById(R.id.btnRegister);
         TextView txtLoginLink = findViewById(R.id.txtLoginLink);
         TextView txtForgotPassReg = findViewById(R.id.txtForgotPassReg);
+        layoutLoading = findViewById(R.id.layoutLoading);
 
         txtErrorNickname = findViewById(R.id.txtErrorNickname);
         txtErrorAccount = findViewById(R.id.txtErrorAccount);
@@ -107,8 +110,8 @@ public class RegisterActivity extends AppCompatActivity {
             if (status == null) return;
 
             if (status.startsWith("SUCCESS_REGISTER_EMAIL")) {
-                Toast.makeText(this, status.replace("SUCCESS_REGISTER_EMAIL:", ""), Toast.LENGTH_LONG).show();
-                finish();
+                Toast.makeText(getApplicationContext(), status.replace("SUCCESS_REGISTER_EMAIL:", ""), Toast.LENGTH_LONG).show();
+                new Handler(Looper.getMainLooper()).postDelayed(this::finish, 500);
             } else if (status.startsWith("SUCCESS_REGISTER_PHONE")) {
                 if (otpDialog != null && otpDialog.isShowing()) otpDialog.dismiss();
                 Toast.makeText(this, status.replace("SUCCESS_REGISTER_PHONE:", ""), Toast.LENGTH_LONG).show();
@@ -123,13 +126,19 @@ public class RegisterActivity extends AppCompatActivity {
                 showCustomOTPDialog();
             } else if (status.startsWith("ERROR:")) {
                 String errorMsg = status.replace("ERROR:", "");
-                // Phân loại lỗi: Nếu là lỗi kỹ thuật sâu thì đẩy vào Logcat, ngược lại hiện Toast
                 if (errorMsg.contains("[") || errorMsg.contains("internal")) {
                     Log.e("AuthError", "Chi tiết lỗi Firebase: " + errorMsg);
                     Toast.makeText(this, "Đã xảy ra sự cố hệ thống, vui lòng thử lại sau.", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        authViewModel.getIsLoading().observe(this, isLoading -> {
+            if (isLoading != null) {
+                layoutLoading.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+                btnRegister.setEnabled(!isLoading);
             }
         });
     }

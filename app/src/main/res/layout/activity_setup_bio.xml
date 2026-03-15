@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8F9FD"
@@ -16,18 +17,17 @@
             android:id="@+id/btnBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="?selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back_arrow"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:padding="8dp"
-            app:tint="#2D3142" />
-
+            android:src="@drawable/ic_back_arrow"
+            app:tint="#2D3142"
+            tools:ignore="ContentDescription,TouchTargetSizeCheck,SpeakableTextPresentCheck" />
         <LinearLayout
             android:layout_centerInParent="true"
             android:gravity="center"
             android:orientation="vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
-
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="wrap_content"
@@ -36,7 +36,6 @@
                 <View android:layout_width="30dp" android:layout_height="4dp" android:layout_margin="2dp" android:background="#E86FA0" />
                 <View android:layout_width="30dp" android:layout_height="4dp" android:layout_margin="2dp" android:background="#E0E0E0" />
             </LinearLayout>
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -44,7 +43,8 @@
                 android:textColor="#C0BACA"
                 android:textSize="10sp"
                 android:layout_marginTop="4dp"
-                android:textStyle="bold"/>
+                android:textStyle="bold"
+                tools:ignore="HardcodedText,SmallSp" />
         </LinearLayout>
     </RelativeLayout>
 
@@ -53,10 +53,11 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:gravity="center"
-        android:text="Giới thiệu bản thân 👋"
+        android:text="Giới thiệu bản thân"
         android:textColor="#2D3142"
         android:textSize="22sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        tools:ignore="HardcodedText" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="80dp"
@@ -65,72 +66,84 @@
         android:layout_marginTop="20dp"
         app:cardBackgroundColor="#FFEBF2"
         app:cardCornerRadius="40dp"
-        app:cardElevation="0dp">
+        app:cardElevation="0dp"
+        app:cardPreventCornerOverlap="false" >
         <TextView
             android:id="@+id/tvPreviewAvatar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:textSize="40sp" />
+            android:text="🌸"
+            android:textSize="40sp"
+            android:includeFontPadding="false"
+            android:lineSpacingExtra="0dp"
+            tools:ignore="HardcodedText" />
     </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="30dp"
-        app:cardCornerRadius="20dp"
+        app:cardCornerRadius="30dp"
         app:cardElevation="2dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="15dp"
-            android:background="@drawable/bg_input_focus"
-            android:addStatesFromChildren="true"
-            android:focusableInTouchMode="true">
+            android:padding="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="NICKNAME*"
-                android:textColor="#4A4A4A"
-                android:textSize="12sp"
+                android:text="NICKNAME"
+                android:textColor="#C0BACA"
+                android:textSize="11sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.05" />
-
-            <EditText
-                android:id="@+id/etNickname"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@null"
-                android:hint="Heami nên gọi bạn là gì?"
-                android:layout_marginTop="4dp"
-                android:inputType="textPersonName"
-                android:maxLength="20"
-                android:textColor="#2D3142"
-                android:textSize="16sp" />
-
-            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginVertical="8dp"/>
+                android:letterSpacing="0.05"
+                tools:ignore="HardcodedText" />
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tối thiểu 2 ký tự. Đây là tên riêng tư."
-                    android:textColor="#C0BACA"
-                    android:textSize="10sp" />
+                android:layout_height="55dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_pink_selector"
+                android:addStatesFromChildren="true"
+                android:paddingHorizontal="15dp">
+
+                <EditText
+                    android:id="@+id/etNickname"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_toStartOf="@+id/tvNicknameCount"
+                    android:background="@null"
+                    android:hint="Heami nên gọi bạn là gì?"
+                    android:inputType="textPersonName"
+                    android:maxLength="20"
+                    android:textColor="#2D3142"
+                    android:textSize="15sp"
+                    tools:ignore="Autofill,HardcodedText" />
+
                 <TextView
                     android:id="@+id/tvNicknameCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
                     android:text="0/20"
                     android:textColor="#C0BACA"
-                    android:textSize="10sp" />
+                    android:textSize="11sp"
+                    tools:ignore="HardcodedText" />
             </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Tối thiểu 2 ký tự · Đây là tên riêng tư của bạn"
+                android:textColor="#C0BACA"
+                android:textSize="10sp"
+                tools:ignore="HardcodedText,SmallSp" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
@@ -138,48 +151,56 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        app:cardCornerRadius="20dp"
+        app:cardCornerRadius="30dp"
         app:cardElevation="2dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="15dp"
-            android:background="@drawable/bg_input_focus"
-            android:addStatesFromChildren="true"
-            android:focusableInTouchMode="true">
+            android:padding="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="CHÂM NGÔN (TUỲ CHỌN)"
-                android:textColor="#4A4A4A"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.05" />
-
-            <EditText
-                android:id="@+id/etBio"
-                android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:gravity="top"
-                android:background="@null"
-                android:hint="Câu nói truyền cảm hứng cho bạn... 🌸"
-                android:layout_marginTop="8dp"
-                android:inputType="textMultiLine"
-                android:maxLength="60"
-                android:textColor="#2D3142"
-                android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/tvBioCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:text="0/60"
                 android:textColor="#C0BACA"
-                android:textSize="10sp" />
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"
+                tools:ignore="HardcodedText" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_pink_selector"
+                android:addStatesFromChildren="true"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <EditText
+                    android:id="@+id/etBio"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:gravity="top"
+                    android:background="@null"
+                    android:hint="Câu nói truyền cảm hứng mà bạn yêu thích..."
+                    android:inputType="textMultiLine"
+                    android:maxLength="60"
+                    android:textColor="#2D3142"
+                    android:textSize="14sp"
+                    tools:ignore="Autofill,HardcodedText" />
+
+                <TextView
+                    android:id="@+id/tvBioCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="0/60"
+                    android:textColor="#C0BACA"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

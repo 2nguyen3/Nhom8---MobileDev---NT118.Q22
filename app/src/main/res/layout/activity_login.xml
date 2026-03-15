@@ -171,24 +171,6 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <FrameLayout
-        android:id="@+id/layoutLoading"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#F2FFF9F1"
-        android:clickable="true"
-        android:focusable="true"
-        android:visibility="gone"
-        android:elevation="20dp" >
-
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/loadingView"
-            android:layout_width="180dp"
-            android:layout_height="180dp"
-            android:layout_gravity="center"
-            app:lottie_rawRes="@raw/loading_animation"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true" />
-    </FrameLayout>
+    <include layout="@layout/layout_loading" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

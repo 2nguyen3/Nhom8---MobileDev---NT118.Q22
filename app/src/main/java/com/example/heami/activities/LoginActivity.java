@@ -42,7 +42,6 @@ import androidx.credentials.exceptions.NoCredentialException;
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 
-import com.airbnb.lottie.LottieAnimationView;
 import com.example.heami.R;
 import com.example.heami.viewmodels.AuthViewModel;
 
@@ -52,7 +51,6 @@ public class LoginActivity extends AppCompatActivity {
     private boolean isPasswordVisible = false;
     private CredentialManager credentialManager;
 
-    // Đợi hệ thống Android thêm tài khoản xong rồi tự động chạy tiếp
     private final ActivityResultLauncher<Intent> addAccountLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> signInWithGoogleNewAPI()
@@ -63,74 +61,83 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Ánh xạ View
+        // Khởi tạo cơ bản trước
+        initViews();
+        
+        // Trì hoãn việc khởi tạo CredentialManager và logic nặng để giảm lag onCreate
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            credentialManager = CredentialManager.create(LoginActivity.this);
+            setupViewModel();
+        }, 100);
+    }
+
+    private void initViews() {
         EditText edtEmail = findViewById(R.id.edtEmail);
         EditText edtPass = findViewById(R.id.edtPassword);
         ImageView imgShowHide = findViewById(R.id.imgShowHidePassword);
         Button btnLogin = findViewById(R.id.btnLogin);
         View btnGoogle = findViewById(R.id.btnGoogle);
         TextView txtCreateAccount = findViewById(R.id.txtCreateAccount);
-        View layoutLoading = findViewById(R.id.layoutLoading);
-        LottieAnimationView lottieView = findViewById(R.id.loadingView);
         TextView txtForgotPass = findViewById(R.id.txtForgotPass);
 
-        // hiết lập ban đầu
-        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
-        credentialManager = CredentialManager.create(this);
         setupCreateAccountLink(txtCreateAccount);
 
-        // Link Quên mật khẩu
         txtForgotPass.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class)));
 
-        // Đổi màu ic_visibility khi active/focus mật khẩu
         edtPass.setOnFocusChangeListener((v, hasFocus) -> {
             int color = ContextCompat.getColor(this, hasFocus ? R.color.teal : R.color.text_hint);
             imgShowHide.setColorFilter(color);
         });
 
-        // Quan sát trạng thái Auth
-        authViewModel.getAuthStatus().observe(this, status -> {
-            if (status != null && status.startsWith("SUCCESS")) {
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    startActivity(new Intent(LoginActivity.this, OnboardingActivity.class));
-                    finish();
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                }, 500);
-            } else if (status != null) {
-                // Tắt loading nếu có lỗi
-                layoutLoading.setVisibility(View.GONE);
-                lottieView.pauseAnimation();
-                btnLogin.setEnabled(true);
-                // CHỈ HIỂN THỊ LỖI QUAN TRỌNG CHO NGƯỜI DÙNG
-                Toast.makeText(this, status.replace("ERROR:", ""), Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // Quan sát trạng thái Loading
-        authViewModel.getIsLoading().observe(this, isLoading -> {
-            if (isLoading != null && isLoading) {
-                layoutLoading.setVisibility(View.VISIBLE);
-                lottieView.playAnimation();
-                btnLogin.setEnabled(false);
-            }
-        });
-
-        // Xử lý sự kiện Click
         imgShowHide.setOnClickListener(v -> togglePasswordVisibility(edtEmail, edtPass, imgShowHide));
 
         btnLogin.setOnClickListener(v -> {
             String email = edtEmail.getText().toString().trim();
             String pass = edtPass.getText().toString().trim();
-            authViewModel.login(email, pass);
+            if (authViewModel != null) {
+                authViewModel.login(email, pass);
+            }
         });
 
         btnGoogle.setOnClickListener(v -> signInWithGoogleNewAPI());
     }
 
-    /**
-     * Logic đăng nhập Google với Credential Manager
-     */
+    private void setupViewModel() {
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        View layoutLoading = findViewById(R.id.layoutLoading);
+        Button btnLogin = findViewById(R.id.btnLogin);
+
+        authViewModel.getAuthStatus().observe(this, status -> {
+            if (status == null) return;
+
+            if (status.startsWith("SUCCESS_HOME")) {
+                startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            } else if (status.startsWith("SUCCESS_SETUP")) {
+                startActivity(new Intent(LoginActivity.this, OnboardingActivity.class));
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            } else if (status.startsWith("ERROR:")) {
+                layoutLoading.setVisibility(View.GONE);
+                btnLogin.setEnabled(true);
+                Toast.makeText(this, status.replace("ERROR:", ""), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        authViewModel.getIsLoading().observe(this, isLoading -> {
+            if (isLoading != null) {
+                layoutLoading.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+                btnLogin.setEnabled(!isLoading);
+            }
+        });
+    }
+
     private void signInWithGoogleNewAPI() {
+        if (credentialManager == null) {
+            credentialManager = CredentialManager.create(this);
+        }
+
         GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(getString(R.string.default_web_client_id))
@@ -155,7 +162,9 @@ public class LoginActivity extends AppCompatActivity {
                             try {
                                 GoogleIdTokenCredential googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.getData());
                                 String idToken = googleIdTokenCredential.getIdToken();
-                                authViewModel.signInWithGoogle(idToken);
+                                if (authViewModel != null) {
+                                    authViewModel.signInWithGoogle(idToken);
+                                }
                             } catch (Exception e) {
                                 Log.e("GoogleAuthError", "Lỗi xử lý dữ liệu Google: " + e.getMessage());
                             }
@@ -234,11 +243,9 @@ public class LoginActivity extends AppCompatActivity {
                 v.getGlobalVisibleRect(outRect);
                 if (!outRect.contains((int) event.getRawX(), (int) event.getRawY())) {
                     v.clearFocus();
-
                     View rootView = findViewById(android.R.id.content);
                     rootView.setFocusableInTouchMode(true);
                     rootView.requestFocus();
-
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     if (imm != null) {
                         imm.hideSoftInputFromWindow(v.getWindowToken(), 0);

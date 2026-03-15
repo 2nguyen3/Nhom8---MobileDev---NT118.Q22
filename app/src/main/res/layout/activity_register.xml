@@ -236,4 +236,7 @@
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
+
+    <include layout="@layout/layout_loading" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

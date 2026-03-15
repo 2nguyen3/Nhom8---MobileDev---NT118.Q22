@@ -7,9 +7,13 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.heami.models.AccountModel;
 import com.example.heami.models.UserModel;
+import com.example.heami.models.UserSettingsModel;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseNetworkException;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
@@ -22,9 +26,11 @@ import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings({"unused", "BooleanMethodIsAlwaysInverted", "deprecation"})
@@ -61,25 +67,48 @@ public class AuthViewModel extends ViewModel {
         return p;
     }
 
-    // Hàm chuyển đổi lỗi sang tiếng Việt cho UI, đồng thời ghi log chi tiết cho Dev
     private String getVietnameseErrorMessage(Exception exception) {
         if (exception == null) return "Đã xảy ra sự cố không xác định!";
-
-        // Ghi log lỗi chi tiết vào Logcat
         Log.e(TAG, "Firebase Exception: ", exception);
-
         if (exception instanceof FirebaseAuthUserCollisionException) return "Tài khoản này đã được sử dụng!";
         if (exception instanceof FirebaseAuthInvalidUserException) return "Tài khoản này không tồn tại!";
         if (exception instanceof FirebaseAuthInvalidCredentialsException) return "Thông tin đăng nhập không chính xác!";
         if (exception instanceof FirebaseNetworkException) return "Lỗi kết nối mạng, vui lòng thử lại!";
-
         return "Đã xảy ra sự cố hệ thống, vui lòng thử lại sau.";
     }
 
-    private void saveUserToFirestore(String uid, String account, String nickname) {
-        UserModel newUser = new UserModel(uid, account, nickname, "USER", System.currentTimeMillis());
-        db.collection("users").document(uid).set(newUser)
-                .addOnFailureListener(e -> Log.e(TAG, "Lỗi lưu Firestore: " + e.getMessage()));
+    private Task<Void> initUserData(String uid, String email, String nickname) {
+        WriteBatch batch = db.batch();
+        Timestamp now = Timestamp.now();
+
+        AccountModel account = new AccountModel(uid, email, "USER", "ACTIVE", now);
+        account.setLast_sign_in_at(now);
+        account.setActive_session_id(UUID.randomUUID().toString());
+        batch.set(db.collection("accounts").document(uid), account);
+
+        UserModel user = new UserModel(uid, nickname, null, now);
+        batch.set(db.collection("users").document(uid), user);
+
+        UserSettingsModel settings = new UserSettingsModel();
+        settings.setSetting_id(uid);
+        settings.setUser_id(uid);
+        settings.setTheme_mode("LIGHT");
+        settings.setIs_notif_enabled(true);
+
+        Map<String, Boolean> config = new HashMap<>();
+        config.put("chat", true);
+        config.put("appointment", true);
+        config.put("system", true);
+        settings.setNotif_config(config);
+
+        Map<String, String> reminders = new HashMap<>();
+        reminders.put("breath", "08:00");
+        reminders.put("checkin", "21:00");
+        settings.setReminders(reminders);
+
+        batch.set(db.collection("settings").document(uid), settings);
+
+        return batch.commit();
     }
 
     public void cancelLoading() {
@@ -91,17 +120,40 @@ public class AuthViewModel extends ViewModel {
         String finalAccount = formatInput(account);
 
         auth.signInWithEmailAndPassword(finalAccount, pass).addOnCompleteListener(task -> {
-            isLoading.setValue(false);
             if (task.isSuccessful()) {
                 FirebaseUser user = auth.getCurrentUser();
                 if (user != null && (isPhoneNumber(account) || user.isEmailVerified())) {
-                    authStatus.setValue("SUCCESS:Đăng nhập thành công!");
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("last_sign_in_at", Timestamp.now());
+                    updates.put("active_session_id", UUID.randomUUID().toString());
+
+                    db.collection("accounts").document(user.getUid())
+                            .update(updates);
+                    
+                    checkUserProfile(user.getUid());
                 } else {
+                    isLoading.setValue(false);
                     auth.signOut();
                     authStatus.setValue("ERROR:Vui lòng kiểm tra hộp thư để xác thực email!");
                 }
             } else {
+                isLoading.setValue(false);
                 authStatus.setValue("ERROR:" + getVietnameseErrorMessage(task.getException()));
+            }
+        });
+    }
+
+    private void checkUserProfile(String uid) {
+        db.collection("users").document(uid).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                String avatarUrl = task.getResult().getString("avatar_url");
+                if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                    authStatus.setValue("SUCCESS_HOME:Đăng nhập thành công!");
+                } else {
+                    authStatus.setValue("SUCCESS_SETUP:Vui lòng hoàn tất hồ sơ!");
+                }
+            } else {
+                authStatus.setValue("SUCCESS_SETUP:Vui lòng hoàn tất hồ sơ!");
             }
         });
     }
@@ -110,7 +162,6 @@ public class AuthViewModel extends ViewModel {
         isLoading.setValue(true);
         String authEmail = formatInput(account);
 
-        // Kiểm tra trên hệ thống xác thực Auth
         auth.fetchSignInMethodsForEmail(authEmail).addOnCompleteListener(authTask -> {
             if (authTask.isSuccessful() && authTask.getResult() != null &&
                     authTask.getResult().getSignInMethods() != null &&
@@ -121,44 +172,21 @@ public class AuthViewModel extends ViewModel {
                 return;
             }
 
-            if (!authTask.isSuccessful()) {
-                Log.e(TAG, "Lỗi fetchSignInMethods: ", authTask.getException());
-            }
-
-            // Kiểm tra trong cơ sở dữ liệu Firestore
-            List<String> checkValues = new ArrayList<>();
-            checkValues.add(account);
-            if (isPhoneNumber(account)) {
-                checkValues.add(formatPhoneForFirebase(account));
-                checkValues.add(authEmail);
-            }
-
-            db.collection("users").whereIn("email", checkValues).get().addOnCompleteListener(task -> {
+            db.collection("accounts").whereEqualTo("email", account).get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
                     isLoading.setValue(false);
-                    authStatus.setValue("ERROR:Thông tin này đã tồn tại!");
+                    authStatus.setValue("ERROR:Email/Số điện thoại đã được sử dụng!");
                 } else {
-                    if (!task.isSuccessful()) Log.e(TAG, "Lỗi Firestore email check: ", task.getException());
-
-                    db.collection("users").whereIn("account", checkValues).get().addOnCompleteListener(task2 -> {
-                        if (task2.isSuccessful() && task2.getResult() != null && !task2.getResult().isEmpty()) {
+                    if (isPhoneNumber(account)) {
+                        if (account.equals(pendingPhone) && mVerificationId != null) {
                             isLoading.setValue(false);
-                            authStatus.setValue("ERROR:Số điện thoại/Email đã được sử dụng!");
+                            authStatus.setValue("OTP_SENT:" + System.currentTimeMillis());
                         } else {
-                            if (!task2.isSuccessful()) Log.e(TAG, "Lỗi Firestore account check: ", task2.getException());
-
-                            if (isPhoneNumber(account)) {
-                                if (account.equals(pendingPhone) && mVerificationId != null) {
-                                    isLoading.setValue(false);
-                                    authStatus.setValue("OTP_SENT:" + System.currentTimeMillis());
-                                } else {
-                                    sendOTP(account, pass, nickname, activity);
-                                }
-                            } else {
-                                createEmailAccount(account, pass, nickname);
-                            }
+                            sendOTP(account, pass, nickname, activity);
                         }
-                    });
+                    } else {
+                        createEmailAccount(account, pass, nickname);
+                    }
                 }
             });
         });
@@ -170,16 +198,23 @@ public class AuthViewModel extends ViewModel {
             if (regTask.isSuccessful()) {
                 FirebaseUser user = auth.getCurrentUser();
                 if (user != null) {
-                    saveUserToFirestore(user.getUid(), email, nickname);
-                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                            .setDisplayName(nickname).build();
+                    initUserData(user.getUid(), email, nickname).addOnCompleteListener(dbTask -> {
+                        if (dbTask.isSuccessful()) {
+                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                    .setDisplayName(nickname).build();
 
-                    user.updateProfile(profileUpdates).addOnCompleteListener(uTask ->
-                            user.sendEmailVerification().addOnCompleteListener(vTask -> {
-                                isLoading.setValue(false);
-                                authStatus.setValue("SUCCESS_REGISTER_EMAIL:Đăng ký thành công! Hãy kiểm tra email.");
-                            })
-                    );
+                            user.updateProfile(profileUpdates).addOnCompleteListener(uTask ->
+                                    user.sendEmailVerification().addOnCompleteListener(vTask -> {
+                                        auth.signOut();
+                                        Log.d(TAG, "Auth Status Update: SUCCESS_REGISTER_EMAIL at " + System.currentTimeMillis());
+                                        authStatus.setValue("SUCCESS_REGISTER_EMAIL:Đăng ký thành công! Hãy kiểm tra email.");
+                                    })
+                            );
+                        } else {
+                            isLoading.setValue(false);
+                            authStatus.setValue("ERROR: Lỗi khởi tạo dữ liệu người dùng.");
+                        }
+                    });
                 }
             } else {
                 isLoading.setValue(false);
@@ -257,7 +292,7 @@ public class AuthViewModel extends ViewModel {
 
     public void verifyOTP(String code) {
         if (mVerificationId == null) {
-            authStatus.setValue("ERROR:Phiên xác thực đã hết hạn.");
+            authStatus.setValue("ERROR:Mã xác thực không hợp lệ!");
             return;
         }
         isLoading.setValue(true);
@@ -266,58 +301,64 @@ public class AuthViewModel extends ViewModel {
     }
 
     private void verifyAndCreateAccount(PhoneAuthCredential credential) {
+        String finalAccount = formatInput(pendingPhone);
+        AuthCredential emailCred = EmailAuthProvider.getCredential(finalAccount, pendingPass);
+
         auth.signInWithCredential(credential).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 FirebaseUser user = auth.getCurrentUser();
                 if (user != null) {
-                    AuthCredential emailCred = EmailAuthProvider.getCredential(formatInput(pendingPhone), pendingPass);
                     user.linkWithCredential(emailCred).addOnCompleteListener(linkTask -> {
-                        if (linkTask.isSuccessful()) {
-                            saveUserToFirestore(user.getUid(), pendingPhone, pendingNickname);
+                        initUserData(user.getUid(), pendingPhone, pendingNickname).addOnCompleteListener(dbTask -> {
                             UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                                     .setDisplayName(pendingNickname).build();
-                            user.updateProfile(profileUpdates).addOnCompleteListener(updateTask -> {
-                                isLoading.setValue(false);
-                                authStatus.setValue("SUCCESS_REGISTER_PHONE:Xác thực thành công!");
-                            });
-                        } else {
-                            isLoading.setValue(false);
-                            Log.e(TAG, "Lỗi link credential: ", linkTask.getException());
-                            authStatus.setValue("ERROR:Lỗi thiết lập mật khẩu cho tài khoản.");
-                        }
+                            user.updateProfile(profileUpdates);
+                            authStatus.setValue("SUCCESS_REGISTER_PHONE:Xác thực thành công!");
+                        });
                     });
                 }
             } else {
                 isLoading.setValue(false);
-                authStatus.setValue("ERROR:Mã OTP không chính xác!");
+                authStatus.setValue("ERROR:" + getVietnameseErrorMessage(task.getException()));
             }
         });
     }
 
     public void signInWithGoogle(String idToken) {
         isLoading.setValue(true);
-        com.google.firebase.auth.AuthCredential credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null);
-
+        AuthCredential credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null);
         auth.signInWithCredential(credential).addOnCompleteListener(task -> {
-            isLoading.setValue(false);
             if (task.isSuccessful()) {
                 FirebaseUser user = auth.getCurrentUser();
-                if (task.getResult().getAdditionalUserInfo() != null && task.getResult().getAdditionalUserInfo().isNewUser() && user != null) {
-                    saveUserToFirestore(user.getUid(), user.getEmail(), user.getDisplayName());
+                if (user != null) {
+                    db.collection("accounts").document(user.getUid()).get().addOnCompleteListener(dbTask -> {
+                        if (dbTask.isSuccessful() && !dbTask.getResult().exists()) {
+                            initUserData(user.getUid(), user.getEmail(), user.getDisplayName()).addOnCompleteListener(t -> checkUserProfile(user.getUid()));
+                        } else {
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put("last_sign_in_at", Timestamp.now());
+                            updates.put("active_session_id", UUID.randomUUID().toString());
+
+                            db.collection("accounts").document(user.getUid())
+                                    .update(updates);
+                            checkUserProfile(user.getUid());
+                        }
+                    });
                 }
-                authStatus.setValue("SUCCESS:Đăng nhập thành công!");
             } else {
+                isLoading.setValue(false);
                 authStatus.setValue("ERROR:" + getVietnameseErrorMessage(task.getException()));
             }
         });
     }
 
-    public void resetPassword(String account) {
+    public void resetPassword(String email) {
         isLoading.setValue(true);
-        auth.sendPasswordResetEmail(account).addOnCompleteListener(task -> {
+        String finalEmail = formatInput(email);
+        auth.sendPasswordResetEmail(finalEmail).addOnCompleteListener(task -> {
             isLoading.setValue(false);
             if (task.isSuccessful()) {
-                authStatus.setValue("SUCCESS_RESET:Đã gửi link khôi phục mật khẩu.");
+                authStatus.setValue("SUCCESS_RESET:Yêu cầu đã được gửi! Vui lòng kiểm tra email của bạn.");
             } else {
                 authStatus.setValue("ERROR:" + getVietnameseErrorMessage(task.getException()));
             }

@@ -44,7 +44,7 @@
             android:id="@+id/tvMainTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Heami cần một vài quyền 🙏"
+            android:text="Heami cần một vài quyền"
             android:textSize="24sp"
             android:textColor="#313866"
             android:gravity="center"
@@ -71,7 +71,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Camera 🤳"
+                    android:text="Camera 📸"
                     android:textSize="18sp"
                     android:fontFamily="@font/quicksand_bold"
                     android:textColor="#313866"/>

@@ -69,7 +69,7 @@ public class SetupGoalsActivity extends AppCompatActivity {
         // 4. Nút Hoàn tất
         btnFinishSetup.setOnClickListener(v -> {
             btnFinishSetup.setEnabled(false);
-            btnFinishSetup.setText("Đang lưu hồ sơ... 🌸");
+            btnFinishSetup.setText("Đang lưu hồ sơ...");
 
             // Giả lập thời gian lưu dữ liệu 1.5 giây trước khi vào Home
             new Handler().postDelayed(this::navigateToHome, 1500);
