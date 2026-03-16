@@ -22,13 +22,13 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@drawable/bg_light_teal_rect" />
+                android:background="@drawable/bg_light_red_circle" />
 
             <ImageView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_logout"
+                android:src="@drawable/ic_delete"
                 app:tint="#FF6B6B" />
         </FrameLayout>
 
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:fontFamily="@font/quicksand_bold"
-            android:text="Đăng xuất khỏi Heami?"
+            android:text="Xóa tài khoản vĩnh viễn?"
             android:textColor="#FF6B6B"
             android:textSize="18sp" />
 
@@ -47,18 +47,18 @@
             android:layout_marginTop="10dp"
             android:fontFamily="@font/quicksand_medium"
             android:gravity="center"
-            android:text="Bạn có chắc chắn muốn rời đi không? Chúng mình sẽ rất nhớ bạn đấy!"
+            android:text="Mọi dữ liệu cảm xúc và thông tin cá nhân của bạn sẽ bị xóa sạch khỏi hệ thống và không thể khôi phục."
             android:textColor="#7D8BB7"
             android:textSize="14sp"
             android:lineSpacingExtra="4dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnStay"
+            android:id="@+id/btnCancelDelete"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
             android:fontFamily="@font/quicksand_bold"
-            android:text="Trở về"
+            android:text="Giữ lại tài khoản"
             android:letterSpacing="0"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
@@ -68,13 +68,13 @@
             app:elevation="0dp" />
 
         <TextView
-            android:id="@+id/tvConfirmLogout"
+            android:id="@+id/tvConfirmDeleteAccount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="@font/quicksand_bold"
             android:padding="10dp"
-            android:text="Đăng xuất"
+            android:text="Tôi hiểu, hãy xóa tài khoản"
             android:textColor="#FF6B6B"
             android:textSize="14sp" />
 
