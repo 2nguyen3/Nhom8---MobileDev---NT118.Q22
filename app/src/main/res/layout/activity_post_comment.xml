@@ -62,7 +62,7 @@
                 android:layout_height="33dp"
                 android:background="@drawable/bg_post_comment_close_btn"
                 android:padding="7dp"
-                android:src="@drawable/ic_close_comment"
+                android:src="@drawable/ic_close"
                 android:contentDescription="Đóng"
                 android:scaleType="centerInside"
                 app:tint="#AEA1BE" />

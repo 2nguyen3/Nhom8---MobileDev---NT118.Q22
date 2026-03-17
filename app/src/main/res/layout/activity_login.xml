@@ -159,7 +159,8 @@
                 app:iconSize="24dp"
                 app:iconGravity="textStart"
                 app:iconPadding="15dp"
-                app:iconTint="@null" />
+                app:iconTint="@null"
+                app:rippleColor="@color/teal" />
 
             <TextView
                 android:id="@+id/txtCreateAccount"

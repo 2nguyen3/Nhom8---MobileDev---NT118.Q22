@@ -19,19 +19,31 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp">
 
+            <ImageView
+                android:id="@+id/imgSettings"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="4dp"
+                android:src="@drawable/ic_setting"
+                app:tint="#313866"
+                tools:ignore="ContentDescription,SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+
             <RelativeLayout
                 android:id="@+id/layoutAvatar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true">
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/ivAvatarProfile"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:padding="2dp"
-                    android:scaleType="centerCrop"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:background="#FEE4F0"
                     app:shapeAppearanceOverlay="@style/CircleAppearance"
                     app:strokeColor="#FEE4F0"
@@ -39,10 +51,14 @@
 
                 <TextView
                     android:id="@+id/tvAvatarEmoji"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:textSize="40sp" />
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:paddingBottom="4dp"
+                    android:textColor="@android:color/black"
+                    android:textSize="44sp"
+                    tools:text="🌸" />
             </RelativeLayout>
 
             <LinearLayout
@@ -50,6 +66,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_marginStart="16dp"
+                android:layout_toStartOf="@id/imgSettings"
                 android:layout_toEndOf="@id/layoutAvatar"
                 android:orientation="vertical">
 
@@ -72,41 +89,49 @@
                     android:textColor="#7D8BB7"
                     android:textSize="13sp" />
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:orientation="horizontal">
+                    android:scrollbars="none"
+                    android:overScrollMode="never">
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipStress"
-                        style="@style/Widget.MaterialComponents.Chip.Action"
+                    <LinearLayout
+                        android:id="@+id/layoutGoalsContainer"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:text="😔 Giảm căng thẳng"
-                        android:textColor="#E86FA0"
-                        android:textSize="10sp"
-                        app:chipBackgroundColor="#FEE4F0"
-                        app:chipCornerRadius="16dp"
-                        app:chipStrokeWidth="0dp"
-                        app:fontFamily="@font/quicksand_bold"
-                        tools:ignore="TouchTargetSizeCheck" />
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipSleep"
-                        style="@style/Widget.MaterialComponents.Chip.Action"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_marginStart="8dp"
-                        android:text="😴 Cải thiện giấc ngủ"
-                        android:textColor="#E86FA0"
-                        android:textSize="10sp"
-                        app:chipBackgroundColor="#FEE4F0"
-                        app:chipCornerRadius="16dp"
-                        app:chipStrokeWidth="0dp"
-                        app:fontFamily="@font/quicksand_bold"
-                        tools:ignore="TouchTargetSizeCheck" />
-                </LinearLayout>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipStress"
+                            style="@style/Widget.MaterialComponents.Chip.Action"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:text="😮‍💨 Giảm căng thẳng"
+                            android:textColor="#E86FA0"
+                            android:textSize="10sp"
+                            app:chipBackgroundColor="#FEE4F0"
+                            app:chipCornerRadius="16dp"
+                            app:chipStrokeWidth="0dp"
+                            app:fontFamily="@font/quicksand_bold"
+                            tools:ignore="TouchTargetSizeCheck" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipSleep"
+                            style="@style/Widget.MaterialComponents.Chip.Action"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="8dp"
+                            android:text="😴 Cải thiện giấc ngủ"
+                            android:textColor="#E86FA0"
+                            android:textSize="10sp"
+                            app:chipBackgroundColor="#FEE4F0"
+                            app:chipCornerRadius="16dp"
+                            app:chipStrokeWidth="0dp"
+                            app:fontFamily="@font/quicksand_bold"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+                </HorizontalScrollView>
             </LinearLayout>
         </RelativeLayout>
 
@@ -587,12 +612,13 @@
                 android:padding="8dp">
 
                 <RelativeLayout
+                    android:id="@+id/iconPrivacy1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="12dp">
 
                     <ImageView
-                        android:id="@+id/iconPrivacy1"
+                        android:id="@+id/iconPrivacy1_img"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="@drawable/bg_light_purple_circle"
@@ -605,7 +631,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconPrivacy1"
+                        android:layout_toEndOf="@id/iconPrivacy1_img"
                         android:orientation="vertical">
 
                         <TextView
@@ -839,44 +865,6 @@
                         android:fontFamily="@font/quicksand_bold"
                         android:text="Đăng xuất"
                         android:textColor="#313866"
-                        android:textSize="15sp" />
-                </RelativeLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginHorizontal="12dp"
-                    android:background="#F5F5F5" />
-
-                <!-- Nút Xóa tài khoản -->
-                <RelativeLayout
-                    android:id="@+id/layoutDeleteAccount"
-                    android:layout_width="match_parent"
-                    android:layout_height="64dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingHorizontal="12dp">
-
-                    <ImageView
-                        android:id="@+id/iconDelete"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/bg_light_red_circle"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_delete"
-                        app:tint="#FF6B6B" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconDelete"
-                        android:fontFamily="@font/quicksand_bold"
-                        android:text="Xóa tài khoản"
-                        android:textColor="#FF6B6B"
                         android:textSize="15sp" />
                 </RelativeLayout>
             </LinearLayout>

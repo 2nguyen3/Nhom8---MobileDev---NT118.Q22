@@ -86,7 +86,7 @@ public class AuthViewModel extends ViewModel {
         account.setActive_session_id(UUID.randomUUID().toString());
         batch.set(db.collection("accounts").document(uid), account);
 
-        UserModel user = new UserModel(uid, nickname, null, now);
+        UserModel user = new UserModel(uid, nickname, null);
         batch.set(db.collection("users").document(uid), user);
 
         UserSettingsModel settings = new UserSettingsModel();
