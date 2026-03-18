@@ -59,17 +59,17 @@
             android:layout_height="match_parent"
             app:cardCornerRadius="70dp"
             app:cardElevation="0dp"
-            app:cardBackgroundColor="#F3E5F5"
+            app:cardBackgroundColor="#FEE4F0"
             app:cardPreventCornerOverlap="false" >
             <TextView
                 android:id="@+id/tvSelectedAvatar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
                 android:text="🌸"
                 android:textSize="80sp"
                 android:includeFontPadding="false"
-                android:lineSpacingExtra="0dp" />
+                android:paddingBottom="8dp" />
         </androidx.cardview.widget.CardView>
     </FrameLayout>
 

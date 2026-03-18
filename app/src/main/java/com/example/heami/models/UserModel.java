@@ -11,15 +11,13 @@ public class UserModel {
     private List<String> mood_goals;
     private Double hr_baseline;
     private boolean is_protected_mode;
-    private Timestamp created_at;
 
     public UserModel() {}
 
-    public UserModel(String user_id, String nickname, String avatar_url, Timestamp created_at) {
+    public UserModel(String user_id, String nickname, String avatar_url) {
         this.user_id = user_id;
         this.nickname = nickname;
         this.avatar_url = avatar_url;
-        this.created_at = created_at;
         this.is_protected_mode = false; // Mặc định tắt
         this.hr_baseline = 0.0;
     }
@@ -45,7 +43,4 @@ public class UserModel {
 
     public boolean is_protected_mode() { return is_protected_mode; }
     public void setIs_protected_mode(boolean is_protected_mode) { this.is_protected_mode = is_protected_mode; }
-
-    public Timestamp getCreated_at() { return created_at; }
-    public void setCreated_at(Timestamp created_at) { this.created_at = created_at; }
 }

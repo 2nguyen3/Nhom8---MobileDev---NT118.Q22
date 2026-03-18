@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="12dp">
+
+    <GridLayout
+        android:id="@+id/gridEmojiSelector"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:columnCount="4"
+        android:padding="16dp"
+        android:alignmentMode="alignMargins">
+
+        <!-- Tăng size lên 40sp và dùng màu đen đặc để Emoji giữ đúng màu sắc, layerType=software để tránh bị mờ -->
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🌸" />
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🌻" />
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🌷" />
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🍀" />
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🦄" />
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🐻" />
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🦊" />
+        <TextView android:layout_margin="4dp" android:gravity="center" android:textSize="40sp" android:textColor="#FF000000" android:padding="12dp" android:layerType="software" android:includeFontPadding="false" android:background="?attr/selectableItemBackgroundBorderless" android:text="🦁" />
+    </GridLayout>
+</androidx.cardview.widget.CardView>
