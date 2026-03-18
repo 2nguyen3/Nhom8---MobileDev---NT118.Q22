@@ -84,7 +84,13 @@ public class BottomNavManager {
 
         if (navTherapy != null) {
             navTherapy.setOnClickListener(v -> {
-                // Màn chưa làm xong, tạm để trống
+                // Kiểm tra nếu không phải đang ở trang TherapyActivity thì mới chuyển
+                if (!(activity instanceof TherapyActivity)) {
+                    activity.startActivity(new Intent(activity, TherapyActivity.class));
+                    // Hiệu ứng chuyển trang tức thì (không bị giật)
+                    activity.overridePendingTransition(0, 0);
+                    activity.finish();
+                }
             });
         }
 

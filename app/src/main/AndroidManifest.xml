@@ -41,6 +41,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".activities.TherapyActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activities.CommunityActivity"
             android:exported="false" />
             <activity
