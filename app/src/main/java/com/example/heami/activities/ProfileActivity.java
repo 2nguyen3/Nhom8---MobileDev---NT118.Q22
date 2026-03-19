@@ -8,11 +8,11 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.ImageView;
@@ -26,12 +26,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.models.UserSettingsModel;
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
 
@@ -47,14 +49,16 @@ public class ProfileActivity extends AppCompatActivity {
     private ViewGroup rootView;
     private GestureDetector gestureDetector;
 
-    private final String[] allGoals = {
+    private final String[] allMoodGoals = {
             "😮‍💨 Giảm căng thẳng", "😴 Cải thiện giấc ngủ", "🧠 Tập trung làm việc",
             "☀️ Ổn định cảm xúc", "✨ Sống tích cực", "📅 Xây dựng thói quen",
             "🌿 Phát triển bản thân", "🤝 Kết nối mọi người"
     };
-    private List<String> userSelectedGoals = new ArrayList<>();
+    private List<String> userSelectedMoodGoals = new ArrayList<>();
     private String currentAvatarEmoji = "🌸";
     private String currentUserEmail = "";
+    private UserSettingsModel userSettings;
+    private boolean isUpdatingUI = false; // Cờ ngăn chặn trigger ngược khi đang đồng bộ dữ liệu từ DB
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,10 +76,9 @@ public class ProfileActivity extends AppCompatActivity {
         setupSwipeToBack();
         setupOnBackPressed();
 
-        // Load ban đầu từ local để tránh màn hình trống
         updateUserAvatarLocal();
-        // Cập nhật dữ liệu từ Database (bao gồm cả Avatar và Email)
         updateUserInfo();
+        loadUserSettings();
     }
 
     private void setupOnBackPressed() {
@@ -121,26 +124,42 @@ public class ProfileActivity extends AppCompatActivity {
         TextView tvName = findViewById(R.id.tvProfileName);
         TextView tvBio = findViewById(R.id.tvProfileBio);
         TextView tvAvatarEmoji = findViewById(R.id.tvAvatarEmoji);
+        TextView tvStatStreak = findViewById(R.id.tvStatStreak);
+        TextView tvStatCheckin = findViewById(R.id.tvStatCheckin);
+        TextView tvStatTask = findViewById(R.id.tvStatTask);
         LinearLayout layoutChips = findViewById(R.id.layoutGoalsContainer);
+        SwitchMaterial switchPrivacy = findViewById(R.id.switchPrivacy);
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            // Lấy email trực tiếp từ Auth để sử dụng cho popup chỉnh sửa
             currentUserEmail = currentUser.getEmail();
 
             FirebaseFirestore.getInstance().collection("users").document(currentUser.getUid())
                     .get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
+                            isUpdatingUI = true;
+                            
                             String nickname = documentSnapshot.getString("nickname");
                             String motto = documentSnapshot.getString("motto");
                             String avatarEmoji = documentSnapshot.getString("avatar_url");
-                            List<String> goals = (List<String>) documentSnapshot.get("goals");
+                            List<String> mood_goals = (List<String>) documentSnapshot.get("mood_goals");
+                            Long streak = documentSnapshot.getLong("current_streak");
+                            Boolean isProtected = documentSnapshot.getBoolean("is_protected_mode");
 
-                            if (nickname != null && !nickname.isEmpty() && tvName != null) tvName.setText(nickname);
-                            if (motto != null && !motto.isEmpty() && tvBio != null) tvBio.setText(motto);
+                            if (nickname != null) tvName.setText(nickname);
+                            if (motto != null) tvBio.setText(motto);
+                            if (streak != null) tvStatStreak.setText(streak + " ngày");
                             
-                            if (avatarEmoji != null && !avatarEmoji.isEmpty() && tvAvatarEmoji != null) {
+                            tvStatCheckin.setText(documentSnapshot.contains("total_checkins") ? String.valueOf(documentSnapshot.getLong("total_checkins")) : "0");
+                            tvStatTask.setText(documentSnapshot.contains("tasks_done") ? String.valueOf(documentSnapshot.getLong("tasks_done")) : "0");
+
+                            if (isProtected != null && switchPrivacy != null) {
+                                switchPrivacy.setChecked(isProtected);
+                                updatePrivacyStatusUI(isProtected);
+                            }
+
+                            if (avatarEmoji != null && !avatarEmoji.isEmpty()) {
                                 tvAvatarEmoji.setText(avatarEmoji);
                                 currentAvatarEmoji = avatarEmoji;
                                 SharedPreferences.Editor editor = getSharedPreferences("HeamiData", MODE_PRIVATE).edit();
@@ -148,20 +167,118 @@ public class ProfileActivity extends AppCompatActivity {
                                 editor.apply();
                             }
 
-                            if (goals != null) {
-                                userSelectedGoals = new ArrayList<>(goals);
-                                if (layoutChips != null) {
-                                    updateGoalsUI(layoutChips, goals);
-                                }
+                            if (mood_goals != null) {
+                                userSelectedMoodGoals = new ArrayList<>(mood_goals);
+                                updateMoodGoalsUI(layoutChips, mood_goals);
                             }
+                            
+                            isUpdatingUI = false;
                         }
                     });
         }
     }
 
-    private void updateGoalsUI(LinearLayout container, List<String> goals) {
+    private void loadUserSettings() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        DocumentReference settingsRef = FirebaseFirestore.getInstance()
+                .collection("users").document(user.getUid())
+                .collection("settings").document("default");
+
+        settingsRef.get().addOnSuccessListener(doc -> {
+            isUpdatingUI = true;
+            if (doc.exists()) {
+                userSettings = doc.toObject(UserSettingsModel.class);
+                syncSettingsToUI();
+            } else {
+                userSettings = new UserSettingsModel("LIGHT", true);
+                settingsRef.set(userSettings);
+                syncSettingsToUI();
+            }
+            isUpdatingUI = false;
+        });
+    }
+
+    private void syncSettingsToUI() {
+        if (userSettings == null) return;
+
+        SwitchMaterial swDarkMode = findViewById(R.id.switchDarkMode);
+        if (swDarkMode != null) {
+            swDarkMode.setChecked("DARK".equals(userSettings.getTheme_mode()));
+            updateDarkModeStatusUI(swDarkMode.isChecked());
+        }
+
+        Map<String, Boolean> config = userSettings.getNotif_config();
+        if (config != null) {
+            setSwitchChecked(R.id.switchNotiCheckin, config.getOrDefault("checkin", true));
+            setSwitchChecked(R.id.switchNotiPlan, config.getOrDefault("plan", true));
+            setSwitchChecked(R.id.switchNotiDr, config.getOrDefault("appointment", true));
+            setSwitchChecked(R.id.switchNotiChat, config.getOrDefault("chat", true));
+            
+            updateNotiTextColors();
+        }
+
+        // Đồng bộ thời gian nhắc nhở từ database
+        Map<String, String> reminders = userSettings.getReminders();
+        if (reminders != null && reminders.containsKey("checkin")) {
+            TextView tvCheckinTime = findViewById(R.id.tvNotiCheckinSub);
+            if (tvCheckinTime != null) {
+                tvCheckinTime.setText(reminders.get("checkin") + " mỗi sáng");
+            }
+        }
+    }
+
+    private void setSwitchChecked(int id, boolean checked) {
+        SwitchMaterial sw = findViewById(id);
+        if (sw != null) sw.setChecked(checked);
+    }
+
+    private void updateNotiTextColors() {
+        updateSingleNotiColor(R.id.switchNotiCheckin, R.id.tvNotiCheckinSub);
+        updateSingleNotiColor(R.id.switchNotiPlan, R.id.tvNotiPlanSub);
+        updateSingleNotiColor(R.id.switchNotiDr, R.id.tvNotiDrSub);
+        updateSingleNotiColor(R.id.switchNotiChat, R.id.tvNotiChatSub);
+    }
+
+    private void updateSingleNotiColor(int swId, int tvId) {
+        SwitchMaterial sw = findViewById(swId);
+        TextView tv = findViewById(tvId);
+        if (sw != null && tv != null) {
+            tv.setTextColor(sw.isChecked() ? colorActive : colorTextOff);
+        }
+    }
+
+    private void saveSettingUpdate(String key, Object value) {
+        if (isUpdatingUI) return;
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        DocumentReference ref = FirebaseFirestore.getInstance()
+                .collection("users").document(user.getUid())
+                .collection("settings").document("default");
+        
+        ref.update(key, value).addOnFailureListener(e -> Toast.makeText(this, "Lỗi khi lưu cài đặt", Toast.LENGTH_SHORT).show());
+        
+        // Cập nhật model cục bộ để đồng bộ
+        if (userSettings != null) {
+            if ("theme_mode".equals(key)) {
+                userSettings.setTheme_mode((String) value);
+            } else if (key.startsWith("notif_config.")) {
+                String configKey = key.substring("notif_config.".length());
+                if (userSettings.getNotif_config() != null) {
+                    userSettings.getNotif_config().put(configKey, (Boolean) value);
+                }
+            }
+        }
+    }
+
+    private void updateMoodGoalsUI(LinearLayout container, List<String> mood_goals) {
+        if (container == null) return;
         container.removeAllViews();
-        for (String goal : goals) {
+        if (mood_goals == null) return;
+        for (String goal : mood_goals) {
             Chip chip = new Chip(this);
             chip.setText(goal);
             chip.setChipBackgroundColor(ColorStateList.valueOf(Color.parseColor("#FEE4F0")));
@@ -170,7 +287,7 @@ public class ProfileActivity extends AppCompatActivity {
             chip.setClickable(false);
             chip.setCheckable(false);
             chip.setChipStrokeWidth(0);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 80);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             params.setMargins(0, 0, 16, 0);
             container.addView(chip, params);
         }
@@ -193,45 +310,67 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void setupDarkMode() {
         SwitchMaterial sw = findViewById(R.id.switchDarkMode);
-        TextView tv = findViewById(R.id.tvDarkModeStatus);
         applySwitchStyle(sw);
         if (sw != null) {
             sw.setOnCheckedChangeListener((btn, isChecked) -> {
-                if (tv != null) {
-                    tv.setText(isChecked ? "Đang bật" : "Đang tắt");
-                    tv.setTextColor(isChecked ? colorActive : colorTextOff);
-                }
+                if (isUpdatingUI) return;
+                updateDarkModeStatusUI(isChecked);
+                saveSettingUpdate("theme_mode", isChecked ? "DARK" : "LIGHT");
             });
+        }
+    }
+
+    private void updateDarkModeStatusUI(boolean isChecked) {
+        TextView tv = findViewById(R.id.tvDarkModeStatus);
+        if (tv != null) {
+            tv.setText(isChecked ? "Đang bật" : "Đang tắt");
+            tv.setTextColor(isChecked ? colorActive : colorTextOff);
         }
     }
 
     private void setupPrivacy() {
         SwitchMaterial sw = findViewById(R.id.switchPrivacy);
-        TextView tv = findViewById(R.id.tvPrivacySub);
         applySwitchStyle(sw);
         if (sw != null) {
             sw.setOnCheckedChangeListener((btn, isChecked) -> {
+                if (isUpdatingUI) return;
                 TransitionManager.beginDelayedTransition(rootView, new AutoTransition());
-                if (tv != null) {
-                    tv.setText(isChecked ? "Hồ sơ ẩn với cộng đồng" : "Hồ sơ hiển thị với cộng đồng");
-                    tv.setTextColor(isChecked ? colorActive : colorTextOff);
+                updatePrivacyStatusUI(isChecked);
+                
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if (user != null) {
+                    FirebaseFirestore.getInstance().collection("users").document(user.getUid())
+                            .update("is_protected_mode", isChecked);
                 }
             });
         }
     }
 
-    private void setupNotifications() {
-        setupSingleNoti(R.id.switchNotiCheckin, R.id.tvNotiCheckinSub);
-        setupSingleNoti(R.id.switchNotiPlan, R.id.tvNotiPlanSub);
-        setupSingleNoti(R.id.switchNotiDr, R.id.tvNotiDrSub);
+    private void updatePrivacyStatusUI(boolean isChecked) {
+        TextView tv = findViewById(R.id.tvPrivacySub);
+        if (tv != null) {
+            tv.setText(isChecked ? "Hồ sơ ẩn với cộng đồng" : "Hồ sơ hiển thị với cộng đồng");
+            tv.setTextColor(isChecked ? colorActive : colorTextOff);
+        }
     }
 
-    private void setupSingleNoti(int swId, int tvId) {
+    private void setupNotifications() {
+        setupSingleNotiLogic(R.id.switchNotiCheckin, R.id.tvNotiCheckinSub, "checkin");
+        setupSingleNotiLogic(R.id.switchNotiPlan, R.id.tvNotiPlanSub, "plan");
+        setupSingleNotiLogic(R.id.switchNotiDr, R.id.tvNotiDrSub, "appointment");
+        setupSingleNotiLogic(R.id.switchNotiChat, R.id.tvNotiChatSub, "chat");
+    }
+
+    private void setupSingleNotiLogic(int swId, int tvId, String configKey) {
         SwitchMaterial sw = findViewById(swId);
         TextView tv = findViewById(tvId);
         applySwitchStyle(sw);
         if (sw != null && tv != null) {
-            sw.setOnCheckedChangeListener((btn, isChecked) -> tv.setTextColor(isChecked ? colorActive : colorTextOff));
+            sw.setOnCheckedChangeListener((btn, isChecked) -> {
+                if (isUpdatingUI) return;
+                tv.setTextColor(isChecked ? colorActive : colorTextOff);
+                saveSettingUpdate("notif_config." + configKey, isChecked);
+            });
         }
     }
 
@@ -273,6 +412,12 @@ public class ProfileActivity extends AppCompatActivity {
         if (findViewById(R.id.btnViewAnalysis) != null)
             findViewById(R.id.btnViewAnalysis).setOnClickListener(v -> startActivity(new Intent(this, StatsActivity.class)));
 
+        if (findViewById(R.id.btnViewHistory) != null)
+            findViewById(R.id.btnViewHistory).setOnClickListener(v -> Toast.makeText(this, "Lịch sử đang được xử lý", Toast.LENGTH_SHORT).show());
+
+        if (findViewById(R.id.layoutPrivacy2) != null)
+            findViewById(R.id.layoutPrivacy2).setOnClickListener(v -> Toast.makeText(this, "Xem chính sách bảo mật", Toast.LENGTH_SHORT).show());
+
         if (findViewById(R.id.cardSOS) != null)
             findViewById(R.id.cardSOS).setOnClickListener(v -> startActivity(new Intent(this, SosActivity.class)));
 
@@ -304,7 +449,6 @@ public class ProfileActivity extends AppCompatActivity {
         View btnDeleteAcc = dialog.findViewById(R.id.layoutDeleteAccount);
         ImageView btnDismiss = dialog.findViewById(R.id.btnDismiss);
 
-        // Pre-fill data
         if (etEmail != null) etEmail.setText(currentUserEmail);
         etNickname.setText(((TextView) findViewById(R.id.tvProfileName)).getText());
         etBio.setText(((TextView) findViewById(R.id.tvProfileBio)).getText());
@@ -316,8 +460,8 @@ public class ProfileActivity extends AppCompatActivity {
             selectedEmoji[0] = emoji;
         }));
 
-        List<String> tempSelectedGoals = new ArrayList<>(userSelectedGoals);
-        populateGoalsInDialog(flexGoals, tempSelectedGoals);
+        List<String> tempSelectedMoodGoals = new ArrayList<>(userSelectedMoodGoals);
+        populateMoodGoalsInDialog(flexGoals, tempSelectedMoodGoals);
 
         btnDismiss.setOnClickListener(v -> dialog.dismiss());
         btnChangePass.setOnClickListener(v -> {
@@ -339,7 +483,7 @@ public class ProfileActivity extends AppCompatActivity {
                 Toast.makeText(this, "Tên không được để trống", Toast.LENGTH_SHORT).show();
                 return;
             }
-            saveProfileChanges(newName, newBio, selectedEmoji[0], tempSelectedGoals, dialog);
+            saveProfileChanges(newName, newBio, selectedEmoji[0], tempSelectedMoodGoals, dialog);
         });
 
         dialog.show();
@@ -366,9 +510,9 @@ public class ProfileActivity extends AppCompatActivity {
         void onEmojiSelected(String emoji);
     }
 
-    private void populateGoalsInDialog(FlexboxLayout flex, List<String> selected) {
+    private void populateMoodGoalsInDialog(FlexboxLayout flex, List<String> selected) {
         flex.removeAllViews();
-        for (String goal : allGoals) {
+        for (String goal : allMoodGoals) {
             Chip chip = new Chip(this);
             chip.setText(goal);
             chip.setCheckable(true);
@@ -409,14 +553,14 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void saveProfileChanges(String name, String bio, String avatar, List<String> goals, android.app.Dialog dialog) {
+    private void saveProfileChanges(String name, String bio, String avatar, List<String> mood_goals, android.app.Dialog dialog) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             Map<String, Object> updates = new HashMap<>();
             updates.put("nickname", name);
             updates.put("motto", bio);
             updates.put("avatar_url", avatar);
-            updates.put("goals", goals);
+            updates.put("mood_goals", mood_goals);
 
             FirebaseFirestore.getInstance().collection("users").document(user.getUid())
                     .update(updates)
@@ -501,7 +645,7 @@ public class ProfileActivity extends AppCompatActivity {
             WriteBatch batch = db.batch();
             batch.delete(db.collection("users").document(uid));
             batch.delete(db.collection("accounts").document(uid));
-            batch.delete(db.collection("settings").document(uid));
+            batch.delete(db.collection("users").document(uid).collection("settings").document("default"));
 
             batch.commit().addOnSuccessListener(aVoid -> user.delete().addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {

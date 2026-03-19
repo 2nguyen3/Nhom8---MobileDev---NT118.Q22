@@ -122,7 +122,7 @@ public class SetupGoalsActivity extends AppCompatActivity {
         }
 
         FirebaseFirestore.getInstance().collection("users").document(user.getUid())
-                .update("goals", goalsText)
+                .update("mood_goals", goalsText)
                 .addOnSuccessListener(aVoid -> navigateToHome())
                 .addOnFailureListener(e -> {
                     btnFinishSetup.setEnabled(true);
