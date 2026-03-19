@@ -1,23 +1,33 @@
 package com.example.heami.models;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class UserSettingsModel {
-    private String setting_id;
-    private String user_id;
-    private String theme_mode;        // "LIGHT", "DARK"
-    private boolean is_notif_enabled;
-    private Map<String, Boolean> notif_config; // Cấu hình chi tiết (Chat, Lịch hẹn...)
-    private Map<String, String> reminders;     // Giờ nhắc nhở (Tập thở, Check-in...)
+    private String theme_mode;          // "LIGHT", "DARK"
+    private boolean is_notif_enabled;   // Bật/tắt thông báo tổng
+    private Map<String, Boolean> notif_config; // Cấu hình riêng: {"chat": true, "appointment": true, "checkin": true, "plan": true}
+    private Map<String, String> reminders;     // Giờ nhắc nhở: {"breathing": "08:00", "checkin": "21:00"}
 
-    public UserSettingsModel() {}
+    public UserSettingsModel() {
+        this.notif_config = new HashMap<>();
+        this.reminders = new HashMap<>();
+    }
 
-    // Getter và Setter
-    public String getSetting_id() { return setting_id; }
-    public void setSetting_id(String setting_id) { this.setting_id = setting_id; }
+    public UserSettingsModel(String theme_mode, boolean is_notif_enabled) {
+        this.theme_mode = theme_mode;
+        this.is_notif_enabled = is_notif_enabled;
 
-    public String getUser_id() { return user_id; }
-    public void setUser_id(String user_id) { this.user_id = user_id; }
+        this.notif_config = new HashMap<>();
+        this.notif_config.put("chat", true);
+        this.notif_config.put("appointment", true);
+        this.notif_config.put("checkin", true);
+        this.notif_config.put("plan", true);
+
+        this.reminders = new HashMap<>();
+        this.reminders.put("breathing", "08:00");
+        this.reminders.put("checkin", "09:00");
+    }
 
     public String getTheme_mode() { return theme_mode; }
     public void setTheme_mode(String theme_mode) { this.theme_mode = theme_mode; }

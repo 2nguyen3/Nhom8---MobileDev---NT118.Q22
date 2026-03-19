@@ -89,24 +89,9 @@ public class AuthViewModel extends ViewModel {
         UserModel user = new UserModel(uid, nickname, null);
         batch.set(db.collection("users").document(uid), user);
 
-        UserSettingsModel settings = new UserSettingsModel();
-        settings.setSetting_id(uid);
-        settings.setUser_id(uid);
-        settings.setTheme_mode("LIGHT");
-        settings.setIs_notif_enabled(true);
-
-        Map<String, Boolean> config = new HashMap<>();
-        config.put("chat", true);
-        config.put("appointment", true);
-        config.put("system", true);
-        settings.setNotif_config(config);
-
-        Map<String, String> reminders = new HashMap<>();
-        reminders.put("breath", "08:00");
-        reminders.put("checkin", "21:00");
-        settings.setReminders(reminders);
-
-        batch.set(db.collection("settings").document(uid), settings);
+        UserSettingsModel settings = new UserSettingsModel("LIGHT", true);
+        
+        batch.set(db.collection("users").document(uid).collection("settings").document("default"), settings);
 
         return batch.commit();
     }
@@ -143,8 +128,10 @@ public class AuthViewModel extends ViewModel {
         });
     }
 
-    private void checkUserProfile(String uid) {
+    public void checkUserProfile(String uid) {
+        isLoading.setValue(true);
         db.collection("users").document(uid).get().addOnCompleteListener(task -> {
+            isLoading.setValue(false);
             if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
                 String avatarUrl = task.getResult().getString("avatar_url");
                 if (avatarUrl != null && !avatarUrl.isEmpty()) {

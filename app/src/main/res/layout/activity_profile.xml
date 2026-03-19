@@ -172,6 +172,7 @@
                             app:tint="#FF8A65" />
 
                         <TextView
+                            android:id="@+id/tvStatStreak"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -184,7 +185,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/quicksand_medium"
-                            android:text="Chuỗi check-in"
+                            android:text="Chuỗi"
                             android:textColor="#7D8BB7"
                             android:textSize="10sp" />
                     </LinearLayout>
@@ -202,10 +203,11 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@drawable/ic_check"
+                            android:src="@drawable/ic_heartbeat"
                             app:tint="#4DB6AC" />
 
                         <TextView
+                            android:id="@+id/tvStatCheckin"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -236,10 +238,11 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@drawable/ic_star"
+                            android:src="@drawable/ic_task"
                             app:tint="#9575CD" />
 
                         <TextView
+                            android:id="@+id/tvStatTask"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -252,7 +255,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/quicksand_medium"
-                            android:text="Bài thở"
+                            android:text="Nhiệm vụ"
                             android:textColor="#7D8BB7"
                             android:textSize="10sp" />
                     </LinearLayout>
@@ -368,7 +371,7 @@
                     android:id="@+id/iconDarkMode"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:background="@drawable/bg_light_teal_circle"
+                    android:background="@drawable/bg_light_blue_circle"
                     android:padding="10dp"
                     android:src="@drawable/ic_moon"
                     app:tint="#4A90E2" />
@@ -438,7 +441,7 @@
                     android:padding="12dp">
 
                     <ImageView
-                        android:id="@+id/iconNoti1"
+                        android:id="@+id/iconNotiCheckin"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="@drawable/bg_light_pink_circle"
@@ -451,14 +454,14 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconNoti1"
+                        android:layout_toEndOf="@id/iconNotiCheckin"
                         android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/quicksand_bold"
-                            android:text="Nhắc check-in hàng ngày"
+                            android:text="Check-in hàng ngày"
                             android:textColor="#313866"
                             android:textSize="15sp" />
 
@@ -491,7 +494,7 @@
                     android:padding="12dp">
 
                     <ImageView
-                        android:id="@+id/iconNoti2"
+                        android:id="@+id/iconNotiPlan"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="@drawable/bg_light_teal_circle"
@@ -504,14 +507,14 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconNoti2"
+                        android:layout_toEndOf="@id/iconNotiPlan"
                         android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/quicksand_bold"
-                            android:text="Nhắc hoạt động &amp; Gentle Plan"
+                            android:text="Lịch trình cá nhân"
                             android:textColor="#313866"
                             android:textSize="15sp" />
 
@@ -519,7 +522,7 @@
                             android:id="@+id/tvNotiPlanSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Uống nước, bài thở, nhật ký..."
+                            android:text="Uống nước, bài thở, viết nhật ký..."
                             android:textColor="#7D8BB7"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -544,12 +547,12 @@
                     android:padding="12dp">
 
                     <ImageView
-                        android:id="@+id/iconNoti3"
+                        android:id="@+id/iconNotiDr"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="@drawable/bg_light_purple_circle"
                         android:padding="10dp"
-                        android:src="@drawable/ic_bell"
+                        android:src="@drawable/ic_nav_doctor"
                         app:tint="#9C27B0" />
 
                     <LinearLayout
@@ -557,14 +560,14 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconNoti3"
+                        android:layout_toEndOf="@id/iconNotiDr"
                         android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/quicksand_bold"
-                            android:text="Thông báo từ bác sĩ"
+                            android:text="Tư vấn &amp; Trị liệu"
                             android:textColor="#313866"
                             android:textSize="15sp" />
 
@@ -572,13 +575,66 @@
                             android:id="@+id/tvNotiDrSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Lịch hẹn, tin nhắn tư vấn"
+                            android:text="Lịch hẹn, tin nhắn từ bác sĩ"
                             android:textColor="#7D8BB7"
                             android:textSize="12sp" />
                     </LinearLayout>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switchNotiDr"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginHorizontal="12dp"
+                    android:background="#F5F5F5" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp">
+
+                    <ImageView
+                        android:id="@+id/iconNotiChat"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_light_blue_circle"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_comment_bubble"
+                        app:tint="#1E88E5" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="12dp"
+                        android:layout_toEndOf="@id/iconNotiChat"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/quicksand_bold"
+                            android:text="Tin nhắn"
+                            android:textColor="#313866"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/tvNotiChatSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tin nhắn mới từ cộng đồng"
+                            android:textColor="#7D8BB7"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchNotiChat"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
@@ -612,7 +668,7 @@
                 android:padding="8dp">
 
                 <RelativeLayout
-                    android:id="@+id/iconPrivacy1"
+                    android:id="@+id/layoutPrivacy1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="12dp">
@@ -666,12 +722,13 @@
                     android:background="#F5F5F5" />
 
                 <RelativeLayout
+                    android:id="@+id/layoutPrivacy2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="12dp">
 
                     <ImageView
-                        android:id="@+id/iconPrivacy2"
+                        android:id="@+id/iconPrivacy2_img"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="@drawable/bg_light_teal_circle"
@@ -684,7 +741,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconPrivacy2"
+                        android:layout_toEndOf="@id/iconPrivacy2_img"
                         android:orientation="vertical">
 
                         <TextView

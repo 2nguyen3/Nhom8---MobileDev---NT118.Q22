@@ -44,6 +44,8 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 
 import com.example.heami.R;
 import com.example.heami.viewmodels.AuthViewModel;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -61,14 +63,24 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Khởi tạo cơ bản trước
         initViews();
+        setupViewModel(); // Khởi tạo ViewModel sớm để xử lý auto-login
         
-        // Trì hoãn việc khởi tạo CredentialManager và logic nặng để giảm lag onCreate
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             credentialManager = CredentialManager.create(LoginActivity.this);
-            setupViewModel();
         }, 100);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Kiểm tra auto-login
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            if (authViewModel != null) {
+                authViewModel.checkUserProfile(currentUser.getUid());
+            }
+        }
     }
 
     private void initViews() {
