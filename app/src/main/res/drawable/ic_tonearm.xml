@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M85,15m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+
+    <path
+        android:strokeColor="#40FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M85,15 L40,60" />
+
+    <path
+        android:id="@+id/stylus_tip"
+        android:fillColor="#99A6ECE6"
+        android:pathData="M40,60m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+</vector>

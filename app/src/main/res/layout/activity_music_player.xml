@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_music_player"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <RelativeLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <ImageButton
+            android:id="@+id/btnMinimize"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:background="@drawable/bg_music_control_sub"
+            android:padding="12dp"
+            android:src="@drawable/ic_chevron_down"
+            app:tint="#FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:animateLayoutChanges="true"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/quicksand_bold"
+                android:letterSpacing="0.1"
+                android:text="ĐANG PHÁT"
+                android:textAllCaps="true"
+                android:textColor="#B3B3B3"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvStatusPlay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:text="Đã dừng"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:id="@+id/viewStatusDot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_marginStart="2dp"
+                    android:background="@drawable/bg_status_dot"
+                    android:visibility="invisible" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnList"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/bg_music_control_sub"
+            android:padding="12dp"
+            android:src="@drawable/ic_playlist_play"
+            app:tint="#FFFFFF" />
+    </RelativeLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutDiscContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="50dp"
+        android:layout_weight="4.8"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <View
+            android:id="@+id/viewDiscRing"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/bg_disc_playing_glow"
+            android:elevation="1dp"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_percent="0.95"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/viewPulseGlow"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/bg_pulse_glow_teal"
+            android:elevation="2dp"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_percent="0.92"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/viewRotatingDisc"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:cardBackgroundColor="#00000000"
+            app:cardCornerRadius="1000dp"
+            app:cardElevation="5dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_percent="0.85"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/bg_disc_concentric" />
+        </androidx.cardview.widget.CardView>
+
+        <ImageView
+            android:id="@+id/imgTonearm"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginTop="-30dp"
+            android:layout_marginEnd="-10dp"
+            android:elevation="10dp"
+            android:rotation="-45"
+            android:src="@drawable/ic_tonearm"
+            android:transformPivotX="120dp"
+            android:transformPivotY="24dp"
+            app:layout_constraintEnd_toEndOf="@id/viewRotatingDisc"
+            app:layout_constraintTop_toTopOf="@id/viewRotatingDisc" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="20dp"
+        android:layout_weight="1.8"
+        android:paddingHorizontal="10dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvSongTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="Giai điệu thư giãn"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/tvArtist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nhạc trị liệu"
+                android:textColor="#B3B3B3"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnLike"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_music_control_sub"
+            android:padding="12dp"
+            android:src="@drawable/ic_heart_outline"
+            app:tint="#FFFFFF" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3.2"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <SeekBar
+            android:id="@+id/seekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:progressTint="#F48FB1"
+            android:thumbTint="#FFFFFF" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#B3FFFFFF"
+                android:textSize="11sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="-05:30"
+                android:textColor="#B3FFFFFF"
+                android:textSize="11sp" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:background="@drawable/bg_music_control_sub"
+                android:padding="12dp"
+                android:src="@drawable/ic_shuffle"
+                app:tint="#FFFFFF" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:background="@drawable/bg_music_control_sub"
+                android:padding="14dp"
+                android:src="@drawable/ic_skip_previous"
+                app:tint="#FFFFFF" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/btnPlayPause"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_play_music_main"
+                android:padding="26dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_pause"
+                app:tint="#FFFFFF" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:background="@drawable/bg_music_control_sub"
+                android:padding="14dp"
+                android:src="@drawable/ic_skip_next"
+                app:tint="#FFFFFF" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:background="@drawable/bg_music_control_sub"
+                android:padding="12dp"
+                android:src="@drawable/ic_repeat"
+                app:tint="#FFFFFF" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_music_action_bottom"
+            android:gravity="center"
+            android:paddingVertical="12dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_off"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Hẹn giờ tắt"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_music_action_bottom"
+            android:gravity="center"
+            android:paddingVertical="12dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_share"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Chia sẻ"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

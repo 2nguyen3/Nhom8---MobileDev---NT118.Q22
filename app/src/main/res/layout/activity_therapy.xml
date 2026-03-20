@@ -228,16 +228,17 @@
                                 android:layout_height="wrap_content"
                                 android:layout_toStartOf="@+id/tvTagSuggestMusic"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:background="@drawable/bg_tag_pink"
+                                    android:fontFamily="@font/quicksand_bold"
                                     android:paddingHorizontal="8dp"
                                     android:paddingVertical="2dp"
                                     android:text="🎵 Nhạc"
                                     android:textColor="#E86FA0"
-                                    android:textSize="10sp"
-                                    android:fontFamily="@font/quicksand_bold" />
+                                    android:textSize="10sp" />
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -274,6 +275,7 @@
                                 android:textColor="#E86FA0"
                                 android:textSize="10sp" />
                             <ImageButton
+                                android:id="@+id/btnOpenMusic"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
