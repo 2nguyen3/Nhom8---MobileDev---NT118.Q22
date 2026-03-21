@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_music_player"
@@ -261,6 +262,7 @@
                 android:layout_weight="1" />
 
             <ImageButton
+                android:id="@+id/btnPrev"
                 android:layout_width="55dp"
                 android:layout_height="55dp"
                 android:background="@drawable/bg_music_control_sub"
@@ -289,6 +291,7 @@
                 android:layout_weight="1" />
 
             <ImageButton
+                android:id="@+id/btnNext"
                 android:layout_width="55dp"
                 android:layout_height="55dp"
                 android:background="@drawable/bg_music_control_sub"
@@ -318,21 +321,26 @@
         android:orientation="horizontal">
 
         <LinearLayout
+            android:id="@+id/layoutTimerAction"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_music_action_bottom"
             android:gravity="center"
-            android:paddingVertical="12dp">
+            android:paddingVertical="12dp"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
+                android:id="@+id/imgTimerIconMain"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:src="@drawable/ic_off"
                 app:tint="#FFFFFF" />
 
             <TextView
+                android:id="@+id/tvTimerTextMain"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -342,13 +350,16 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/layoutShareAction"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_music_action_bottom"
             android:gravity="center"
-            android:paddingVertical="12dp">
+            android:paddingVertical="12dp"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
                 android:layout_width="18dp"
@@ -357,7 +368,6 @@
                 app:tint="#FFFFFF" />
 
             <TextView
-                android:id="@+id/textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
