@@ -2,5 +2,7 @@
     <string name="app_name">Heami</string>
     <string name="status_on">Đang bật</string>
     <string name="status_off">Đang tắt</string>
+    <string name="doctor_verified">Bác sĩ đã xác thực</string>
+    <string name="clear_search">Xoá tìm kiếm</string>
     <string name="default_web_client_id" translatable="false">414780799666-hkgsjb9kfciv9st6ous9u08osgoklmrm.apps.googleusercontent.com</string>
 </resources>

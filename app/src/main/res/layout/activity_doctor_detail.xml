@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/doctorDetailRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -54,7 +55,8 @@
                         android:contentDescription="Quay lại"
                         android:padding="7dp"
                         android:scaleType="centerInside"
-                        android:src="@drawable/ic_back" />
+                        android:src="@drawable/ic_back"
+                        tools:ignore="TouchTargetSizeCheck" />
 
                     <View
                         android:layout_width="0dp"
@@ -69,7 +71,8 @@
                         android:contentDescription="Yêu thích"
                         android:padding="10dp"
                         android:scaleType="centerInside"
-                        android:src="@drawable/ic_doctor_favorite" />
+                        android:src="@drawable/ic_doctor_favorite"
+                        tools:ignore="TouchTargetSizeCheck" />
                 </LinearLayout>
 
                 <!-- avatar -->
@@ -109,14 +112,6 @@
                         android:textColor="#2D1B47"
                         android:textSize="21sp"
                         android:textStyle="bold" />
-
-                    <ImageView
-                        android:id="@+id/imgDoctorDetailVerified"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_marginStart="6dp"
-                        android:contentDescription="verified"
-                        android:src="@drawable/ic_doctor_verified" />
                 </LinearLayout>
 
                 <TextView
@@ -1592,29 +1587,40 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:background="@drawable/bg_doctor_checkout_cta"
-            android:gravity="center"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="17dp"
             android:paddingTop="17dp"
             android:paddingEnd="17dp"
             android:paddingBottom="17dp">
 
-            <ImageView
+            <View
                 android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:contentDescription="checkout left"
-                android:src="@drawable/ic_doctor_checkout_left" />
+                android:layout_height="0dp" />
 
-            <TextView
-                android:id="@+id/txtDoctorCheckout"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp"
-                android:text="Thanh toán &amp; Bắt đầu phiên"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:contentDescription="checkout left"
+                    android:src="@drawable/ic_doctor_checkout_left" />
+
+                <TextView
+                    android:id="@+id/txtDoctorCheckout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="Thanh toán"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <ImageView
                 android:layout_width="18dp"
