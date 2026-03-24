@@ -149,7 +149,7 @@ public class ProfileActivity extends AppCompatActivity {
 
                             if (nickname != null) tvName.setText(nickname);
                             if (motto != null) tvBio.setText(motto);
-                            if (streak != null) tvStatStreak.setText(streak + " ngày");
+                            if (streak != null) tvStatStreak.setText(String.valueOf(streak));
                             
                             tvStatCheckin.setText(documentSnapshot.contains("total_checkins") ? String.valueOf(documentSnapshot.getLong("total_checkins")) : "0");
                             tvStatTask.setText(documentSnapshot.contains("tasks_done") ? String.valueOf(documentSnapshot.getLong("tasks_done")) : "0");
@@ -278,17 +278,31 @@ public class ProfileActivity extends AppCompatActivity {
         if (container == null) return;
         container.removeAllViews();
         if (mood_goals == null) return;
+        
+        float density = getResources().getDisplayMetrics().density;
+        int heightPx = (int) (27 * density); // Tăng lên 27dp để tránh bị cắt chữ mà vẫn mảnh mai
+        int paddingPx = (int) (10 * density);  
+        
         for (String goal : mood_goals) {
             Chip chip = new Chip(this);
             chip.setText(goal);
             chip.setChipBackgroundColor(ColorStateList.valueOf(Color.parseColor("#FEE4F0")));
             chip.setTextColor(Color.parseColor("#E86FA0"));
-            chip.setTextSize(10);
+            chip.setTextSize(10); 
             chip.setClickable(false);
             chip.setCheckable(false);
             chip.setChipStrokeWidth(0);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.setMargins(0, 0, 16, 0);
+            
+            chip.setEnsureMinTouchTargetSize(false);
+            chip.setChipStartPadding(paddingPx);
+            chip.setChipEndPadding(paddingPx);
+            chip.setChipMinHeight(heightPx);
+            chip.setTextStartPadding(0);
+            chip.setTextEndPadding(0);
+            
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, heightPx);
+            params.setMargins(0, 0, (int) (6 * density), 0);
             container.addView(chip, params);
         }
     }
