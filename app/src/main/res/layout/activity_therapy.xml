@@ -359,6 +359,7 @@
                                     android:textSize="10sp" />
                             </LinearLayout>
                             <ImageButton
+                                android:id="@+id/btnOpenNatureSound"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
