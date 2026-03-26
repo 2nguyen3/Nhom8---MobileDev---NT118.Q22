@@ -112,6 +112,10 @@
             android:name=".activities.NatureSoundActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".activities.BreathingActivity"
+            android:exported="false" />
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

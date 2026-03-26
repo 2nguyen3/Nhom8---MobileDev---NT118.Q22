@@ -24,6 +24,8 @@ public class TherapyActivity extends AppCompatActivity {
     private ImageButton btnOpenMusic; // Khai báo ở đây
     private ImageButton btnOpenNatureSound;
 
+    private ImageButton btnOpen1Breath;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +38,8 @@ public class TherapyActivity extends AppCompatActivity {
         setupMusicButton();
 
         setupNatureButton();
+
+        setup1BreathButton();
 
         startCloudAnimation();
 
@@ -60,7 +64,9 @@ public class TherapyActivity extends AppCompatActivity {
         // Ánh xạ nút mở nhạc
         btnOpenMusic = findViewById(R.id.btnOpenMusic);
 
-        btnOpenNatureSound= findViewById(R.id.btnOpenNatureSound);
+        btnOpenNatureSound = findViewById(R.id.btnOpenNatureSound);
+
+        btnOpen1Breath = findViewById(R.id.btnOpen1Breath);
     }
 
     // HÀM XỬ LÝ MỞ TRANG NHẠC
@@ -78,6 +84,16 @@ public class TherapyActivity extends AppCompatActivity {
         if (btnOpenNatureSound != null) {
             btnOpenNatureSound.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, NatureSoundActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setup1BreathButton() {
+        if (btnOpen1Breath != null) {
+            btnOpen1Breath.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
