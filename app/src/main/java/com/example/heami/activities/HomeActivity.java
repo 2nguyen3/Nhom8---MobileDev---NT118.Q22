@@ -3,6 +3,7 @@ package com.example.heami.activities;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.View;
@@ -33,6 +34,7 @@ public class HomeActivity extends AppCompatActivity {
         loadUserData();
         applyStaticStyles();
         startHomeAnimations();
+        setupActions();
     }
 
     private void initViews() {
@@ -422,5 +424,15 @@ public class HomeActivity extends AppCompatActivity {
         AnimatorSet glowSet = new AnimatorSet();
         glowSet.playTogether(glowScaleX, glowScaleY, glowAlpha);
         glowSet.start();
+    }
+
+    private void setupActions() {
+        View btnStartAi = findViewById(R.id.btnStartAi);
+        if (btnStartAi != null) {
+            btnStartAi.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, CheckInAiActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 }

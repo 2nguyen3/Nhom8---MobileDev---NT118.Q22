@@ -39,6 +39,9 @@
         <activity
             android:name=".activities.HomeActivity"
             android:exported="false" />
+            <activity
+                android:name=".activities.CheckInAiActivity"
+                android:exported="false" />
 
         <activity
             android:name=".activities.TherapyActivity"
