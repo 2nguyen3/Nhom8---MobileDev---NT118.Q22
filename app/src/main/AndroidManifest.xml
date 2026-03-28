@@ -42,6 +42,12 @@
             <activity
                 android:name=".activities.CheckInAiActivity"
                 android:exported="false" />
+            <activity
+                android:name=".activities.ManualMoodActivity"
+                android:exported="false" />
+            <activity
+                android:name=".activities.CheckInResultActivity"
+                android:exported="false" />
 
         <activity
             android:name=".activities.TherapyActivity"

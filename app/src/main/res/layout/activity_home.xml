@@ -670,10 +670,10 @@
 
                                     <ImageView
                                         android:layout_width="22dp"
-                                        android:layout_height="22dp"
+                                        android:layout_height="wrap_content"
                                         android:layout_gravity="center"
-                                        android:src="@drawable/ic_heal_music"
-                                        android:contentDescription="music" />
+                                        android:contentDescription="music"
+                                        android:src="@drawable/ic_heal_music" />
                                 </FrameLayout>
 
                                 <TextView

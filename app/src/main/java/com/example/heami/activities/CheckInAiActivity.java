@@ -3,6 +3,7 @@ package com.example.heami.activities;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -44,7 +45,7 @@ public class CheckInAiActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_check_in_ai);
+        setContentView(R.layout.activity_checkin_ai);
 
         bindViews();
         setupActions();
@@ -85,8 +86,17 @@ public class CheckInAiActivity extends AppCompatActivity {
 
         if (btnManualMood != null) {
             btnManualMood.setOnClickListener(v -> {
-                // Bước sau mình sẽ xử lý mở màn chọn cảm xúc thủ công
+                Intent intent = new Intent(CheckInAiActivity.this, ManualMoodActivity.class);
+                startActivity(intent);
             });
+        }
+
+        if (cardCameraPreview != null) {
+            cardCameraPreview.setOnClickListener(v -> openResultFromAiScan());
+        }
+
+        if (imgCheckInCameraPreview != null) {
+            imgCheckInCameraPreview.setOnClickListener(v -> openResultFromAiScan());
         }
     }
 
@@ -334,5 +344,17 @@ public class CheckInAiActivity extends AppCompatActivity {
         AnimatorSet set = new AnimatorSet();
         set.playTogether(fade, move);
         set.start();
+    }
+
+    private void openResultFromAiScan() {
+        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
+
+        intent.putExtra("mood_name", "Căng thẳng");
+        intent.putExtra("mood_emoji", "😤");
+        intent.putExtra("mood_desc", "Hơi nhiều áp lực hôm nay...");
+        intent.putExtra("mood_percent", 87);
+        intent.putExtra("source", "ai_scan");
+
+        startActivity(intent);
     }
 }

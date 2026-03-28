@@ -1,0 +1,694 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/checkInResultRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_checkin_ai_screen"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- Background glow -->
+    <View
+        android:id="@+id/glowResultTopLeft"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_marginStart="-58dp"
+        android:layout_marginTop="-72dp"
+        android:alpha="0.55"
+        android:background="@drawable/bg_checkin_glow_pink"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/glowResultBottomRight"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_marginEnd="-58dp"
+        android:layout_marginBottom="80dp"
+        android:alpha="0.45"
+        android:background="@drawable/bg_checkin_glow_mint"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ScrollView
+        android:id="@+id/scrollCheckInResult"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:paddingBottom="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/layoutCheckInResultContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="780dp"
+            android:orientation="vertical"
+            android:paddingBottom="46dp">
+
+            <!-- Header -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layoutCheckInResultHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="24dp"
+                android:paddingTop="54dp"
+                android:paddingEnd="24dp">
+
+                <ImageButton
+                    android:id="@+id/btnBackCheckInResult"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:background="@drawable/bg_checkin_header_button"
+                    android:contentDescription="Quay lại"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_back"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <LinearLayout
+                    android:id="@+id/layoutCheckInResultTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@id/btnBackCheckInResult"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/btnBackCheckInResult"
+                    app:layout_constraintTop_toTopOf="@id/btnBackCheckInResult">
+
+                    <TextView
+                        android:id="@+id/txtCheckInResultLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.08"
+                        android:text="KẾT QUẢ PHÂN TÍCH"
+                        android:textColor="#C0B0BC"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtCheckInResultTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Heami đã thấy bạn rồi..."
+                        android:textColor="#2D3A5E"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Result card -->
+            <LinearLayout
+                android:id="@+id/cardCheckInResultMain"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="28dp"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/bg_checkin_result_card"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingTop="28dp"
+                android:paddingEnd="24dp"
+                android:paddingBottom="24dp">
+
+                <LinearLayout
+                    android:id="@+id/chipAiAnalysis"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_result_analysis_chip"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="12dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="4dp">
+
+                    <ImageView
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:contentDescription="analysis"
+                        android:src="@drawable/ic_result_spark" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="5dp"
+                        android:letterSpacing="0.04"
+                        android:text="AI · HEAMI ANALYSIS"
+                        android:textColor="#F59E87"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutResultMoodInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/imgResultHeamiCloud"
+                        android:layout_width="92dp"
+                        android:layout_height="80dp"
+                        android:contentDescription="Heami"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_cloud_ai" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutResultMoodText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/txtResultMoodPrefix"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Có vẻ hôm nay bạn đang"
+                            android:textColor="#A0B0C0"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/layoutResultMoodNameRow"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/txtResultMoodEmoji"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:includeFontPadding="false"
+                                android:text="😤"
+                                android:textSize="30sp" />
+
+                            <TextView
+                                android:id="@+id/txtResultMoodName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="Căng thẳng"
+                                android:textColor="#2D3A5E"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/txtResultMoodDesc"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Hơi nhiều áp lực hôm nay..."
+                            android:textColor="#7A8A9A"
+                            android:textSize="12.5sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/layoutResultPercent"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:id="@+id/progressResultMood"
+                                android:layout_width="0dp"
+                                android:layout_height="6dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_result_progress_track">
+
+                                <View
+                                    android:id="@+id/viewResultMoodProgress"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:background="@drawable/bg_result_progress_fill" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:id="@+id/txtResultMoodPercent"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="87%"
+                                android:textColor="#F59E87"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/txtResultHeamiMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:background="@drawable/bg_result_heami_message"
+                    android:lineSpacingExtra="4dp"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:text="Heami thấy bạn đang mang nhiều áp lực hôm nay. Heami hãy để cùng bạn thở nhẹ một chút nhé"
+                    android:textColor="#5A6A8A"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Cause card -->
+            <LinearLayout
+                android:id="@+id/cardCheckInCauses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/bg_checkin_result_card"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="22dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="22dp">
+
+                <TextView
+                    android:id="@+id/txtCauseLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.08"
+                    android:text="NGUYÊN NHÂN"
+                    android:textColor="#C0B0BC"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtCauseTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Điều gì đang tác động đến bạn?"
+                    android:textColor="#2D3A5E"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.flexbox.FlexboxLayout
+                    android:id="@+id/layoutCauseChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    app:flexWrap="wrap"
+                    app:justifyContent="flex_start">
+
+                    <TextView
+                        android:id="@+id/chipCauseWork"
+                        style="@style/CheckInCauseChip"
+                        android:text="💼  Công việc" />
+
+                    <TextView
+                        android:id="@+id/chipCauseStudy"
+                        style="@style/CheckInCauseChip"
+                        android:text="📚  Học tập" />
+
+                    <TextView
+                        android:id="@+id/chipCauseFamily"
+                        style="@style/CheckInCauseChip"
+                        android:text="🏠  Gia đình" />
+
+                    <TextView
+                        android:id="@+id/chipCauseLove"
+                        style="@style/CheckInCauseChip"
+                        android:text="💗  Tình cảm" />
+
+                    <TextView
+                        android:id="@+id/chipCauseHealth"
+                        style="@style/CheckInCauseChip"
+                        android:text="💪  Sức khỏe" />
+
+                    <TextView
+                        android:id="@+id/chipCauseFinance"
+                        style="@style/CheckInCauseChip"
+                        android:text="💰  Tài chính" />
+
+                    <TextView
+                        android:id="@+id/chipCauseWeather"
+                        style="@style/CheckInCauseChip"
+                        android:text="☁️  Thời tiết" />
+
+                    <TextView
+                        android:id="@+id/chipCauseOther"
+                        style="@style/CheckInCauseChip"
+                        android:text="✨  Khác" />
+                </com.google.android.flexbox.FlexboxLayout>
+            </LinearLayout>
+
+            <!-- Note card -->
+            <LinearLayout
+                android:id="@+id/cardCheckInNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/bg_checkin_result_card"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="22dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="22dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:contentDescription="note"
+                        android:src="@drawable/ic_result_note" />
+
+                    <TextView
+                        android:id="@+id/txtNoteLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:letterSpacing="0.08"
+                        android:text="GHI CHÚ CỦA BẠN"
+                        android:textColor="#C0B0BC"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/txtNoteTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="7dp"
+                    android:text="Muốn kể thêm cho Heami nghe không?"
+                    android:textColor="#2D3A5E"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/edtResultNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="102dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_result_note_input"
+                    android:gravity="top|start"
+                    android:hint="Hôm nay tôi cảm thấy... (Tùy chọn)"
+                    android:inputType="textMultiLine"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:textColor="#2D3A5E"
+                    android:textColorHint="#802D395D"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:id="@+id/layoutResultQuickEmoji"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Thêm:"
+                        android:textColor="#B0BACA"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        style="@style/CheckInQuickEmoji"
+                        android:text="🌸" />
+
+                    <TextView
+                        style="@style/CheckInQuickEmoji"
+                        android:text="🌿" />
+
+                    <TextView
+                        style="@style/CheckInQuickEmoji"
+                        android:text="🌙" />
+
+                    <TextView
+                        style="@style/CheckInQuickEmoji"
+                        android:text="☕" />
+
+                    <TextView
+                        style="@style/CheckInQuickEmoji"
+                        android:text="🌧️" />
+
+                    <TextView
+                        style="@style/CheckInQuickEmoji"
+                        android:text="☀️" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Therapy suggestions -->
+            <LinearLayout
+                android:id="@+id/layoutTherapySection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp">
+
+                <TextView
+                    android:id="@+id/txtTherapyLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.08"
+                    android:text="GỢI Ý TRỊ LIỆU"
+                    android:textColor="#C0B0BC"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtTherapyTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Heami dành riêng cho bạn"
+                    android:textColor="#2D3A5E"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/layoutTherapyCards"
+                    android:layout_width="match_parent"
+                    android:layout_height="132dp"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
+
+                    <LinearLayout
+                        android:id="@+id/cardTherapyMusic"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="9dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_result_therapy_music"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:paddingTop="22dp"
+                        android:paddingBottom="16dp">
+
+                        <FrameLayout
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:background="@drawable/bg_result_therapy_icon_box">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="music"
+                                android:src="@drawable/ic_heal_music" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Nghe nhạc"
+                            android:textColor="#2D3A5E"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center"
+                            android:lineSpacingExtra="1dp"
+                            android:text="5 phút · Nhạc thư\ngiãn"
+                            android:textColor="#E86FA0"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/cardTherapyBreath"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="9dp"
+                        android:layout_marginEnd="9dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_result_therapy_breath"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:paddingTop="22dp"
+                        android:paddingBottom="16dp">
+
+                        <FrameLayout
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:background="@drawable/bg_result_therapy_icon_box">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="breath"
+                                android:src="@drawable/ic_heal_breath" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Hít thở"
+                            android:textColor="#2D3A5E"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center"
+                            android:text="3 phút · 4-7-8"
+                            android:textColor="#4BBDAD"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/cardTherapyJournal"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_result_therapy_journal"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:paddingTop="22dp"
+                        android:paddingBottom="16dp">
+
+                        <FrameLayout
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:background="@drawable/bg_result_therapy_icon_box">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="journal"
+                                android:src="@drawable/ic_heal_diary" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Nhật ký"
+                            android:textColor="#2D3A5E"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center"
+                            android:text="Viết điều bạn cảm"
+                            android:textColor="#D4900A"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Save button -->
+            <LinearLayout
+                android:id="@+id/btnSaveCheckInResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/bg_result_save_button"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingTop="18dp"
+                android:paddingBottom="18dp">
+
+                <ImageView
+                    android:layout_width="19dp"
+                    android:layout_height="19dp"
+                    android:contentDescription="save"
+                    android:src="@drawable/ic_result_save" />
+
+                <TextView
+                    android:id="@+id/txtSaveCheckInResult"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="Lưu &amp; Nhận gợi ý trị liệu"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/txtCheckInPrivacy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="Dữ liệu cảm xúc của bạn được bảo mật tuyệt đối"
+                android:textColor="#B0BACA"
+                android:textSize="11.5sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

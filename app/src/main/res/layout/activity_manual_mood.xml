@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/manualMoodRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_checkin_ai_screen"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- Background glow -->
+    <View
+        android:id="@+id/glowManualMoodTopLeft"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_marginStart="-46dp"
+        android:layout_marginTop="-62dp"
+        android:alpha="0.68"
+        android:background="@drawable/bg_checkin_glow_pink"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/glowManualMoodBottomRight"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_marginEnd="-56dp"
+        android:layout_marginBottom="40dp"
+        android:alpha="0.58"
+        android:background="@drawable/bg_checkin_glow_mint"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ScrollView
+        android:id="@+id/scrollManualMood"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/layoutManualMoodContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="780dp"
+            android:orientation="vertical"
+            android:paddingBottom="58dp">
+
+            <!-- Header -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layoutManualMoodHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="24dp"
+                android:paddingTop="54dp"
+                android:paddingEnd="24dp">
+
+                <ImageButton
+                    android:id="@+id/btnBackManualMood"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:background="@drawable/bg_checkin_header_button"
+                    android:contentDescription="Quay lại"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_back"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <LinearLayout
+                    android:id="@+id/layoutManualMoodTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@id/btnBackManualMood"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/btnBackManualMood"
+                    app:layout_constraintTop_toTopOf="@id/btnBackManualMood">
+
+                    <TextView
+                        android:id="@+id/txtManualMoodLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.08"
+                        android:text="CHỌN THỦ CÔNG"
+                        android:textAllCaps="true"
+                        android:textColor="#C0B0BC"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtManualMoodTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Bạn đang cảm thấy gì?"
+                        android:textColor="#2D3A5E"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Cloud mascot -->
+            <FrameLayout
+                android:id="@+id/layoutManualMoodCloudWrap"
+                android:layout_width="match_parent"
+                android:layout_height="112dp"
+                android:layout_marginTop="18dp">
+
+                <ImageView
+                    android:id="@+id/imgManualMoodCloud"
+                    android:layout_width="110dp"
+                    android:layout_height="94dp"
+                    android:layout_gravity="center"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Heami cloud"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_cloud_ai" />
+            </FrameLayout>
+
+            <!-- Mood grid -->
+            <LinearLayout
+                android:id="@+id/layoutManualMoodGrid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp">
+
+                <!-- Row 1 -->
+                <LinearLayout
+                    android:id="@+id/rowManualMood1"
+                    android:layout_width="match_parent"
+                    android:layout_height="154dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/cardMoodStress"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_manual_mood_stress"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingStart="14dp"
+                        android:paddingTop="18dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="22dp">
+
+                        <TextView
+                            android:id="@+id/txtMoodStressEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:includeFontPadding="false"
+                            android:text="😤"
+                            android:textSize="36sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodStressTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Căng thẳng"
+                            android:textColor="#2D3A5E"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtMoodStressDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:singleLine="true"
+                            android:text="Hơi nhiều áp lực hôm nay..."
+                            android:textColor="#8A9AAA"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/cardMoodFear"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_manual_mood_fear"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingStart="14dp"
+                        android:paddingTop="18dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="18dp">
+
+                        <TextView
+                            android:id="@+id/txtMoodFearEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:includeFontPadding="false"
+                            android:text="😭"
+                            android:textSize="36sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodFearTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Sợ hãi"
+                            android:textColor="#2D3A5E"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtMoodFearDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:gravity="center"
+                            android:lineSpacingExtra="1dp"
+                            android:text="Năng lượng yếu, dễ&#10;tổn thương"
+                            android:textColor="#8A9AAA"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Row 2 -->
+                <LinearLayout
+                    android:id="@+id/rowManualMood2"
+                    android:layout_width="match_parent"
+                    android:layout_height="154dp"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/cardMoodHappy"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_manual_mood_happy"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingStart="14dp"
+                        android:paddingTop="18dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="22dp">
+
+                        <TextView
+                            android:id="@+id/txtMoodHappyEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:includeFontPadding="false"
+                            android:text="😊"
+                            android:textSize="36sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodHappyTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Vui vẻ"
+                            android:textColor="#2D3A5E"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtMoodHappyDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:singleLine="true"
+                            android:text="Heami thấy bạn đang rất ổn!"
+                            android:textColor="#8A9AAA"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/cardMoodSad"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_manual_mood_sad"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingStart="14dp"
+                        android:paddingTop="18dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="18dp">
+
+                        <TextView
+                            android:id="@+id/txtMoodSadEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:includeFontPadding="false"
+                            android:text="🥲"
+                            android:textSize="36sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodSadTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Buồn"
+                            android:textColor="#2D3A5E"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtMoodSadDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:gravity="center"
+                            android:lineSpacingExtra="1dp"
+                            android:text="Hôm nay có gì nặng lòng&#10;không?"
+                            android:textColor="#8A9AAA"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Row 3 -->
+                <LinearLayout
+                    android:id="@+id/rowManualMood3"
+                    android:layout_width="match_parent"
+                    android:layout_height="139dp"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/cardMoodDisgust"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_manual_mood_disgust"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingStart="14dp"
+                        android:paddingTop="18dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="18dp">
+
+                        <TextView
+                            android:id="@+id/txtMoodDisgustEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:includeFontPadding="false"
+                            android:text="🤢"
+                            android:textSize="36sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodDisgustTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Ghê tởm"
+                            android:textColor="#2D3A5E"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtMoodDisgustDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:singleLine="true"
+                            android:text="Cơ thể đang cần nghỉ ngơi..."
+                            android:textColor="#8A9AAA"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/cardMoodAngry"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_manual_mood_angry"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingStart="14dp"
+                        android:paddingTop="18dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="18dp">
+
+                        <TextView
+                            android:id="@+id/txtMoodAngryEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:includeFontPadding="false"
+                            android:text="🤬"
+                            android:textSize="36sp" />
+
+                        <TextView
+                            android:id="@+id/txtMoodAngryTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Tức giận"
+                            android:textColor="#2D3A5E"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtMoodAngryDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:singleLine="true"
+                            android:text="Có điều gì đó đang bất ổn..."
+                            android:textColor="#8A9AAA"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
