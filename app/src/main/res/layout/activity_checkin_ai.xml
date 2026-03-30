@@ -227,49 +227,68 @@
                 android:clipChildren="false"
                 android:clipToPadding="false">
 
-                <FrameLayout
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardCameraPreview"
                     android:layout_width="260dp"
                     android:layout_height="300dp"
                     android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_checkin_camera_card"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:elevation="2dp">
+                    android:elevation="2dp"
+                    app:cardCornerRadius="34dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:strokeWidth="0dp">
 
-                    <View
-                        android:id="@+id/viewCameraPreviewPattern"
+                    <FrameLayout
+                        android:id="@+id/layoutCameraInner"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@drawable/bg_checkin_camera_pattern"
-                        android:alpha="0.45" />
+                        android:background="@drawable/bg_checkin_camera_card"
+                        android:clipChildren="true"
+                        android:clipToPadding="true">
 
-                    <ImageView
-                        android:id="@+id/imgCheckInCameraPreview"
-                        android:layout_width="200dp"
-                        android:layout_height="230dp"
-                        android:layout_gravity="center"
-                        android:adjustViewBounds="true"
-                        android:contentDescription="camera preview"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/img_checkin_ai_camera" />
+                        <androidx.camera.view.PreviewView
+                            android:id="@+id/previewCheckInCamera"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            app:scaleType="fillCenter" />
 
-                    <View
-                        android:id="@+id/viewCheckInScanGlow"
-                        android:layout_width="210dp"
-                        android:layout_height="30dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/bg_checkin_scan_glow"
-                        android:alpha="0.65" />
+                        <View
+                            android:id="@+id/viewCameraPreviewPattern"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:alpha="0.18"
+                            android:background="@drawable/bg_checkin_camera_pattern" />
 
-                    <View
-                        android:id="@+id/viewCheckInScanLine"
-                        android:layout_width="218dp"
-                        android:layout_height="2dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/bg_checkin_scan_line"
-                        android:alpha="0.85" />
-                </FrameLayout>
+                        <ImageView
+                            android:id="@+id/imgCheckInCameraPreview"
+                            android:layout_width="280dp"
+                            android:layout_height="300dp"
+                            android:layout_gravity="center"
+                            android:adjustViewBounds="true"
+                            android:alpha="0.3"
+                            android:contentDescription="camera preview"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/img_checkin_ai_camera" />
+
+                        <View
+                            android:id="@+id/viewCheckInScanGlow"
+                            android:layout_width="210dp"
+                            android:layout_height="30dp"
+                            android:layout_gravity="center"
+                            android:alpha="0.65"
+                            android:background="@drawable/bg_checkin_scan_glow" />
+
+                        <View
+                            android:id="@+id/viewCheckInScanLine"
+                            android:layout_width="218dp"
+                            android:layout_height="2dp"
+                            android:layout_gravity="center"
+                            android:alpha="0.85"
+                            android:background="@drawable/bg_checkin_scan_line" />
+
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
             </FrameLayout>
 
             <!-- Instruction -->
@@ -277,18 +296,19 @@
                 android:id="@+id/txtCheckInInstruction"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="20dp"
                 android:gravity="center"
                 android:lineSpacingExtra="3dp"
                 android:paddingStart="40dp"
                 android:paddingEnd="40dp"
-                android:text="Giữ yên khuôn mặt trong khung hình và nhìn thẳng&#10;vào camera nhé"
-                android:textColor="#A0B0C0"
-                android:textSize="12.5sp" />
+                android:text="Giữ yên khuôn mặt trong khung hình và&#10; nhìn thẳng vào camera nhé"
+                android:textColor="#F291A3"
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
             <Space
                 android:layout_width="match_parent"
-                android:layout_height="54dp" />
+                android:layout_height="40dp" />
 
             <!-- Manual mood button -->
             <LinearLayout
@@ -320,7 +340,7 @@
                     android:layout_marginStart="8dp"
                     android:text="Chọn cảm xúc thủ công"
                     android:textColor="#E86FA0"
-                    android:textSize="15sp"
+                    android:textSize="15.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -332,7 +352,7 @@
                 android:gravity="center"
                 android:text="Camera không hoạt động? Bạn có thể tự chọn cảm xúc"
                 android:textColor="#C0B8CC"
-                android:textSize="11.5sp" />
+                android:textSize="13sp" />
 
         </LinearLayout>
     </ScrollView>

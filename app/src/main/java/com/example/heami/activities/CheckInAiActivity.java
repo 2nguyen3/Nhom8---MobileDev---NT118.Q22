@@ -1,5 +1,36 @@
 package com.example.heami.activities;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.camera.core.CameraInfo;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.media.Image;
+import android.util.Size;
+import androidx.annotation.OptIn;
+import androidx.camera.core.ExperimentalGetImage;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import android.graphics.Rect;
+
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.face.Face;
+import com.google.mlkit.vision.face.FaceDetection;
+import com.google.mlkit.vision.face.FaceDetector;
+import com.google.mlkit.vision.face.FaceDetectorOptions;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.List;
+
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -42,6 +73,21 @@ public class CheckInAiActivity extends AppCompatActivity {
     private TextView txtCheckInInstruction;
     private TextView txtManualMoodHint;
 
+    private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
+
+    private PreviewView previewCheckInCamera;
+    private ExecutorService cameraExecutor;
+
+    private FaceDetector faceDetector;
+
+    private boolean isProcessingFrame = false;
+    private long lastAnalyzeTime = 0L;
+    private int stableFaceCount = 0;
+
+    private Rect lastFaceBounds = null;
+    private float lastHeadY = 0f;
+    private float lastHeadZ = 0f;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,8 +96,11 @@ public class CheckInAiActivity extends AppCompatActivity {
         bindViews();
         setupActions();
         startCheckInAnimations();
-    }
 
+        cameraExecutor = Executors.newSingleThreadExecutor();
+        setupFaceDetector();
+        checkCameraPermissionAndStart();
+    }
     private void bindViews() {
         btnBackCheckInAi = findViewById(R.id.btnBackCheckInAi);
 
@@ -77,6 +126,8 @@ public class CheckInAiActivity extends AppCompatActivity {
         txtCheckInAiTitle = findViewById(R.id.txtCheckInAiTitle);
         txtCheckInInstruction = findViewById(R.id.txtCheckInInstruction);
         txtManualMoodHint = findViewById(R.id.txtManualMoodHint);
+
+        previewCheckInCamera = findViewById(R.id.previewCheckInCamera);
     }
 
     private void setupActions() {
@@ -92,20 +143,19 @@ public class CheckInAiActivity extends AppCompatActivity {
         }
 
         if (cardCameraPreview != null) {
-            cardCameraPreview.setOnClickListener(v -> openResultFromAiScan());
-        }
-
-        if (imgCheckInCameraPreview != null) {
-            imgCheckInCameraPreview.setOnClickListener(v -> openResultFromAiScan());
+            cardCameraPreview.setOnClickListener(v -> {
+                stableFaceCount = 0;
+                Toast.makeText(
+                        CheckInAiActivity.this,
+                        "Heami đang quét lại khuôn mặt của bạn...",
+                        Toast.LENGTH_SHORT
+                ).show();
+            });
         }
     }
 
     private void startCheckInAnimations() {
         startFloatY(imgCheckInHeami, 5f, 4200, 0);
-        startFloatY(cardCheckInBubble, 3f, 4600, 250);
-
-        startCameraBreath(cardCameraPreview);
-        startFloatY(imgCheckInCameraPreview, 3f, 4200, 300);
 
         startScan(viewCheckInScanLine, viewCheckInScanGlow);
 
@@ -356,5 +406,254 @@ public class CheckInAiActivity extends AppCompatActivity {
         intent.putExtra("source", "ai_scan");
 
         startActivity(intent);
+    }
+
+    private void setupFaceDetector() {
+        FaceDetectorOptions options =
+                new FaceDetectorOptions.Builder()
+                        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+                        .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
+                        .setContourMode(FaceDetectorOptions.CONTOUR_MODE_NONE)
+                        .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+                        .setMinFaceSize(0.15f)
+                        .enableTracking()
+                        .build();
+
+        faceDetector = FaceDetection.getClient(options);
+    }
+
+    private void checkCameraPermissionAndStart() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            startCamera();
+        } else {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.CAMERA},
+                    CAMERA_PERMISSION_REQUEST_CODE
+            );
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            @NonNull String[] permissions,
+            @NonNull int[] grantResults
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startCamera();
+            } else {
+                Toast.makeText(
+                        this,
+                        "Bạn cần cấp quyền camera để Heami nhận diện cảm xúc nha",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        }
+    }
+
+    private void startCamera() {
+        if (previewCheckInCamera == null) {
+            Toast.makeText(this, "Không tìm thấy khung camera preview", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
+                ProcessCameraProvider.getInstance(this);
+
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+
+                Preview preview = new Preview.Builder().build();
+                preview.setSurfaceProvider(previewCheckInCamera.getSurfaceProvider());
+
+                ImageAnalysis imageAnalysis =
+                        new ImageAnalysis.Builder()
+                                .setTargetResolution(new Size(640, 480))
+                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                .build();
+
+                imageAnalysis.setAnalyzer(cameraExecutor, this::analyzeImage);
+
+                CameraSelector anyAvailableCamera =
+                        new CameraSelector.Builder()
+                                .addCameraFilter(cameraInfos -> {
+                                    List<CameraInfo> result = new ArrayList<>();
+
+                                    if (!cameraInfos.isEmpty()) {
+                                        result.add(cameraInfos.get(0));
+                                    }
+
+                                    return result;
+                                })
+                                .build();
+
+                cameraProvider.unbindAll();
+
+                cameraProvider.bindToLifecycle(
+                        this,
+                        anyAvailableCamera,
+                        preview,
+                        imageAnalysis
+                );
+
+            } catch (Exception e) {
+                Toast.makeText(
+                        this,
+                        "Không thể mở camera: " + e.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    @OptIn(markerClass = ExperimentalGetImage.class)
+    private void analyzeImage(@NonNull ImageProxy imageProxy) {
+        long now = System.currentTimeMillis();
+
+        // Giảm tải, chỉ phân tích khoảng mỗi 650ms/lần
+        if (now - lastAnalyzeTime < 650 || isProcessingFrame) {
+            imageProxy.close();
+            return;
+        }
+
+        lastAnalyzeTime = now;
+        isProcessingFrame = true;
+
+        Image mediaImage = imageProxy.getImage();
+
+        if (mediaImage == null) {
+            isProcessingFrame = false;
+            imageProxy.close();
+            return;
+        }
+
+        InputImage image = InputImage.fromMediaImage(
+                mediaImage,
+                imageProxy.getImageInfo().getRotationDegrees()
+        );
+
+        faceDetector.process(image)
+                .addOnSuccessListener(this::handleDetectedFaces)
+                .addOnFailureListener(e -> runOnUiThread(() -> {
+                    stableFaceCount = 0;
+
+                    if (txtCheckInInstruction != null) {
+                        txtCheckInInstruction.setText(
+                                "Heami chưa quét được khuôn mặt, thử giữ máy ổn định hơn nha"
+                        );
+                    }
+                }))
+                .addOnCompleteListener(task -> {
+                    isProcessingFrame = false;
+                    imageProxy.close();
+                });
+    }
+
+    private void handleDetectedFaces(List<Face> faces) {
+        if (faces == null || faces.isEmpty()) {
+            stableFaceCount = 0;
+            lastFaceBounds = null;
+
+            runOnUiThread(() -> {
+                if (txtCheckInInstruction != null) {
+                    txtCheckInInstruction.setText(
+                            "Đưa khuôn mặt vào khung hình và nhìn thẳng vào camera nhé"
+                    );
+                }
+            });
+
+            return;
+        }
+
+        Face face = faces.get(0);
+
+        Rect currentBounds = face.getBoundingBox();
+
+        float headY = Math.abs(face.getHeadEulerAngleY());
+        float headZ = Math.abs(face.getHeadEulerAngleZ());
+
+        boolean isLookingAway = headY > 18f || headZ > 15f;
+        boolean isMoving = isFaceMoving(currentBounds, headY, headZ);
+
+        String message;
+
+        if (isLookingAway) {
+            stableFaceCount = 0;
+            message = "Heami thấy mặt bạn rồi, thử nhìn thẳng vào camera hơn một chút nha";
+        } else if (isMoving) {
+            stableFaceCount = 0;
+            message = "Bạn đang di chuyển hơi nhiều, giữ yên khuôn mặt một chút nha";
+        } else {
+            stableFaceCount++;
+
+            if (stableFaceCount < 3) {
+                message = "Heami đã thấy bạn rồi, giữ yên thêm một chút nhé...";
+            } else {
+                message = "Khuôn mặt đã ổn định. Heami sẵn sàng phân tích cảm xúc rồi";
+            }
+        }
+
+        lastFaceBounds = new Rect(currentBounds);
+        lastHeadY = headY;
+        lastHeadZ = headZ;
+
+        runOnUiThread(() -> {
+            if (txtCheckInInstruction != null) {
+                txtCheckInInstruction.setText(message);
+            }
+        });
+    }
+
+    private boolean isFaceMoving(Rect currentBounds, float currentHeadY, float currentHeadZ) {
+        if (lastFaceBounds == null || currentBounds == null) {
+            return false;
+        }
+
+        int currentCenterX = currentBounds.centerX();
+        int currentCenterY = currentBounds.centerY();
+
+        int lastCenterX = lastFaceBounds.centerX();
+        int lastCenterY = lastFaceBounds.centerY();
+
+        int deltaX = Math.abs(currentCenterX - lastCenterX);
+        int deltaY = Math.abs(currentCenterY - lastCenterY);
+
+        int currentWidth = currentBounds.width();
+        int currentHeight = currentBounds.height();
+
+        int lastWidth = lastFaceBounds.width();
+        int lastHeight = lastFaceBounds.height();
+
+        int deltaWidth = Math.abs(currentWidth - lastWidth);
+        int deltaHeight = Math.abs(currentHeight - lastHeight);
+
+        float deltaHeadY = Math.abs(currentHeadY - lastHeadY);
+        float deltaHeadZ = Math.abs(currentHeadZ - lastHeadZ);
+
+        return deltaX > 18
+                || deltaY > 18
+                || deltaWidth > 22
+                || deltaHeight > 22
+                || deltaHeadY > 8f
+                || deltaHeadZ > 8f;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (faceDetector != null) {
+            faceDetector.close();
+        }
+
+        if (cameraExecutor != null) {
+            cameraExecutor.shutdown();
+        }
     }
 }
