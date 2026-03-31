@@ -16,6 +16,17 @@ import android.widget.Toast;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.example.heami.models.MoodHistoryModel;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
@@ -54,6 +65,15 @@ public class CheckInResultActivity extends AppCompatActivity {
     private String moodDesc;
     private int moodPercent;
 
+    private String source;
+
+    private TextView txtTherapyMusicTitle;
+    private TextView txtTherapyMusicDesc;
+    private TextView txtTherapyBreathTitle;
+    private TextView txtTherapyBreathDesc;
+    private TextView txtTherapyJournalTitle;
+    private TextView txtTherapyJournalDesc;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +81,7 @@ public class CheckInResultActivity extends AppCompatActivity {
 
         bindViews();
         bindResultData();
+        bindTherapySuggestions();
         setupActions();
         setupCauseChipActions();
         updateProgressBar();
@@ -91,6 +112,13 @@ public class CheckInResultActivity extends AppCompatActivity {
         chipCauseFinance = findViewById(R.id.chipCauseFinance);
         chipCauseWeather = findViewById(R.id.chipCauseWeather);
         chipCauseOther = findViewById(R.id.chipCauseOther);
+
+        txtTherapyMusicTitle = findViewById(R.id.txtTherapyMusicTitle);
+        txtTherapyMusicDesc = findViewById(R.id.txtTherapyMusicDesc);
+        txtTherapyBreathTitle = findViewById(R.id.txtTherapyBreathTitle);
+        txtTherapyBreathDesc = findViewById(R.id.txtTherapyBreathDesc);
+        txtTherapyJournalTitle = findViewById(R.id.txtTherapyJournalTitle);
+        txtTherapyJournalDesc = findViewById(R.id.txtTherapyJournalDesc);
     }
 
     private void bindResultData() {
@@ -98,6 +126,12 @@ public class CheckInResultActivity extends AppCompatActivity {
         moodEmoji = getIntent().getStringExtra("mood_emoji");
         moodDesc = getIntent().getStringExtra("mood_desc");
         moodPercent = getIntent().getIntExtra("mood_percent", 87);
+
+        source = getIntent().getStringExtra("source");
+
+        if (source == null || source.trim().isEmpty()) {
+            source = "unknown";
+        }
 
         if (moodName == null || moodName.trim().isEmpty()) {
             moodName = "Căng thẳng";
@@ -146,18 +180,7 @@ public class CheckInResultActivity extends AppCompatActivity {
         }
 
         if (btnSaveCheckInResult != null) {
-            btnSaveCheckInResult.setOnClickListener(v -> {
-                Toast.makeText(
-                        CheckInResultActivity.this,
-                        "Heami đã lưu check-in hôm nay 💗",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
-            });
+            btnSaveCheckInResult.setOnClickListener(v -> saveCheckInToFirestore());
         }
     }
 
@@ -317,5 +340,207 @@ public class CheckInResultActivity extends AppCompatActivity {
                         .setDuration(120)
                         .start())
                 .start();
+    }
+
+    private ArrayList<String> getSelectedCauses() {
+        ArrayList<String> causes = new ArrayList<>();
+
+        for (TextView chip : selectedCauseChips) {
+            if (chip != null) {
+                String text = chip.getText().toString()
+                        .replace("  ✓", "")
+                        .trim();
+
+                causes.add(text);
+            }
+        }
+
+        return causes;
+    }
+
+    private void saveCheckInToFirestore() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user == null) {
+            Toast.makeText(
+                    CheckInResultActivity.this,
+                    "Bạn cần đăng nhập để lưu check-in nha",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        if (btnSaveCheckInResult != null) {
+            btnSaveCheckInResult.setEnabled(false);
+            btnSaveCheckInResult.setAlpha(0.65f);
+        }
+
+        String note = "";
+        if (edtResultNote != null) {
+            note = edtResultNote.getText().toString().trim();
+        }
+
+        ArrayList<String> causes = getSelectedCauses();
+        ArrayList<String> recommendations = getTherapyRecommendations();
+
+        String recordId = new SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                .format(new Date());
+
+        Timestamp now = Timestamp.now();
+
+        MoodHistoryModel moodHistory = new MoodHistoryModel(
+                recordId,
+                user.getUid(),
+                moodName,
+                moodEmoji,
+                moodDesc,
+                moodPercent,
+                moodPercent,
+                source,
+                source != null && source.contains("ai"),
+                causes,
+                note,
+                now,
+                now
+        );
+
+        moodHistory.setRecommendations(recommendations);
+
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(user.getUid())
+                .collection("mood_history")
+                .document(recordId)
+                .set(moodHistory)
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(
+                            CheckInResultActivity.this,
+                            "Heami đã lưu check-in hôm nay 💗",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    if (btnSaveCheckInResult != null) {
+                        btnSaveCheckInResult.setEnabled(true);
+                        btnSaveCheckInResult.setAlpha(1f);
+                    }
+
+                    Toast.makeText(
+                            CheckInResultActivity.this,
+                            "Lưu check-in thất bại: " + e.getMessage(),
+                            Toast.LENGTH_LONG
+                    ).show();
+                });
+    }
+
+    private void bindTherapySuggestions() {
+        String musicTitle = "Nghe nhạc";
+        String musicDesc = "5 phút · Nhạc thư\ngiãn";
+
+        String breathTitle = "Hít thở";
+        String breathDesc = "3 phút · 4-7-8";
+
+        String journalTitle = "Nhật ký";
+        String journalDesc = "Viết điều bạn cảm";
+
+        switch (moodName) {
+            case "Vui vẻ":
+                musicTitle = "Nhạc tích cực";
+                musicDesc = "5 phút · Giữ năng lượng";
+
+                breathTitle = "Thở biết ơn";
+                breathDesc = "2 phút · Chậm rãi";
+
+                journalTitle = "Nhật ký vui";
+                journalDesc = "Lưu khoảnh khắc đẹp";
+                break;
+
+            case "Buồn":
+                musicTitle = "Nhạc chữa lành";
+                musicDesc = "7 phút · Dịu tâm trí";
+
+                breathTitle = "Thở an ủi";
+                breathDesc = "3 phút · Nhẹ nhàng";
+
+                journalTitle = "Viết ra nỗi buồn";
+                journalDesc = "Không cần phải ổn ngay";
+                break;
+
+            case "Căng thẳng":
+                musicTitle = "Nhạc thư giãn";
+                musicDesc = "5 phút · Giảm áp lực";
+
+                breathTitle = "Hít thở 4-7-8";
+                breathDesc = "3 phút · Thả lỏng";
+
+                journalTitle = "Gỡ rối suy nghĩ";
+                journalDesc = "Viết điều đang lo";
+                break;
+
+            case "Tức giận":
+                musicTitle = "Âm thanh xả giận";
+                musicDesc = "5 phút · Hạ nhiệt";
+
+                breathTitle = "Thở chậm";
+                breathDesc = "3 phút · Bình tĩnh lại";
+
+                journalTitle = "Viết không gửi";
+                journalDesc = "Xả cảm xúc an toàn";
+                break;
+
+            case "Sợ hãi":
+                musicTitle = "Âm thanh an toàn";
+                musicDesc = "6 phút · Grounding";
+
+                breathTitle = "Thở neo tâm";
+                breathDesc = "3 phút · 5-4-3-2-1";
+
+                journalTitle = "Điều mình kiểm soát";
+                journalDesc = "Viết 3 điều nhỏ";
+                break;
+
+            case "Ghê tởm":
+                musicTitle = "Âm thanh nghỉ ngơi";
+                musicDesc = "5 phút · Làm dịu cơ thể";
+
+                breathTitle = "Thở làm sạch";
+                breathDesc = "3 phút · Buông nhẹ";
+
+                journalTitle = "Chăm sóc bản thân";
+                journalDesc = "Cơ thể cần gì?";
+                break;
+        }
+
+        if (txtTherapyMusicTitle != null) txtTherapyMusicTitle.setText(musicTitle);
+        if (txtTherapyMusicDesc != null) txtTherapyMusicDesc.setText(musicDesc);
+
+        if (txtTherapyBreathTitle != null) txtTherapyBreathTitle.setText(breathTitle);
+        if (txtTherapyBreathDesc != null) txtTherapyBreathDesc.setText(breathDesc);
+
+        if (txtTherapyJournalTitle != null) txtTherapyJournalTitle.setText(journalTitle);
+        if (txtTherapyJournalDesc != null) txtTherapyJournalDesc.setText(journalDesc);
+    }
+
+    private ArrayList<String> getTherapyRecommendations() {
+        ArrayList<String> recommendations = new ArrayList<>();
+
+        if (txtTherapyMusicTitle != null) {
+            recommendations.add(txtTherapyMusicTitle.getText().toString());
+        }
+
+        if (txtTherapyBreathTitle != null) {
+            recommendations.add(txtTherapyBreathTitle.getText().toString());
+        }
+
+        if (txtTherapyJournalTitle != null) {
+            recommendations.add(txtTherapyJournalTitle.getText().toString());
+        }
+
+        return recommendations;
     }
 }

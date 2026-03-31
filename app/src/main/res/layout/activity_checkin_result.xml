@@ -533,6 +533,7 @@
                         </FrameLayout>
 
                         <TextView
+                            android:id="@+id/txtTherapyMusicTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
@@ -542,6 +543,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/txtTherapyMusicDesc"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -580,6 +582,7 @@
                         </FrameLayout>
 
                         <TextView
+                            android:id="@+id/txtTherapyBreathTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
@@ -589,6 +592,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/txtTherapyBreathDesc"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -625,6 +629,7 @@
                         </FrameLayout>
 
                         <TextView
+                            android:id="@+id/txtTherapyJournalTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
@@ -634,6 +639,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/txtTherapyJournalDesc"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"

@@ -88,6 +88,8 @@ public class CheckInAiActivity extends AppCompatActivity {
     private float lastHeadY = 0f;
     private float lastHeadZ = 0f;
 
+    private boolean isNavigatingResult = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -396,17 +398,17 @@ public class CheckInAiActivity extends AppCompatActivity {
         set.start();
     }
 
-    private void openResultFromAiScan() {
-        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
-
-        intent.putExtra("mood_name", "Căng thẳng");
-        intent.putExtra("mood_emoji", "😤");
-        intent.putExtra("mood_desc", "Hơi nhiều áp lực hôm nay...");
-        intent.putExtra("mood_percent", 87);
-        intent.putExtra("source", "ai_scan");
-
-        startActivity(intent);
-    }
+//    private void openResultFromAiScan() {
+//        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
+//
+//        intent.putExtra("mood_name", "Căng thẳng");
+//        intent.putExtra("mood_emoji", "😤");
+//        intent.putExtra("mood_desc", "Hơi nhiều áp lực hôm nay...");
+//        intent.putExtra("mood_percent", 87);
+//        intent.putExtra("source", "ai_scan");
+//
+//        startActivity(intent);
+//    }
 
     private void setupFaceDetector() {
         FaceDetectorOptions options =
@@ -595,7 +597,21 @@ public class CheckInAiActivity extends AppCompatActivity {
             if (stableFaceCount < 3) {
                 message = "Heami đã thấy bạn rồi, giữ yên thêm một chút nhé...";
             } else {
-                message = "Khuôn mặt đã ổn định. Heami sẵn sàng phân tích cảm xúc rồi";
+                message = "Khuôn mặt đã ổn định. Heami đang phân tích cảm xúc của bạn...";
+
+                if (!isNavigatingResult) {
+                    isNavigatingResult = true;
+
+                    runOnUiThread(() -> {
+                        if (txtCheckInInstruction != null) {
+                            txtCheckInInstruction.setText(
+                                    "Khuôn mặt đã ổn định. Heami đang phân tích cảm xúc của bạn..."
+                            );
+                        }
+                    });
+
+                    cardCameraPreview.postDelayed(() -> openResultFromFace(face), 900);
+                }
             }
         }
 
@@ -642,6 +658,112 @@ public class CheckInAiActivity extends AppCompatActivity {
                 || deltaHeight > 22
                 || deltaHeadY > 8f
                 || deltaHeadZ > 8f;
+    }
+
+    private void openResultFromFace(Face face) {
+        MoodResult result = estimateMoodFromFace(face);
+
+        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
+        intent.putExtra("mood_name", result.name);
+        intent.putExtra("mood_emoji", result.emoji);
+        intent.putExtra("mood_desc", result.desc);
+        intent.putExtra("mood_percent", result.percent);
+        intent.putExtra("source", "ai_camera_mlkit_demo");
+
+        startActivity(intent);
+    }
+
+    private MoodResult estimateMoodFromFace(Face face) {
+        Float smilingProbability = face.getSmilingProbability();
+        Float leftEyeOpenProbability = face.getLeftEyeOpenProbability();
+        Float rightEyeOpenProbability = face.getRightEyeOpenProbability();
+
+        float smile = smilingProbability != null ? smilingProbability : -1f;
+        float leftEye = leftEyeOpenProbability != null ? leftEyeOpenProbability : -1f;
+        float rightEye = rightEyeOpenProbability != null ? rightEyeOpenProbability : -1f;
+
+        float avgEye = -1f;
+        if (leftEye >= 0f && rightEye >= 0f) {
+            avgEye = (leftEye + rightEye) / 2f;
+        }
+
+        float headY = Math.abs(face.getHeadEulerAngleY());
+        float headZ = Math.abs(face.getHeadEulerAngleZ());
+
+        if (smile >= 0.65f) {
+            return new MoodResult(
+                    "Vui vẻ",
+                    "😊",
+                    "Heami thấy bạn đang rất ổn!",
+                    probabilityToPercent(smile, 78)
+            );
+        }
+
+        if (avgEye >= 0f && avgEye < 0.35f) {
+            return new MoodResult(
+                    "Buồn",
+                    "🥲",
+                    "Hôm nay có gì nặng lòng không?",
+                    probabilityToPercent(1f - avgEye, 70)
+            );
+        }
+
+        if (headY > 12f || headZ > 12f) {
+            return new MoodResult(
+                    "Căng thẳng",
+                    "😤",
+                    "Hơi nhiều áp lực hôm nay...",
+                    82
+            );
+        }
+
+        if (smile >= 0f && smile < 0.25f && avgEye > 0.65f) {
+            return new MoodResult(
+                    "Căng thẳng",
+                    "😤",
+                    "Hơi nhiều áp lực hôm nay...",
+                    76
+            );
+        }
+
+        return new MoodResult(
+                "Căng thẳng",
+                "😤",
+                "Heami cảm nhận hôm nay bạn cần nghỉ nhẹ một chút...",
+                68
+        );
+    }
+
+    private int probabilityToPercent(float value, int base) {
+        int percent = base + Math.round(value * 18f);
+
+        if (percent < 0) percent = 0;
+        if (percent > 99) percent = 99;
+
+        return percent;
+    }
+
+    private static class MoodResult {
+        String name;
+        String emoji;
+        String desc;
+        int percent;
+
+        MoodResult(String name, String emoji, String desc, int percent) {
+            this.name = name;
+            this.emoji = emoji;
+            this.desc = desc;
+            this.percent = percent;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        isNavigatingResult = false;
+        stableFaceCount = 0;
+        lastFaceBounds = null;
     }
 
     @Override
