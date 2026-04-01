@@ -26,6 +26,11 @@ public class TherapyActivity extends AppCompatActivity {
 
     private ImageButton btnOpen1Breath;
 
+    private ImageButton btnOpen3Breath;
+    private ImageButton btnOpen5Breath;
+
+    private ImageButton btnOpenDoctor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,10 +46,15 @@ public class TherapyActivity extends AppCompatActivity {
 
         setup1BreathButton();
 
+        setup3BreathButton();
+
+        setup5BreathButton();
+
+        setupDoctorButton();
+
         startCloudAnimation();
 
-        // Giả sử nhóm đã có class BottomNavManager
-        // BottomNavManager.setup(this, 1);
+        BottomNavManager.setup(this, BottomNavManager.TAB_THERAPY);
     }
 
     private void initViews() {
@@ -61,15 +71,19 @@ public class TherapyActivity extends AppCompatActivity {
 
         imgCloud = findViewById(R.id.imgCloud);
 
-        // Ánh xạ nút mở nhạc
         btnOpenMusic = findViewById(R.id.btnOpenMusic);
 
         btnOpenNatureSound = findViewById(R.id.btnOpenNatureSound);
 
         btnOpen1Breath = findViewById(R.id.btnOpen1Breath);
+
+        btnOpen3Breath = findViewById(R.id.btnOpen3Breath);
+
+        btnOpen5Breath = findViewById(R.id.btnOpen5Breath);
+
+        btnOpenDoctor = findViewById(R.id.btnOpenDoctor);
     }
 
-    // HÀM XỬ LÝ MỞ TRANG NHẠC
     private void setupMusicButton() {
         if (btnOpenMusic != null) {
             btnOpenMusic.setOnClickListener(v -> {
@@ -94,6 +108,39 @@ public class TherapyActivity extends AppCompatActivity {
         if (btnOpen1Breath != null) {
             btnOpen1Breath.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
+                intent.putExtra("TARGET_TIME", 1); // Gửi số 1
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setup3BreathButton() {
+        if (btnOpen3Breath != null) {
+            btnOpen3Breath.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
+                intent.putExtra("TARGET_TIME", 3); // Gửi số 3
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setup5BreathButton() {
+        if (btnOpen5Breath != null) {
+            btnOpen5Breath.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
+                intent.putExtra("TARGET_TIME", 5); // Gửi số 5
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupDoctorButton() {
+        if (btnOpenDoctor != null) {
+            btnOpenDoctor.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, DoctorActivity.class);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });

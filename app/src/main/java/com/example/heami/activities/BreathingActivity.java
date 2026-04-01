@@ -10,6 +10,7 @@ import android.os.CountDownTimer;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -21,6 +22,7 @@ public class BreathingActivity extends AppCompatActivity {
 
     private TextView tvStatus, tvInstruction, tvCycleCount;
     private Button btnAction;
+    private ImageButton btnMinimize;
     private ProgressBar cpbBreath;
     private ImageView imgCloud;
     private View viewPulseGlow;
@@ -39,6 +41,14 @@ public class BreathingActivity extends AppCompatActivity {
         initViews();
         setupTimeSelection();
 
+        if (btnMinimize != null) {
+            btnMinimize.setOnClickListener(v -> finish());
+        }
+
+        int targetTime = getIntent().getIntExtra("TARGET_TIME", 1);
+        handleIncomingIntent(targetTime);
+        // --------------------------------------------------
+
         btnAction.setOnClickListener(v -> {
             if (!isRunning) startBreathingSession();
             else stopBreathingSession();
@@ -49,6 +59,7 @@ public class BreathingActivity extends AppCompatActivity {
         tvStatus = findViewById(R.id.tvStatus);
         tvInstruction = findViewById(R.id.tvInstruction);
         btnAction = findViewById(R.id.btnAction);
+        btnMinimize = findViewById(R.id.btnMinimize);
         cpbBreath = findViewById(R.id.cpbBreath);
         imgCloud = findViewById(R.id.imgCloud);
         viewPulseGlow = findViewById(R.id.viewPulseGlow);
@@ -60,10 +71,21 @@ public class BreathingActivity extends AppCompatActivity {
         layoutDots = findViewById(R.id.layoutDots);
         tvCycleCount = findViewById(R.id.tvCycleCount);
 
-        // Khởi tạo: mặc định chọn nút 1 phút
         resetAllButtons();
-        selectButton(btn1Min);
         layoutCycleInfo.setVisibility(View.INVISIBLE);
+    }
+
+    private void handleIncomingIntent(int time) {
+        if (time == 3) {
+            selectedTime = 3;
+            selectButton(btn3Min);
+        } else if (time == 5) {
+            selectedTime = 5;
+            selectButton(btn5Min);
+        } else {
+            selectedTime = 1;
+            selectButton(btn1Min);
+        }
     }
 
     private void setupTimeSelection() {
@@ -83,8 +105,8 @@ public class BreathingActivity extends AppCompatActivity {
     private void selectButton(LinearLayout selectedBtn) {
         resetAllButtons();
         selectedBtn.setBackgroundResource(R.drawable.bg_circle_glass_active);
-        setButtonTextColor(selectedBtn, "#F48FB1"); // Chữ hồng phấn khi chọn
-        updateButtonScale(selectedBtn); // Phóng to 1.2f
+        setButtonTextColor(selectedBtn, "#F48FB1");
+        updateButtonScale(selectedBtn);
 
         cycleCount = 0;
         layoutDots.removeAllViews();
@@ -95,7 +117,7 @@ public class BreathingActivity extends AppCompatActivity {
         LinearLayout[] buttons = {btn1Min, btn3Min, btn5Min};
         for (LinearLayout btn : buttons) {
             btn.setBackgroundResource(R.drawable.bg_circle_glass_inactive);
-            setButtonTextColor(btn, "#80FFFFFF"); // Chữ trắng mờ khi reset
+            setButtonTextColor(btn, "#80FFFFFF");
         }
     }
 
@@ -123,11 +145,8 @@ public class BreathingActivity extends AppCompatActivity {
         tvCycleCount.setText("");
 
         btnAction.setText("Dừng lại");
-
-        // CHỈ MẤT 3 CÁI NÚT NGAY LẬP TỨC
         layoutOptions.setVisibility(View.GONE);
 
-        // Hiện layout chu kỳ sẵn sàng
         layoutCycleInfo.setVisibility(View.VISIBLE);
         layoutCycleInfo.setAlpha(1f);
 
@@ -196,12 +215,10 @@ public class BreathingActivity extends AppCompatActivity {
         tvStatus.setText("Sẵn sàng?");
         tvInstruction.setText("Hãy ngồi thoải mái và thư giãn");
 
-        // HIỆN LẠI 3 NÚT (Giữ nguyên kích thước cũ đã chọn)
         layoutOptions.setVisibility(View.VISIBLE);
         layoutOptions.setAlpha(1f);
         layoutCycleInfo.setVisibility(View.INVISIBLE);
 
-        // Reset visual mây và đĩa
         imgCloud.animate().scaleX(1f).scaleY(1f).setDuration(300).start();
         viewPulseGlow.animate().scaleX(1f).scaleY(1f).setDuration(300).start();
         cpbBreath.setProgress(0);

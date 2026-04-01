@@ -726,6 +726,7 @@
                             </LinearLayout>
 
                             <ImageButton
+                                android:id="@+id/btnOpen3Breath"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -814,6 +815,7 @@
                             </LinearLayout>
 
                             <ImageButton
+                                android:id="@+id/btnOpen5Breath"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -1218,6 +1220,7 @@
                                 android:fontFamily="@font/quicksand_bold" />
 
                             <ImageButton
+                                android:id="@+id/btnOpenDoctor"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -1315,12 +1318,12 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-<!--    <include-->
-<!--        android:id="@+id/include_nav"-->
-<!--        layout="@layout/bottom_nav"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent" />-->
+    <!--    <include-->
+    <!--        android:id="@+id/include_nav"-->
+    <!--        layout="@layout/bottom_nav"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent" />-->
 
     <include
         android:id="@+id/include_nav"

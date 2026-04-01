@@ -8,6 +8,15 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
+    <ImageButton
+        android:id="@+id/btnMinimize"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:background="@drawable/bg_music_control_sub"
+        android:padding="12dp"
+        android:src="@drawable/ic_chevron_down"
+        app:tint="#FFFFFF" />
+
     <LinearLayout
         android:id="@+id/layoutHeader"
         android:layout_width="match_parent"
