@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1A1F2E"
+    android:padding="24dp">
+
+    <RelativeLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp">
+
+        <ImageButton
+            android:id="@+id/btnMinimize"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_circle_glass_inactive"
+            android:src="@drawable/ic_chevron_down"
+            app:tint="#FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/quicksand_bold"
+                android:letterSpacing="0.2"
+                android:text="PODCAST"
+                android:textColor="#B0BEC5"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvStatusPlay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.6"
+                android:text="Đã dừng"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnPlaylist"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/bg_circle_glass_inactive"
+            android:src="@drawable/ic_playlist_play"
+            app:tint="#FFFFFF" />
+    </RelativeLayout>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardCover"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_below="@id/layoutHeader"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="60dp"
+        app:cardBackgroundColor="#000000"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="25dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/imgPodcastCover"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/podcast" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_border_overlay" />
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/layoutInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/cardCover"
+        android:layout_marginTop="55dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvPodcastTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/quicksand_bold"
+            android:gravity="center"
+            android:text="Nếu cả đời không rực rỡ thì sao"
+            android:textColor="#FFFFFF"
+            android:textSize="23sp" />
+
+        <TextView
+            android:id="@+id/tvPodcastAuthor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/quicksand_medium"
+            android:text="Heami • Podcast Chữa Lành"
+            android:textColor="#FFB74D"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvQuote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            android:fontFamily="@font/quicksand_medium"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:paddingHorizontal="40dp"
+            android:text="“Đôi khi không rực rỡ, lại là một vẻ đẹp bình yên nhất.”"
+            android:textColor="#90FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="italic" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/layoutInfo"
+        android:layout_marginTop="45dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="53dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="25dp"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/bar1"
+                android:layout_width="4dp"
+                android:layout_height="18dp"
+                android:layout_marginHorizontal="3dp"
+                android:background="#4DFFB74D" />
+
+            <View
+                android:id="@+id/bar2"
+                android:layout_width="4dp"
+                android:layout_height="28dp"
+                android:layout_marginHorizontal="3dp"
+                android:background="#80FFB74D" />
+
+            <View
+                android:id="@+id/bar3"
+                android:layout_width="4dp"
+                android:layout_height="35dp"
+                android:layout_marginHorizontal="3dp"
+                android:background="#FFB74D" />
+
+            <View
+                android:id="@+id/bar4"
+                android:layout_width="4dp"
+                android:layout_height="22dp"
+                android:layout_marginHorizontal="3dp"
+                android:background="#FFFFB74D" />
+
+            <View
+                android:id="@+id/bar5"
+                android:layout_width="4dp"
+                android:layout_height="12dp"
+                android:layout_marginHorizontal="3dp"
+                android:background="#80FFB74D" />
+        </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/sbPodcast"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="4dp"
+            android:minHeight="4dp"
+            android:progressDrawable="@drawable/custom_seekbar_progress"
+            android:splitTrack="false"
+            android:thumb="@drawable/custom_seekbar_thumb"
+            android:thumbOffset="11dp" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:paddingHorizontal="12dp">
+
+            <TextView
+                android:id="@+id/tvCurrentTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#B0BEC5"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvTotalTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="11:22"
+                android:textColor="#B0BEC5"
+                android:textSize="12sp" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvSkipFeedback"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/layoutControls"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10dp"
+        android:elevation="10dp"
+        android:fontFamily="@font/quicksand_bold"
+        android:textColor="#FFB74D"
+        android:textSize="22sp"
+        android:visibility="invisible" />
+
+    <LinearLayout
+        android:id="@+id/layoutControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="25dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:weightSum="5.3">
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/btnSpeed"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_podcast_control_sub"
+                android:fontFamily="@font/quicksand_bold"
+                android:gravity="center"
+                android:text="1x"
+                android:textColor="#FFFFFF" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <ImageButton
+                android:id="@+id/btnReplay15"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_podcast_control_sub"
+                android:padding="15dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_replay_15"
+                app:tint="#FFFFFF" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.3">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardPlayPause"
+                android:layout_width="110dp"
+                android:layout_height="70dp"
+                android:layout_gravity="center"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="25dp"
+                app:cardElevation="8dp">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_btn_play_orange" />
+
+                <ImageButton
+                    android:id="@+id/btnPlayPause"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="20dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_pause"
+                    app:tint="#FFFFFF" />
+            </androidx.cardview.widget.CardView>
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <ImageButton
+                android:id="@+id/btnForward15"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_podcast_control_sub"
+                android:padding="15dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_forward_15"
+                app:tint="#FFFFFF" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <ImageButton
+                android:id="@+id/btnTimer"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_circle_glass_inactive"
+                android:padding="13dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_timer"
+                app:tint="#FFFFFF" />
+        </FrameLayout>
+    </LinearLayout>
+
+</RelativeLayout>

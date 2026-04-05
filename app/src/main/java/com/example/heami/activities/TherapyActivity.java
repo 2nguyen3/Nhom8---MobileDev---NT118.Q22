@@ -31,6 +31,8 @@ public class TherapyActivity extends AppCompatActivity {
 
     private ImageButton btnOpenDoctor;
 
+    private ImageButton btnOpenPodcast;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,7 +54,10 @@ public class TherapyActivity extends AppCompatActivity {
 
         setupDoctorButton();
 
+        setupPodcast();
+
         startCloudAnimation();
+
 
         BottomNavManager.setup(this, BottomNavManager.TAB_THERAPY);
     }
@@ -82,6 +87,8 @@ public class TherapyActivity extends AppCompatActivity {
         btnOpen5Breath = findViewById(R.id.btnOpen5Breath);
 
         btnOpenDoctor = findViewById(R.id.btnOpenDoctor);
+
+        btnOpenPodcast = findViewById(R.id.btnOpenPodcast);
     }
 
     private void setupMusicButton() {
@@ -141,6 +148,16 @@ public class TherapyActivity extends AppCompatActivity {
         if (btnOpenDoctor != null) {
             btnOpenDoctor.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, DoctorActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupPodcast() {
+        if (btnOpenPodcast != null) {
+            btnOpenPodcast.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, PodcastActivity.class);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
