@@ -33,6 +33,8 @@ public class TherapyActivity extends AppCompatActivity {
 
     private ImageButton btnOpenPodcast;
 
+    private ImageButton btnOpenBinarual;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +57,8 @@ public class TherapyActivity extends AppCompatActivity {
         setupDoctorButton();
 
         setupPodcast();
+
+        setupBinarualButton();
 
         startCloudAnimation();
 
@@ -89,6 +93,8 @@ public class TherapyActivity extends AppCompatActivity {
         btnOpenDoctor = findViewById(R.id.btnOpenDoctor);
 
         btnOpenPodcast = findViewById(R.id.btnOpenPodcast);
+
+        btnOpenBinarual = findViewById(R.id.btnOpenBinarual);
     }
 
     private void setupMusicButton() {
@@ -159,6 +165,17 @@ public class TherapyActivity extends AppCompatActivity {
             btnOpenPodcast.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, PodcastActivity.class);
                 startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupBinarualButton() {
+        if (btnOpenBinarual != null) {
+            btnOpenBinarual.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BinauralPlayerActivity.class);
+                startActivity(intent);
+
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
         }
