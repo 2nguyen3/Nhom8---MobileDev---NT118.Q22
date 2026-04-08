@@ -68,6 +68,9 @@
             <activity
                 android:name=".activities.MoodMatchChatActivity"
                 android:exported="false" />
+            <activity
+                android:name=".activities.CommunityChatListActivity"
+                android:exported="false" />
 
         <activity
             android:name=".activities.DoctorActivity"

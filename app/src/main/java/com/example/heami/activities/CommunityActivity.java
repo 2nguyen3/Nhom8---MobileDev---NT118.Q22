@@ -36,6 +36,8 @@ public class CommunityActivity extends AppCompatActivity {
 
     private View btnReportPost1;
 
+    private View btnCommunityChat;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +76,8 @@ public class CommunityActivity extends AppCompatActivity {
         btnEmpathyPost1 = findViewById(R.id.btnEmpathyPost1);
 
         btnReportPost1 = findViewById(R.id.btnReportPost1);
+
+        btnCommunityChat = findViewById(R.id.btnCommunityChat);
     }
 
     private void allowOverflow() {
@@ -105,6 +109,14 @@ public class CommunityActivity extends AppCompatActivity {
         if (btnShareYourFeeling != null) {
             btnShareYourFeeling.setOnClickListener(v -> {
                 Intent intent = new Intent(CommunityActivity.this, ShareFeelingActivity.class);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+            });
+        }
+
+        if (btnCommunityChat != null) {
+            btnCommunityChat.setOnClickListener(v -> {
+                Intent intent = new Intent(CommunityActivity.this, CommunityChatListActivity.class);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
             });

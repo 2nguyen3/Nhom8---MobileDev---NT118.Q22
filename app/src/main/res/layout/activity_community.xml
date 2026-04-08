@@ -120,11 +120,44 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="142 online"
+                        android:text="142"
                         android:textColor="#4BBDAD"
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/btnCommunityChat"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_community_chat_btn"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/imgCommunityChat"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Chat"
+                        android:src="@drawable/ic_community_chat" />
+
+                    <TextView
+                        android:id="@+id/badgeCommunityChat"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="0dp"
+                        android:layout_marginEnd="0dp"
+                        android:background="@drawable/bg_community_chat_badge"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
+                        android:text="3"
+                        android:textColor="#FFFFFF"
+                        android:textSize="8sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
             </LinearLayout>
 
             <LinearLayout
