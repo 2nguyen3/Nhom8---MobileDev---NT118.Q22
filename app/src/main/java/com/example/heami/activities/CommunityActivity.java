@@ -384,9 +384,6 @@ public class CommunityActivity extends AppCompatActivity {
         startBlobFloat(findViewById(R.id.blobVioletMid), 8f, -10f, 1.05f, 9000, 400);
         startBlobFloat(findViewById(R.id.blobCyanMid), -8f, 10f, 1.05f, 8600, 700);
 
-        startSubtleFloat(findViewById(R.id.layoutOnlineBadge), 1.5f, 4200, 0);
-        startPulseDot(findViewById(R.id.viewOnlineDot), 0.92f, 1.18f, 1900);
-
         startPulseFadeExpand(findViewById(R.id.viewShuffleRingOuter), 0.82f, 1.32f, 0.22f, 0f, 1800, 0);
         startPulseFadeExpand(findViewById(R.id.viewShuffleRingInner), 0.90f, 1.22f, 0.30f, 0f, 1350, 120);
 

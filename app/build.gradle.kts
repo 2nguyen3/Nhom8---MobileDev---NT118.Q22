@@ -73,4 +73,7 @@ dependencies {
 
     // ML Kit Face Detection
     implementation("com.google.mlkit:face-detection:16.1.7")
+
+    // LiteRT / TensorFlow Lite runtime
+    implementation("com.google.ai.edge.litert:litert:1.0.1")
 }
