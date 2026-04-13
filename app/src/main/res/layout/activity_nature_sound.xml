@@ -202,7 +202,7 @@
             android:layout_height="50dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:background="@drawable/bg_music_control_sub"
+            android:background="@drawable/bg_music_control_sub_green"
             android:padding="12dp"
             android:src="@drawable/ic_heart_outline"
             app:tint="#FFFFFF" />
@@ -222,8 +222,16 @@
             android:layout_height="wrap_content"
             android:paddingStart="0dp"
             android:paddingEnd="0dp"
-            android:progressTint="#00E5FF"
-            android:thumbTint="#FFFFFF" />
+            android:splitTrack="false"
+            android:maxHeight="4dp"
+            android:minHeight="4dp"
+
+            android:thumb="@drawable/custom_thumb_green"
+
+            android:thumbOffset="0dp"
+
+            android:progressDrawable="@drawable/custom_seekbar_green"
+            tools:progress="30" />
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -259,7 +267,7 @@
                 android:id="@+id/btnShuffle"
                 android:layout_width="45dp"
                 android:layout_height="45dp"
-                android:background="@drawable/bg_music_control_sub"
+                android:background="@drawable/bg_music_control_sub_green"
                 android:padding="12dp"
                 android:src="@drawable/ic_shuffle"
                 app:tint="#FFFFFF" />
@@ -273,7 +281,7 @@
                 android:id="@+id/btnPrev"
                 android:layout_width="55dp"
                 android:layout_height="55dp"
-                android:background="@drawable/bg_music_control_sub"
+                android:background="@drawable/bg_music_control_sub_green"
                 android:padding="14dp"
                 android:src="@drawable/ic_skip_previous"
                 app:tint="#FFFFFF" />
@@ -287,7 +295,7 @@
                 android:id="@+id/btnPlayPause"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:background="@drawable/bg_play_music_main"
+                android:background="@drawable/bg_play_nature_main"
                 android:padding="26dp"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_pause"
@@ -302,7 +310,7 @@
                 android:id="@+id/btnNext"
                 android:layout_width="55dp"
                 android:layout_height="55dp"
-                android:background="@drawable/bg_music_control_sub"
+                android:background="@drawable/bg_music_control_sub_green"
                 android:padding="14dp"
                 android:src="@drawable/ic_skip_next"
                 app:tint="#FFFFFF" />
@@ -316,7 +324,7 @@
                 android:id="@+id/btnRepeat"
                 android:layout_width="45dp"
                 android:layout_height="45dp"
-                android:background="@drawable/bg_music_control_sub"
+                android:background="@drawable/bg_music_control_sub_green"
                 android:padding="12dp"
                 android:src="@drawable/ic_repeat"
                 app:tint="#FFFFFF" />
@@ -335,7 +343,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_music_action_bottom"
+            android:background="@drawable/bg_action_bottom_green"
             android:gravity="center"
             android:paddingVertical="12dp"
             android:clickable="true"
@@ -364,7 +372,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_music_action_bottom"
+            android:background="@drawable/bg_action_bottom_green"
             android:gravity="center"
             android:paddingVertical="12dp"
             android:clickable="true"

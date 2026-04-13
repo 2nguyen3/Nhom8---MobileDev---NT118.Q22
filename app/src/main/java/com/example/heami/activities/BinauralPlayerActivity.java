@@ -42,6 +42,7 @@ public class BinauralPlayerActivity extends AppCompatActivity {
     private boolean isPlaying = false;
     private boolean isLiked = false;
     private long timeLeftInMillis = 0;
+    private int selectedTimerMinutes = -1;
 
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private final Handler seekBarHandler = new Handler(Looper.getMainLooper());
@@ -164,12 +165,12 @@ public class BinauralPlayerActivity extends AppCompatActivity {
             Toast.makeText(this, "Ứng dụng chưa được cài đặt!", Toast.LENGTH_SHORT).show();
         }
     }
-
     private void showTimerBottomSheet() {
         BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
         View view = getLayoutInflater().inflate(R.layout.layout_timer_bottom_sheet, null);
         dialog.setContentView(view);
 
+        // Ánh xạ các ô chọn
         LinearLayout btn5 = view.findViewById(R.id.btnTimer5);
         LinearLayout btn15 = view.findViewById(R.id.btnTimer15);
         LinearLayout btn30 = view.findViewById(R.id.btnTimer30);
@@ -177,36 +178,89 @@ public class BinauralPlayerActivity extends AppCompatActivity {
         LinearLayout btnInf = view.findViewById(R.id.btnTimerInfinite);
         LinearLayout btnCancel = view.findViewById(R.id.btnCancelTimer);
 
-        if (btnCancel != null) {
-            btnCancel.setVisibility(timeLeftInMillis > 0 ? View.VISIBLE : View.GONE);
+        // Đưa các nút vào mảng để duyệt cho nhanh
+        LinearLayout[] timerButtons = {btn5, btn15, btn30, btn60, btnInf};
+
+        // Kiểm tra xem có đang chạy timer không để highlight ô cũ
+        if (timeLeftInMillis > 0 || selectedTimerMinutes == 0) {
+            highlightSelectedButton(timerButtons, selectedTimerMinutes);
         }
 
-        if (btn5 != null) btn5.setOnClickListener(v -> startSleepTimer(5, dialog));
-        if (btn15 != null) btn15.setOnClickListener(v -> startSleepTimer(15, dialog));
-        if (btn30 != null) btn30.setOnClickListener(v -> startSleepTimer(30, dialog));
-        if (btn60 != null) btn60.setOnClickListener(v -> startSleepTimer(60, dialog));
+        if (btnCancel != null) {
+            btnCancel.setVisibility(timeLeftInMillis > 0 ? View.VISIBLE : View.GONE);
+            btnCancel.setOnClickListener(v -> { cancelSleepTimer(); selectedTimerMinutes = -1; dialog.dismiss(); });
+        }
+
+        // Gán sự kiện click cho từng nút
+        setupTimerButtonClick(btn5, 5, timerButtons, dialog);
+        setupTimerButtonClick(btn15, 15, timerButtons, dialog);
+        setupTimerButtonClick(btn30, 30, timerButtons, dialog);
+        setupTimerButtonClick(btn60, 60, timerButtons, dialog);
 
         if (btnInf != null) {
             btnInf.setOnClickListener(v -> {
-                cancelSleepTimer();
-                tvTimerTextMain.setText("Vô cực");
-                dialog.dismiss();
+                highlightSelectedButton(timerButtons, 0); // 0 coi như vô cực
+                selectedTimerMinutes = 0;
+                new Handler().postDelayed(() -> { // Delay xíu cho user thấy hiệu ứng highlight
+                    cancelSleepTimer();
+                    tvTimerTextMain.setText("Vô cực");
+                    dialog.dismiss();
+                }, 200);
             });
         }
 
-        if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> {
-                cancelSleepTimer();
-                dialog.dismiss();
-            });
-        }
-
-        View close = view.findViewById(R.id.btnCloseSheet);
-        if (close != null) {
-            close.setOnClickListener(v -> dialog.dismiss());
-        }
-
+        view.findViewById(R.id.btnCloseSheet).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
+    }
+
+    // Hàm hỗ trợ Click và Highlight
+    private void setupTimerButtonClick(LinearLayout btn, int mins, LinearLayout[] allBtns, BottomSheetDialog dialog) {
+        if (btn == null) return;
+        btn.setOnClickListener(v -> {
+            highlightSelectedButton(allBtns, mins);
+            selectedTimerMinutes = mins;
+
+            // Delay 200ms để người dùng kịp thấy ô đó sáng lên rồi mới đóng Dialog
+            new Handler().postDelayed(() -> {
+                startSleepTimer(mins, dialog);
+            }, 200);
+        });
+    }
+
+    // Hàm thực hiện việc đổi màu viền/sáng khung
+    private void highlightSelectedButton(LinearLayout[] allBtns, int mins) {
+        for (LinearLayout btn : allBtns) {
+            if (btn == null) continue;
+            // Reset về background mặc định (bg_music_control_sub)
+            btn.setBackgroundResource(R.drawable.bg_music_control_sub);
+            // Reset màu chữ/icon bên trong về trắng
+            updateTimerItemUI(btn, Color.WHITE);
+        }
+
+        // Tìm đúng nút để làm sáng
+        for (LinearLayout btn : allBtns) {
+            if (btn == null) continue;
+            // Bạn có thể dùng Tag trong XML hoặc so sánh ID để tìm nút
+            // Ở đây mình check theo logic minutes đơn giản
+            if ((mins == 5 && btn.getId() == R.id.btnTimer5) ||
+                    (mins == 15 && btn.getId() == R.id.btnTimer15) ||
+                    (mins == 30 && btn.getId() == R.id.btnTimer30) ||
+                    (mins == 60 && btn.getId() == R.id.btnTimer60) ||
+                    (mins == 0 && btn.getId() == R.id.btnTimerInfinite)) {
+
+                btn.setBackgroundResource(R.drawable.bg_timer_item_selected);
+                updateTimerItemUI(btn, Color.parseColor(COLOR_PINK)); // Chữ & Icon thành hồng
+            }
+        }
+    }
+
+    // Hàm phụ để đổi màu cả TextView và ImageView bên trong ô cho đồng bộ
+    private void updateTimerItemUI(LinearLayout layout, int color) {
+        for (int i = 0; i < layout.getChildCount(); i++) {
+            View v = layout.getChildAt(i);
+            if (v instanceof TextView) ((TextView) v).setTextColor(color);
+            if (v instanceof ImageView) ((ImageView) v).setColorFilter(color);
+        }
     }
 
     private void startSleepTimer(int minutes, BottomSheetDialog dialog) {

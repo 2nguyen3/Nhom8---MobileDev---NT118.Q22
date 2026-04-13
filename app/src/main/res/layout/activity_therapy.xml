@@ -431,7 +431,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Nếu cả đời không rực rỡ thì sao · Mindfulness"
+                                    android:text="Nếu cả đời không rực rỡ thì sao ?"
                                     android:textColor="#8E24AA"
                                     android:textSize="11sp" />
                                 <TextView

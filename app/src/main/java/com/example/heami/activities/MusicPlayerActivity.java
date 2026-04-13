@@ -9,6 +9,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -44,6 +45,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
     private boolean isPlaying = false;
     private boolean isLiked = false;
     private long timeLeftInMillis = 0;
+
+    private int selectedTimerMinutes = -1;
 
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private final Handler seekBarHandler = new Handler(Looper.getMainLooper());
@@ -185,34 +188,95 @@ public class MusicPlayerActivity extends AppCompatActivity {
         LinearLayout btnInf = view.findViewById(R.id.btnTimerInfinite);
         LinearLayout btnCancel = view.findViewById(R.id.btnCancelTimer);
 
-        if (btnCancel != null) {
-            btnCancel.setVisibility(timeLeftInMillis > 0 ? View.VISIBLE : View.GONE);
+        // Đưa vào mảng để dễ quản lý trạng thái sáng/tối
+        LinearLayout[] timerButtons = {btn5, btn15, btn30, btn60, btnInf};
+
+        // Nếu đang có timer chạy, làm sáng ô đó ngay khi mở lên
+        if (timeLeftInMillis > 0 || selectedTimerMinutes == 0) {
+            applyHighlightToSelected(timerButtons, selectedTimerMinutes);
         }
 
-        if (btn5 != null) btn5.setOnClickListener(v -> startSleepTimer(5, dialog));
-        if (btn15 != null) btn15.setOnClickListener(v -> startSleepTimer(15, dialog));
-        if (btn30 != null) btn30.setOnClickListener(v -> startSleepTimer(30, dialog));
-        if (btn60 != null) btn60.setOnClickListener(v -> startSleepTimer(60, dialog));
-        if (btnInf != null) {
-            btnInf.setOnClickListener(v -> {
+        if (btnCancel != null) {
+            btnCancel.setVisibility(timeLeftInMillis > 0 ? View.VISIBLE : View.GONE);
+            btnCancel.setOnClickListener(v -> {
                 cancelSleepTimer();
-                tvTimerStatusMain.setText("Vô cực");
+                selectedTimerMinutes = -1;
                 dialog.dismiss();
             });
         }
-        if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> {
-                cancelSleepTimer();
-                dialog.dismiss();
+
+        // Thiết lập sự kiện click cho các ô thời gian
+        setupTimerItemClick(btn5, 5, timerButtons, dialog);
+        setupTimerItemClick(btn15, 15, timerButtons, dialog);
+        setupTimerItemClick(btn30, 30, timerButtons, dialog);
+        setupTimerItemClick(btn60, 60, timerButtons, dialog);
+
+        if (btnInf != null) {
+            btnInf.setOnClickListener(v -> {
+                applyHighlightToSelected(timerButtons, 0); // Vô cực là 0
+                selectedTimerMinutes = 0;
+                new Handler().postDelayed(() -> {
+                    cancelSleepTimer();
+                    tvTimerStatusMain.setText("Vô cực");
+                    dialog.dismiss();
+                }, 200);
             });
         }
 
         View close = view.findViewById(R.id.btnCloseSheet);
-        if (close != null) {
-            close.setOnClickListener(v -> dialog.dismiss());
-        }
+        if (close != null) close.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+    }
+
+    private void setupTimerItemClick(LinearLayout btn, int mins, LinearLayout[] all, BottomSheetDialog dialog) {
+        if (btn == null) return;
+        btn.setOnClickListener(v -> {
+            applyHighlightToSelected(all, mins); // Làm sáng ô vừa chọn
+            selectedTimerMinutes = mins;         // Lưu lại lựa chọn
+
+            new Handler().postDelayed(() -> {
+                startSleepTimer(mins, dialog);
+            }, 200);
+        });
+    }
+
+    private void applyHighlightToSelected(LinearLayout[] all, int minutes) {
+        for (LinearLayout btn : all) {
+            if (btn == null) continue;
+            // Reset về nền mặc định
+            btn.setBackgroundResource(R.drawable.bg_music_control_sub);
+            updateItemContentUI(btn, Color.WHITE, false);
+        }
+
+        // Tìm ô khớp với số phút để highlight
+        for (LinearLayout btn : all) {
+            if (btn == null) continue;
+            boolean match = false;
+            int id = btn.getId();
+            if (minutes == 5 && id == R.id.btnTimer5) match = true;
+            else if (minutes == 15 && id == R.id.btnTimer15) match = true;
+            else if (minutes == 30 && id == R.id.btnTimer30) match = true;
+            else if (minutes == 60 && id == R.id.btnTimer60) match = true;
+            else if (minutes == 0 && id == R.id.btnTimerInfinite) match = true;
+
+            if (match) {
+                btn.setBackgroundResource(R.drawable.bg_timer_item_selected_teal);
+                updateItemContentUI(btn, Color.parseColor(COLOR_TEAL), true);
+            }
+        }
+    }
+
+    private void updateItemContentUI(LinearLayout layout, int color, boolean isBold) {
+        for (int i = 0; i < layout.getChildCount(); i++) {
+            View child = layout.getChildAt(i);
+            if (child instanceof TextView) {
+                ((TextView) child).setTextColor(color);
+                ((TextView) child).setTypeface(null, isBold ? Typeface.BOLD : Typeface.NORMAL);
+            } else if (child instanceof ImageView) {
+                ((ImageView) child).setColorFilter(color);
+            }
+        }
     }
 
     private void startSleepTimer(int minutes, BottomSheetDialog dialog) {
