@@ -11,10 +11,7 @@ import androidx.camera.view.PreviewView;
 import androidx.camera.core.CameraInfo;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import android.media.Image;
 import android.util.Size;
-import androidx.annotation.OptIn;
-import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
 import android.graphics.Rect;
@@ -33,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import java.util.List;
+import android.util.Log;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
@@ -93,6 +91,9 @@ public class CheckInAiActivity extends AppCompatActivity {
     private float lastHeadZ = 0f;
 
     private boolean isNavigatingResult = false;
+    private static final int REQUIRED_EMOTION_SAMPLES = 3;
+    private final List<float[]> emotionScoreSamples = new ArrayList<>();
+    private long lastEmotionSampleTime = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -151,6 +152,9 @@ public class CheckInAiActivity extends AppCompatActivity {
         if (cardCameraPreview != null) {
             cardCameraPreview.setOnClickListener(v -> {
                 stableFaceCount = 0;
+                clearEmotionSamples();
+                isNavigatingResult = false;
+
                 Toast.makeText(
                         CheckInAiActivity.this,
                         "Heami đang quét lại khuôn mặt của bạn...",
@@ -482,12 +486,11 @@ public class CheckInAiActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    @OptIn(markerClass = ExperimentalGetImage.class)
     private void analyzeImage(@NonNull ImageProxy imageProxy) {
         long now = System.currentTimeMillis();
 
-        // Giảm tải, chỉ phân tích khoảng mỗi 650ms/lần
-        if (now - lastAnalyzeTime < 650 || isProcessingFrame) {
+        // Giảm tải, chỉ phân tích khoảng mỗi 900ms/lần
+        if (now - lastAnalyzeTime < 900 || isProcessingFrame) {
             imageProxy.close();
             return;
         }
@@ -495,29 +498,26 @@ public class CheckInAiActivity extends AppCompatActivity {
         lastAnalyzeTime = now;
         isProcessingFrame = true;
 
-        Image mediaImage = imageProxy.getImage();
-
-        if (mediaImage == null) {
-            isProcessingFrame = false;
-            imageProxy.close();
-            return;
-        }
-
-        InputImage image = InputImage.fromMediaImage(
-                mediaImage,
-                imageProxy.getImageInfo().getRotationDegrees()
-        );
-
         try {
             latestCameraBitmap = ImageProxyUtils.imageProxyToBitmap(imageProxy);
         } catch (Exception e) {
             latestCameraBitmap = null;
         }
 
+        if (latestCameraBitmap == null) {
+            isProcessingFrame = false;
+            imageProxy.close();
+            return;
+        }
+
+        // Quan trọng: ML Kit detect trên chính Bitmap dùng để crop
+        InputImage image = InputImage.fromBitmap(latestCameraBitmap, 0);
+
         faceDetector.process(image)
                 .addOnSuccessListener(this::handleDetectedFaces)
                 .addOnFailureListener(e -> runOnUiThread(() -> {
                     stableFaceCount = 0;
+                    clearEmotionSamples();
 
                     if (txtCheckInInstruction != null) {
                         txtCheckInInstruction.setText(
@@ -535,6 +535,7 @@ public class CheckInAiActivity extends AppCompatActivity {
         if (faces == null || faces.isEmpty()) {
             stableFaceCount = 0;
             lastFaceBounds = null;
+            clearEmotionSamples();
 
             runOnUiThread(() -> {
                 if (txtCheckInInstruction != null) {
@@ -561,9 +562,11 @@ public class CheckInAiActivity extends AppCompatActivity {
 
         if (isLookingAway) {
             stableFaceCount = 0;
+            clearEmotionSamples();
             message = "Heami thấy mặt bạn rồi, thử nhìn thẳng vào camera hơn một chút nha";
         } else if (isMoving) {
             stableFaceCount = 0;
+            clearEmotionSamples();
             message = "Bạn đang di chuyển hơi nhiều, giữ yên khuôn mặt một chút nha";
         } else {
             stableFaceCount++;
@@ -574,17 +577,7 @@ public class CheckInAiActivity extends AppCompatActivity {
                 message = "Khuôn mặt đã ổn định. Heami đang phân tích cảm xúc của bạn...";
 
                 if (!isNavigatingResult) {
-                    isNavigatingResult = true;
-
-                    runOnUiThread(() -> {
-                        if (txtCheckInInstruction != null) {
-                            txtCheckInInstruction.setText(
-                                    "Khuôn mặt đã ổn định. Heami đang phân tích cảm xúc của bạn..."
-                            );
-                        }
-                    });
-
-                    cardCameraPreview.postDelayed(() -> openResultFromFace(face), 900);
+                    collectEmotionSampleAndMaybeOpen(face);
                 }
             }
         }
@@ -634,40 +627,6 @@ public class CheckInAiActivity extends AppCompatActivity {
                 || deltaHeadZ > 8f;
     }
 
-    private void openResultFromFace(Face face) {
-        if (emotionClassifier == null) {
-            openFallbackResult();
-            return;
-        }
-
-        Bitmap faceBitmap = null;
-
-        try {
-            if (latestCameraBitmap != null && face != null) {
-                Rect faceBounds = face.getBoundingBox();
-                faceBitmap = ImageProxyUtils.cropFace(latestCameraBitmap, faceBounds);
-            }
-        } catch (Exception e) {
-            faceBitmap = latestCameraBitmap;
-        }
-
-        EmotionClassifier.EmotionResult result = emotionClassifier.classify(faceBitmap);
-
-        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
-        intent.putExtra("mood_name", result.getMoodName());
-        intent.putExtra("mood_emoji", result.getMoodEmoji());
-        intent.putExtra("mood_desc", result.getMoodDesc());
-        intent.putExtra("mood_percent", result.getMoodPercent());
-
-        intent.putExtra("source", "ai_camera_tflite_" + result.getRawLabel());
-        intent.putExtra("raw_emotion_label", result.getRawLabel());
-        intent.putExtra("ai_confidence", result.getConfidence());
-        intent.putExtra("model_name", "RAF-DB MobileNetV2");
-        intent.putExtra("model_version", "v1");
-
-        startActivity(intent);
-    }
-
     private void openFallbackResult() {
         Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
 
@@ -696,6 +655,116 @@ public class CheckInAiActivity extends AppCompatActivity {
         }
     }
 
+    private void clearEmotionSamples() {
+        emotionScoreSamples.clear();
+        lastEmotionSampleTime = 0L;
+    }
+
+    private Bitmap getFaceBitmap(Face face) {
+        try {
+            if (latestCameraBitmap != null && face != null) {
+                Rect faceBounds = face.getBoundingBox();
+                return ImageProxyUtils.cropFace(latestCameraBitmap, faceBounds);
+            }
+        } catch (Exception e) {
+            return latestCameraBitmap;
+        }
+
+        return latestCameraBitmap;
+    }
+
+    private void collectEmotionSampleAndMaybeOpen(Face face) {
+        if (emotionClassifier == null) {
+            openFallbackResult();
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+
+        // Tránh lấy mẫu quá sát nhau
+        if (now - lastEmotionSampleTime < 450) {
+            return;
+        }
+
+        Bitmap faceBitmap = getFaceBitmap(face);
+        float[] scores = emotionClassifier.predictScores(faceBitmap);
+
+        if (scores == null) {
+            return;
+        }
+
+        emotionScoreSamples.add(scores);
+        lastEmotionSampleTime = now;
+
+        int currentSample = emotionScoreSamples.size();
+
+        runOnUiThread(() -> {
+            if (txtCheckInInstruction != null) {
+                txtCheckInInstruction.setText(
+                        "Heami đang phân tích cảm xúc của bạn... (" +
+                                currentSample + "/" + REQUIRED_EMOTION_SAMPLES + ")"
+                );
+            }
+        });
+
+        if (currentSample >= REQUIRED_EMOTION_SAMPLES) {
+            isNavigatingResult = true;
+
+            float[] averagedScores = averageEmotionScores();
+            cardCameraPreview.postDelayed(() -> openResultFromScores(averagedScores), 500);
+        }
+    }
+
+    private float[] averageEmotionScores() {
+        if (emotionScoreSamples.isEmpty()) {
+            return null;
+        }
+
+        int length = emotionScoreSamples.get(0).length;
+        float[] averagedScores = new float[length];
+
+        for (float[] scores : emotionScoreSamples) {
+            for (int i = 0; i < length; i++) {
+                averagedScores[i] += scores[i];
+            }
+        }
+
+        for (int i = 0; i < length; i++) {
+            averagedScores[i] /= emotionScoreSamples.size();
+        }
+
+        return averagedScores;
+    }
+
+    private void openResultFromScores(float[] averagedScores) {
+        if (emotionClassifier == null) {
+            openFallbackResult();
+            return;
+        }
+
+        Log.d(
+                "HeamiEmotion",
+                "AVG scores: " + emotionClassifier.formatScores(averagedScores)
+        );
+
+        EmotionClassifier.EmotionResult result =
+                emotionClassifier.classifyFromScores(averagedScores);
+
+        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
+        intent.putExtra("mood_name", result.getMoodName());
+        intent.putExtra("mood_emoji", result.getMoodEmoji());
+        intent.putExtra("mood_desc", result.getMoodDesc());
+        intent.putExtra("mood_percent", result.getMoodPercent());
+
+        intent.putExtra("source", "ai_camera_tflite_avg3_" + result.getRawLabel());
+        intent.putExtra("raw_emotion_label", result.getRawLabel());
+        intent.putExtra("ai_confidence", result.getConfidence());
+        intent.putExtra("model_name", "RAF-DB MobileNetV2");
+        intent.putExtra("model_version", "v1_avg3");
+
+        startActivity(intent);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -703,6 +772,7 @@ public class CheckInAiActivity extends AppCompatActivity {
         isNavigatingResult = false;
         stableFaceCount = 0;
         lastFaceBounds = null;
+        clearEmotionSamples();
     }
 
     @Override

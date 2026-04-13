@@ -17,6 +17,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class EmotionClassifier implements Closeable {
 
@@ -38,8 +39,18 @@ public class EmotionClassifier implements Closeable {
     }
 
     public EmotionResult classify(Bitmap bitmap) {
-        if (bitmap == null) {
+        float[] scores = predictScores(bitmap);
+
+        if (scores == null) {
             return getFallbackResult();
+        }
+
+        return classifyFromScores(scores);
+    }
+
+    public float[] predictScores(Bitmap bitmap) {
+        if (bitmap == null) {
+            return null;
         }
 
         Bitmap resizedBitmap = Bitmap.createScaledBitmap(
@@ -52,21 +63,61 @@ public class EmotionClassifier implements Closeable {
         ByteBuffer inputBuffer = convertBitmapToByteBuffer(resizedBitmap);
 
         float[][] output = new float[1][labels.size()];
-
         interpreter.run(inputBuffer, output);
 
-        int maxIndex = 0;
-        float maxConfidence = output[0][0];
+        float[] scores = new float[labels.size()];
+        System.arraycopy(output[0], 0, scores, 0, output[0].length);
 
-        for (int i = 1; i < output[0].length; i++) {
-            if (output[0][i] > maxConfidence) {
-                maxConfidence = output[0][i];
+        return scores;
+    }
+
+    public EmotionResult classifyFromScores(float[] scores) {
+        if (scores == null || scores.length == 0) {
+            return getFallbackResult();
+        }
+
+        int maxIndex = 0;
+        float maxConfidence = scores[0];
+
+        for (int i = 1; i < scores.length; i++) {
+            if (scores[i] > maxConfidence) {
+                maxConfidence = scores[i];
                 maxIndex = i;
             }
         }
 
         String englishLabel = labels.get(maxIndex);
         return mapToHeamiMood(englishLabel, maxConfidence);
+    }
+
+    public String getLabelAt(int index) {
+        if (index < 0 || index >= labels.size()) {
+            return "unknown";
+        }
+
+        return labels.get(index);
+    }
+
+    public String formatScores(float[] scores) {
+        if (scores == null || scores.length == 0) {
+            return "scores=null";
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        int length = Math.min(scores.length, labels.size());
+
+        for (int i = 0; i < length; i++) {
+            if (i > 0) {
+                builder.append(" | ");
+            }
+
+            builder.append(labels.get(i))
+                    .append("=")
+                    .append(String.format(Locale.US, "%.4f", scores[i]));
+        }
+
+        return builder.toString();
     }
 
     private ByteBuffer convertBitmapToByteBuffer(Bitmap bitmap) {
@@ -157,8 +208,17 @@ public class EmotionClassifier implements Closeable {
                         confidence
                 );
 
-            case "surprise":
             case "neutral":
+                return new EmotionResult(
+                        label,
+                        "Bình thường",
+                        "🙂",
+                        "Heami thấy cảm xúc của bạn đang khá ổn định.",
+                        percent,
+                        confidence
+                );
+
+            case "surprise":
             default:
                 return new EmotionResult(
                         label,

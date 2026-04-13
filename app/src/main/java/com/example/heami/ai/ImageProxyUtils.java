@@ -54,12 +54,54 @@ public class ImageProxyUtils {
             return source;
         }
 
-        int padding = Math.round(faceBounds.width() * 0.20f);
+        int sourceWidth = source.getWidth();
+        int sourceHeight = source.getHeight();
 
-        int left = Math.max(faceBounds.left - padding, 0);
-        int top = Math.max(faceBounds.top - padding, 0);
-        int right = Math.min(faceBounds.right + padding, source.getWidth());
-        int bottom = Math.min(faceBounds.bottom + padding, source.getHeight());
+        int faceCenterX = faceBounds.centerX();
+        int faceCenterY = faceBounds.centerY();
+
+        int faceWidth = faceBounds.width();
+        int faceHeight = faceBounds.height();
+
+        // Lấy cạnh lớn hơn để crop thành hình vuông
+        int faceSize = Math.max(faceWidth, faceHeight);
+
+        // Padding rộng hơn một chút để lấy đủ trán/cằm, giúp model ổn định hơn
+        int squareSize = Math.round(faceSize * 1.45f);
+
+        int left = faceCenterX - squareSize / 2;
+        int top = faceCenterY - squareSize / 2;
+        int right = left + squareSize;
+        int bottom = top + squareSize;
+
+        // Nếu crop bị tràn trái/phải thì kéo lại vào trong ảnh
+        if (left < 0) {
+            right -= left;
+            left = 0;
+        }
+
+        if (top < 0) {
+            bottom -= top;
+            top = 0;
+        }
+
+        if (right > sourceWidth) {
+            int overflow = right - sourceWidth;
+            left -= overflow;
+            right = sourceWidth;
+        }
+
+        if (bottom > sourceHeight) {
+            int overflow = bottom - sourceHeight;
+            top -= overflow;
+            bottom = sourceHeight;
+        }
+
+        // Chặn lại lần cuối cho chắc
+        left = Math.max(left, 0);
+        top = Math.max(top, 0);
+        right = Math.min(right, sourceWidth);
+        bottom = Math.min(bottom, sourceHeight);
 
         int width = right - left;
         int height = bottom - top;

@@ -142,8 +142,6 @@ public class CheckInResultActivity extends AppCompatActivity {
         aiConfidence = getIntent().getFloatExtra("ai_confidence", 0f);
         modelName = getIntent().getStringExtra("model_name");
         modelVersion = getIntent().getStringExtra("model_version");
-        confidenceLevel = getConfidenceLevel(aiConfidence);
-        moodDesc = getSoftMoodDescIfLowConfidence(moodName, moodDesc);
 
         if (rawEmotionLabel == null || rawEmotionLabel.trim().isEmpty()) {
             rawEmotionLabel = "unknown";
@@ -168,6 +166,9 @@ public class CheckInResultActivity extends AppCompatActivity {
         if (moodDesc == null || moodDesc.trim().isEmpty()) {
             moodDesc = "Hơi nhiều áp lực hôm nay...";
         }
+
+        confidenceLevel = getConfidenceLevel(aiConfidence);
+        moodDesc = getSoftMoodDescIfLowConfidence(moodName, moodDesc);
 
         if (moodPercent < 0) {
             moodPercent = 0;
@@ -240,6 +241,9 @@ public class CheckInResultActivity extends AppCompatActivity {
 
     private String getHeamiMessage(String moodName) {
         switch (moodName) {
+            case "Bình thường":
+                return "Heami thấy cảm xúc của bạn hôm nay khá ổn định. Đây cũng là một trạng thái rất đáng trân trọng đó";
+
             case "Căng thẳng":
                 return "Heami thấy bạn đang mang nhiều áp lực hôm nay. Hãy để Heami cùng bạn thở nhẹ một chút nhé";
 
@@ -287,6 +291,9 @@ public class CheckInResultActivity extends AppCompatActivity {
 
             case "Ghê tởm":
                 return "Heami chưa thật sự chắc chắn, nhưng cảm nhận cơ thể bạn có vẻ đang không thoải mái.";
+
+            case "Bình thường":
+                return "Heami chưa thật sự chắc chắn, nhưng thấy cảm xúc của bạn có vẻ khá ổn định.";
 
             case "Căng thẳng":
             default:
@@ -522,6 +529,17 @@ public class CheckInResultActivity extends AppCompatActivity {
         String journalDesc = "Viết điều bạn cảm";
 
         switch (moodName) {
+            case "Bình thường":
+                musicTitle = "Nhạc nhẹ";
+                musicDesc = "5 phút · Giữ cân bằng";
+
+                breathTitle = "Thở duy trì";
+                breathDesc = "2 phút · Nhẹ nhàng";
+
+                journalTitle = "Nhật ký hôm nay";
+                journalDesc = "Ghi lại điều nhỏ";
+                break;
+
             case "Vui vẻ":
                 musicTitle = "Nhạc tích cực";
                 musicDesc = "5 phút · Giữ năng lượng";
