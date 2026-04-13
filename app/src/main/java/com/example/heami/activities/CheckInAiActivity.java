@@ -18,7 +18,10 @@ import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
 import android.graphics.Rect;
+import android.graphics.Bitmap;
 
+import com.example.heami.ai.EmotionClassifier;
+import com.example.heami.ai.ImageProxyUtils;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
@@ -53,7 +56,6 @@ public class CheckInAiActivity extends AppCompatActivity {
     private View imgCheckInHeami;
     private View cardCheckInBubble;
     private View cardCameraPreview;
-    private View imgCheckInCameraPreview;
 
     private View viewCheckInScanLine;
     private View viewCheckInScanGlow;
@@ -79,6 +81,8 @@ public class CheckInAiActivity extends AppCompatActivity {
     private ExecutorService cameraExecutor;
 
     private FaceDetector faceDetector;
+    private EmotionClassifier emotionClassifier;
+    private Bitmap latestCameraBitmap;
 
     private boolean isProcessingFrame = false;
     private long lastAnalyzeTime = 0L;
@@ -101,6 +105,7 @@ public class CheckInAiActivity extends AppCompatActivity {
 
         cameraExecutor = Executors.newSingleThreadExecutor();
         setupFaceDetector();
+        setupEmotionClassifier();
         checkCameraPermissionAndStart();
     }
     private void bindViews() {
@@ -109,7 +114,6 @@ public class CheckInAiActivity extends AppCompatActivity {
         imgCheckInHeami = findViewById(R.id.imgCheckInHeami);
         cardCheckInBubble = findViewById(R.id.cardCheckInBubble);
         cardCameraPreview = findViewById(R.id.cardCameraPreview);
-        imgCheckInCameraPreview = findViewById(R.id.imgCheckInCameraPreview);
 
         viewCheckInScanLine = findViewById(R.id.viewCheckInScanLine);
         viewCheckInScanGlow = findViewById(R.id.viewCheckInScanGlow);
@@ -198,30 +202,6 @@ public class CheckInAiActivity extends AppCompatActivity {
         moveY.setRepeatCount(ValueAnimator.INFINITE);
         moveY.setInterpolator(new AccelerateDecelerateInterpolator());
         moveY.start();
-    }
-
-    private void startCameraBreath(View view) {
-        if (view == null) return;
-
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, 1.0f, 1.015f, 1.0f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, 1.0f, 1.015f, 1.0f);
-        ObjectAnimator alpha = ObjectAnimator.ofFloat(view, View.ALPHA, 0.96f, 1.0f, 0.96f);
-
-        scaleX.setDuration(2800);
-        scaleY.setDuration(2800);
-        alpha.setDuration(2800);
-
-        scaleX.setRepeatCount(ValueAnimator.INFINITE);
-        scaleY.setRepeatCount(ValueAnimator.INFINITE);
-        alpha.setRepeatCount(ValueAnimator.INFINITE);
-
-        scaleX.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleY.setInterpolator(new AccelerateDecelerateInterpolator());
-        alpha.setInterpolator(new AccelerateDecelerateInterpolator());
-
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(scaleX, scaleY, alpha);
-        set.start();
     }
 
     private void startScan(View scanLine, View scanGlow) {
@@ -398,18 +378,6 @@ public class CheckInAiActivity extends AppCompatActivity {
         set.start();
     }
 
-//    private void openResultFromAiScan() {
-//        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
-//
-//        intent.putExtra("mood_name", "Căng thẳng");
-//        intent.putExtra("mood_emoji", "😤");
-//        intent.putExtra("mood_desc", "Hơi nhiều áp lực hôm nay...");
-//        intent.putExtra("mood_percent", 87);
-//        intent.putExtra("source", "ai_scan");
-//
-//        startActivity(intent);
-//    }
-
     private void setupFaceDetector() {
         FaceDetectorOptions options =
                 new FaceDetectorOptions.Builder()
@@ -540,6 +508,12 @@ public class CheckInAiActivity extends AppCompatActivity {
                 imageProxy.getImageInfo().getRotationDegrees()
         );
 
+        try {
+            latestCameraBitmap = ImageProxyUtils.imageProxyToBitmap(imageProxy);
+        } catch (Exception e) {
+            latestCameraBitmap = null;
+        }
+
         faceDetector.process(image)
                 .addOnSuccessListener(this::handleDetectedFaces)
                 .addOnFailureListener(e -> runOnUiThread(() -> {
@@ -661,99 +635,64 @@ public class CheckInAiActivity extends AppCompatActivity {
     }
 
     private void openResultFromFace(Face face) {
-        MoodResult result = estimateMoodFromFace(face);
+        if (emotionClassifier == null) {
+            openFallbackResult();
+            return;
+        }
+
+        Bitmap faceBitmap = null;
+
+        try {
+            if (latestCameraBitmap != null && face != null) {
+                Rect faceBounds = face.getBoundingBox();
+                faceBitmap = ImageProxyUtils.cropFace(latestCameraBitmap, faceBounds);
+            }
+        } catch (Exception e) {
+            faceBitmap = latestCameraBitmap;
+        }
+
+        EmotionClassifier.EmotionResult result = emotionClassifier.classify(faceBitmap);
 
         Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
-        intent.putExtra("mood_name", result.name);
-        intent.putExtra("mood_emoji", result.emoji);
-        intent.putExtra("mood_desc", result.desc);
-        intent.putExtra("mood_percent", result.percent);
-        intent.putExtra("source", "ai_camera_mlkit_demo");
+        intent.putExtra("mood_name", result.getMoodName());
+        intent.putExtra("mood_emoji", result.getMoodEmoji());
+        intent.putExtra("mood_desc", result.getMoodDesc());
+        intent.putExtra("mood_percent", result.getMoodPercent());
+
+        intent.putExtra("source", "ai_camera_tflite_" + result.getRawLabel());
+        intent.putExtra("raw_emotion_label", result.getRawLabel());
+        intent.putExtra("ai_confidence", result.getConfidence());
+        intent.putExtra("model_name", "RAF-DB MobileNetV2");
+        intent.putExtra("model_version", "v1");
 
         startActivity(intent);
     }
 
-    private MoodResult estimateMoodFromFace(Face face) {
-        Float smilingProbability = face.getSmilingProbability();
-        Float leftEyeOpenProbability = face.getLeftEyeOpenProbability();
-        Float rightEyeOpenProbability = face.getRightEyeOpenProbability();
+    private void openFallbackResult() {
+        Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
 
-        float smile = smilingProbability != null ? smilingProbability : -1f;
-        float leftEye = leftEyeOpenProbability != null ? leftEyeOpenProbability : -1f;
-        float rightEye = rightEyeOpenProbability != null ? rightEyeOpenProbability : -1f;
+        intent.putExtra("mood_name", "Căng thẳng");
+        intent.putExtra("mood_emoji", "😤");
+        intent.putExtra("mood_desc", "Heami cảm nhận hôm nay bạn cần nghỉ nhẹ một chút...");
+        intent.putExtra("mood_percent", 68);
+        intent.putExtra("source", "ai_camera_tflite_fallback");
+        intent.putExtra("raw_emotion_label", "unknown");
+        intent.putExtra("ai_confidence", 0f);
+        intent.putExtra("model_name", "RAF-DB MobileNetV2");
+        intent.putExtra("model_version", "v1");
 
-        float avgEye = -1f;
-        if (leftEye >= 0f && rightEye >= 0f) {
-            avgEye = (leftEye + rightEye) / 2f;
-        }
-
-        float headY = Math.abs(face.getHeadEulerAngleY());
-        float headZ = Math.abs(face.getHeadEulerAngleZ());
-
-        if (smile >= 0.65f) {
-            return new MoodResult(
-                    "Vui vẻ",
-                    "😊",
-                    "Heami thấy bạn đang rất ổn!",
-                    probabilityToPercent(smile, 78)
-            );
-        }
-
-        if (avgEye >= 0f && avgEye < 0.35f) {
-            return new MoodResult(
-                    "Buồn",
-                    "🥲",
-                    "Hôm nay có gì nặng lòng không?",
-                    probabilityToPercent(1f - avgEye, 70)
-            );
-        }
-
-        if (headY > 12f || headZ > 12f) {
-            return new MoodResult(
-                    "Căng thẳng",
-                    "😤",
-                    "Hơi nhiều áp lực hôm nay...",
-                    82
-            );
-        }
-
-        if (smile >= 0f && smile < 0.25f && avgEye > 0.65f) {
-            return new MoodResult(
-                    "Căng thẳng",
-                    "😤",
-                    "Hơi nhiều áp lực hôm nay...",
-                    76
-            );
-        }
-
-        return new MoodResult(
-                "Căng thẳng",
-                "😤",
-                "Heami cảm nhận hôm nay bạn cần nghỉ nhẹ một chút...",
-                68
-        );
+        startActivity(intent);
     }
 
-    private int probabilityToPercent(float value, int base) {
-        int percent = base + Math.round(value * 18f);
-
-        if (percent < 0) percent = 0;
-        if (percent > 99) percent = 99;
-
-        return percent;
-    }
-
-    private static class MoodResult {
-        String name;
-        String emoji;
-        String desc;
-        int percent;
-
-        MoodResult(String name, String emoji, String desc, int percent) {
-            this.name = name;
-            this.emoji = emoji;
-            this.desc = desc;
-            this.percent = percent;
+    private void setupEmotionClassifier() {
+        try {
+            emotionClassifier = new EmotionClassifier(this);
+        } catch (Exception e) {
+            Toast.makeText(
+                    this,
+                    "Không thể tải model AI cảm xúc: " + e.getMessage(),
+                    Toast.LENGTH_LONG
+            ).show();
         }
     }
 
@@ -772,6 +711,10 @@ public class CheckInAiActivity extends AppCompatActivity {
 
         if (faceDetector != null) {
             faceDetector.close();
+        }
+
+        if (emotionClassifier != null) {
+            emotionClassifier.close();
         }
 
         if (cameraExecutor != null) {

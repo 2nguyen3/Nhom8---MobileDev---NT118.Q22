@@ -66,6 +66,11 @@ public class CheckInResultActivity extends AppCompatActivity {
     private int moodPercent;
 
     private String source;
+    private String rawEmotionLabel;
+    private float aiConfidence;
+    private String modelName;
+    private String modelVersion;
+    private String confidenceLevel;
 
     private TextView txtTherapyMusicTitle;
     private TextView txtTherapyMusicDesc;
@@ -131,6 +136,25 @@ public class CheckInResultActivity extends AppCompatActivity {
 
         if (source == null || source.trim().isEmpty()) {
             source = "unknown";
+        }
+
+        rawEmotionLabel = getIntent().getStringExtra("raw_emotion_label");
+        aiConfidence = getIntent().getFloatExtra("ai_confidence", 0f);
+        modelName = getIntent().getStringExtra("model_name");
+        modelVersion = getIntent().getStringExtra("model_version");
+        confidenceLevel = getConfidenceLevel(aiConfidence);
+        moodDesc = getSoftMoodDescIfLowConfidence(moodName, moodDesc);
+
+        if (rawEmotionLabel == null || rawEmotionLabel.trim().isEmpty()) {
+            rawEmotionLabel = "unknown";
+        }
+
+        if (modelName == null || modelName.trim().isEmpty()) {
+            modelName = "unknown";
+        }
+
+        if (modelVersion == null || modelVersion.trim().isEmpty()) {
+            modelVersion = "unknown";
         }
 
         if (moodName == null || moodName.trim().isEmpty()) {
@@ -202,6 +226,18 @@ public class CheckInResultActivity extends AppCompatActivity {
         });
     }
 
+    private String getConfidenceLevel(float confidence) {
+        if (confidence >= 0.75f) {
+            return "high";
+        }
+
+        if (confidence >= 0.50f) {
+            return "medium";
+        }
+
+        return "low";
+    }
+
     private String getHeamiMessage(String moodName) {
         switch (moodName) {
             case "Căng thẳng":
@@ -224,6 +260,37 @@ public class CheckInResultActivity extends AppCompatActivity {
 
             default:
                 return "Heami đã ghi nhận cảm xúc của bạn hôm nay. Cảm ơn bạn vì đã lắng nghe chính mình";
+        }
+    }
+
+    private String getSoftMoodDescIfLowConfidence(String moodName, String originalDesc) {
+        if (!source.contains("ai_camera_tflite")) {
+            return originalDesc;
+        }
+
+        if (!"low".equals(confidenceLevel)) {
+            return originalDesc;
+        }
+
+        switch (moodName) {
+            case "Vui vẻ":
+                return "Heami chưa thật sự chắc chắn, nhưng thấy bạn có nét năng lượng tích cực.";
+
+            case "Buồn":
+                return "Heami chưa thật sự chắc chắn, nhưng cảm nhận bạn có vẻ hơi trầm hơn hôm nay.";
+
+            case "Tức giận":
+                return "Heami chưa thật sự chắc chắn, nhưng nhận thấy bạn có vẻ đang hơi căng bên trong.";
+
+            case "Sợ hãi":
+                return "Heami chưa thật sự chắc chắn, nhưng thấy bạn có vẻ cần thêm cảm giác an toàn.";
+
+            case "Ghê tởm":
+                return "Heami chưa thật sự chắc chắn, nhưng cảm nhận cơ thể bạn có vẻ đang không thoải mái.";
+
+            case "Căng thẳng":
+            default:
+                return "Heami chưa thật sự chắc chắn, nhưng có vẻ hôm nay bạn hơi căng thẳng.";
         }
     }
 
@@ -405,6 +472,12 @@ public class CheckInResultActivity extends AppCompatActivity {
         );
 
         moodHistory.setRecommendations(recommendations);
+
+        moodHistory.setRaw_emotion_label(rawEmotionLabel);
+        moodHistory.setAi_confidence(aiConfidence);
+        moodHistory.setModel_name(modelName);
+        moodHistory.setModel_version(modelVersion);
+        moodHistory.setConfidence_level(confidenceLevel);
 
         FirebaseFirestore.getInstance()
                 .collection("users")

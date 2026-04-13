@@ -16,6 +16,11 @@ public class MoodHistoryModel {
 
     private String source;
     private boolean ai_analysis;
+    private String raw_emotion_label;
+    private float ai_confidence;
+    private String model_name;
+    private String model_version;
+    private String confidence_level;
 
     private List<String> causes;
     private List<String> recommendations;
@@ -103,4 +108,20 @@ public class MoodHistoryModel {
 
     public Timestamp getUpdated_at() { return updated_at; }
     public void setUpdated_at(Timestamp updated_at) { this.updated_at = updated_at; }
+
+    public String getRaw_emotion_label() { return raw_emotion_label; }
+    public void setRaw_emotion_label(String raw_emotion_label) { this.raw_emotion_label = raw_emotion_label; }
+
+    public float getAi_confidence() { return ai_confidence; }
+    public void setAi_confidence(float ai_confidence) { this.ai_confidence = ai_confidence; }
+
+    public String getModel_name() { return model_name; }
+    public void setModel_name(String model_name) { this.model_name = model_name; }
+
+    public String getModel_version() { return model_version; }
+    public void setModel_version(String model_version) { this.model_version = model_version; }
+
+    public String getConfidence_level() { return confidence_level; }
+
+    public void setConfidence_level(String confidence_level) { this.confidence_level = confidence_level; }
 }
