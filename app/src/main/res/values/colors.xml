@@ -48,4 +48,8 @@
     <color name="onboarding_tag_text">#F28AB2</color>
 
     <color name="grey_300">#E0E0E0</color>
+
+    <!-- Booking Gradient -->
+    <color name="booking_gradient_start">#FF96C5</color>
+    <color name="booking_gradient_end">#BA99FF</color>
 </resources>

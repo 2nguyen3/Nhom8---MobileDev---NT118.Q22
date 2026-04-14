@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FDFDFD"
+    android:background="@android:color/transparent"
     android:fillViewport="true">
 
     <LinearLayout
@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             app:cardCornerRadius="20dp"
-            app:cardElevation="1dp"
+            app:cardElevation="2dp"
             app:cardBackgroundColor="#FFFFFF">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -114,7 +114,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             app:cardCornerRadius="20dp"
-            app:cardElevation="1dp"
+            app:cardElevation="2dp"
             app:cardBackgroundColor="#FFFFFF">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -151,7 +151,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Người dùng Heami"
+                            android:text="Heami User"
                             android:textColor="#9E8AAA"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -248,7 +248,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             app:cardCornerRadius="20dp"
-            app:cardElevation="1dp"
+            app:cardElevation="2dp"
             app:cardBackgroundColor="#FFFFFF">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -259,7 +259,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_doctor_package_card"
+                    android:background="@drawable/bg_doctor_calendar_card"
                     android:gravity="center_vertical"
                     android:padding="12dp">
                     <ImageView
@@ -281,7 +281,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="18 Th4 · 08:30"
+                            android:text="T6, 18/04/2026 · 08:00"
                             android:textColor="#2D1B47"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -432,27 +432,6 @@
                     android:textSize="22sp"
                     android:textStyle="bold" />
             </RelativeLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_doctor_checkout_left"
-                    app:tint="#2196F3" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="Thanh toán qua chuyển khoản ngân hàng"
-                    android:textColor="#9E8AAA"
-                    android:textSize="11sp" />
-            </LinearLayout>
         </LinearLayout>
 
         <!-- LƯU Ý -->
@@ -460,7 +439,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:layout_marginBottom="40dp"
             android:background="@drawable/bg_doctor_notice"
             android:orientation="horizontal"
             android:padding="16dp"
@@ -469,7 +447,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_light"
-                app:tint="#FFD100" />
+                app:tint="#856404" />
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

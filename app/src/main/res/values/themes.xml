@@ -26,6 +26,10 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <style name="RoundedSquareAppearance">
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <style name="HeamiDialogTheme" parent="Theme.MaterialComponents.Light.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>

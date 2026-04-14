@@ -1,6 +1,7 @@
 package com.example.heami.activities;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -211,6 +212,16 @@ public class DoctorDetailActivity extends AppCompatActivity {
                 if (selectedDate == null || selectedTime == null) {
                     Toast.makeText(this, "Vui lòng chọn lịch hẹn trước", Toast.LENGTH_SHORT).show();
                     showBookingDialog();
+                } else {
+                    // Mở màn hình BookingFlowActivity
+                    Intent intent = new Intent(DoctorDetailActivity.this, BookingFlowActivity.class);
+                    
+                    // Truyền thêm dữ liệu nếu cần
+                    intent.putExtra("doctor_id", doctorId);
+                    intent.putExtra("doctor_name", txtDoctorDetailName.getText().toString());
+                    intent.putExtra("price", txtDoctorBottomSummaryPrice.getText().toString());
+                    
+                    startActivity(intent);
                 }
             });
         }
@@ -404,7 +415,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
     private void updateTimeItemUI(TextView view, boolean isSelected, boolean isBooked) {
         if (isBooked) {
-            view.setBackgroundResource(R.drawable.bg_doctor_package_card);
+            view.setBackgroundResource(R.drawable.bg_doctor_calendar_card);
             view.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E2E8F0")));
             view.setTextColor(Color.parseColor("#CBD5E1"));
         } else {

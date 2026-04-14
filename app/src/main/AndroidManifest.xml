@@ -66,6 +66,9 @@
             <activity
                 android:name=".activities.DoctorDetailActivity"
                 android:exported="false" />
+            <activity
+                android:name=".activities.BookingFlowActivity"
+                android:exported="false" />
 
         <activity
             android:name=".activities.ProfileActivity"

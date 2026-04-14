@@ -1,8 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:angle="315"
-        android:startColor="#7ECACA"
-        android:endColor="#5DBFBB" />
-    <corners android:radius="100dp" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Vòng loang ngoài cùng (lớn nhất, mờ nhất) -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#1A66C2C2" />
+        </shape>
+    </item>
+
+    <!-- Vòng loang giữa -->
+    <item
+        android:bottom="10dp"
+        android:left="10dp"
+        android:right="10dp"
+        android:top="10dp">
+        <shape android:shape="oval">
+            <solid android:color="#4D66C2C2" />
+        </shape>
+    </item>
+
+    <!-- Vòng tròn lõi đậm -->
+    <item
+        android:bottom="20dp"
+        android:left="20dp"
+        android:right="20dp"
+        android:top="20dp">
+        <shape android:shape="oval">
+            <solid android:color="#66C2C2" />
+        </shape>
+    </item>
+
+    <item
+        android:drawable="@drawable/ic_check_white"
+        android:gravity="center"
+        android:bottom="32dp"
+        android:left="32dp"
+        android:right="32dp"
+        android:top="32dp">
+    </item>
+
+    <!-- Các hạt lốm đốm xung quanh -->
+    <!-- Hạt trên trái -->
+    <item
+        android:width="4dp"
+        android:height="4dp"
+        android:gravity="top|left"
+        android:left="12dp"
+        android:top="15dp">
+        <shape android:shape="oval">
+            <solid android:color="#66C2C2" />
+        </shape>
+    </item>
+
+    <!-- Hạt dưới phải -->
+    <item
+        android:width="3dp"
+        android:height="3dp"
+        android:gravity="bottom|right"
+        android:bottom="20dp"
+        android:right="10dp">
+        <shape android:shape="oval">
+            <solid android:color="#9966C2C2" />
+        </shape>
+    </item>
+
+    <!-- Hạt trên phải -->
+    <item
+        android:width="5dp"
+        android:height="5dp"
+        android:gravity="top|right"
+        android:right="15dp"
+        android:top="10dp">
+        <shape android:shape="oval">
+            <solid android:color="#4D66C2C2" />
+        </shape>
+    </item>
+
+</layer-list>

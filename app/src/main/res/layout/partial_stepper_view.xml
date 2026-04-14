@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical"
+    android:gravity="center_horizontal"
     android:orientation="horizontal">
 
     <!-- Step 1: Đặt lịch -->
@@ -12,13 +11,18 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical">
-        <ImageView
-            android:id="@+id/step1_icon"
+        <TextView
+            android:id="@+id/step1_number"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_check_circle"
-            app:tint="@color/teal" />
+            android:background="@drawable/bg_light_teal_circle"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="@color/teal_dark"
+            android:textSize="12sp"
+            android:textStyle="bold" />
         <TextView
+            android:id="@+id/step1_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Đặt lịch"
@@ -28,11 +32,13 @@
     </LinearLayout>
 
     <View
+        android:id="@+id/step1_divider"
         android:layout_width="40dp"
-        android:layout_height="1dp"
+        android:layout_height="2dp"
         android:layout_marginHorizontal="8dp"
-        android:background="#E0E0E0"
-        android:layout_marginBottom="14dp"/>
+        android:layout_marginTop="11dp"
+        android:layout_gravity="top"
+        android:background="#E0E0E0"/>
 
     <!-- Step 2: Thanh toán -->
     <LinearLayout
@@ -44,27 +50,30 @@
             android:id="@+id/step2_number"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:background="@drawable/bg_light_teal_circle"
+            android:background="@drawable/bg_light_gray_circle"
             android:gravity="center"
             android:text="2"
-            android:textColor="@color/teal_dark"
+            android:textColor="#9E8AAA"
             android:textSize="12sp"
             android:textStyle="bold" />
         <TextView
+            android:id="@+id/step2_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Thanh toán"
             android:textSize="10sp"
-            android:textColor="#2D1B47"
+            android:textColor="#9E8AAA"
             android:layout_marginTop="4dp"/>
     </LinearLayout>
 
     <View
+        android:id="@+id/step2_divider"
         android:layout_width="40dp"
-        android:layout_height="1dp"
+        android:layout_height="2dp"
         android:layout_marginHorizontal="8dp"
-        android:background="#E0E0E0"
-        android:layout_marginBottom="14dp"/>
+        android:layout_marginTop="11dp"
+        android:layout_gravity="top"
+        android:background="#E0E0E0"/>
 
     <!-- Step 3: Hóa đơn -->
     <LinearLayout
@@ -83,6 +92,7 @@
             android:textSize="12sp"
             android:textStyle="bold" />
         <TextView
+            android:id="@+id/step3_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Hóa đơn"

@@ -4,7 +4,7 @@
     android:id="@+id/bookingFlowRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF9FB">
+    android:background="@drawable/bg_doctor_screen">
 
     <!-- Background blobs -->
     <View
@@ -95,34 +95,83 @@
         <include layout="@layout/partial_stepper_view" />
     </LinearLayout>
 
-    <!-- Content -->
+    <!-- Content Area -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/booking_nav_host"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:paddingBottom="140dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutStepper" />
+        app:layout_constraintTop_toBottomOf="@id/layoutStepper"
+        app:layout_constraintBottom_toTopOf="@id/layoutBottomAction" />
 
-    <!-- Bottom Action (Glass container with Gradient Button) -->
+    <!-- Bottom Action Bar -->
     <LinearLayout
         android:id="@+id/layoutBottomAction"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_doctor_detail_bottom_bar"
-        android:elevation="12dp"
-        android:clipChildren="false"
-        android:clipToPadding="false"
+        android:elevation="16dp"
         android:orientation="vertical"
         android:paddingStart="20dp"
         android:paddingTop="16dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="40dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:paddingBottom="32dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- Countdown and Price Row -->
+        <LinearLayout
+            android:id="@+id/layoutBookingTimerRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_clock"
+                    app:tint="#FFB6C1"
+                    android:contentDescription="Giờ"/>
+                <TextView
+                    android:id="@+id/txtBookingTimer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Giữ lịch hẹn trong 15:00"
+                    android:textSize="13sp"
+                    android:textColor="#B0A0C0"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_sparkle"
+                    app:tint="#FF6BAE"
+                    android:contentDescription="Sparkle"/>
+                <TextView
+                    android:id="@+id/txtBookingPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="250.000đ"
+                    android:textColor="#FF6BAE"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Continue Button (Step 1) -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnMainAction"
             android:layout_width="match_parent"
@@ -134,7 +183,59 @@
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:visibility="visible" />
+
+        <!-- VNPay Button (Step 2) -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutBtnPayVnpay"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_vnpay_button"
+            android:elevation="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Thanh toán qua VNPAY"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/icExternal"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="24dp"
+                android:src="@drawable/ic_external_link"
+                app:tint="#FFFFFF"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Complete Button (Step 3) -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnComplete"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_button_confirm_gradient"
+            android:elevation="8dp"
+            android:stateListAnimator="@null"
+            android:text="Về trang chủ"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
