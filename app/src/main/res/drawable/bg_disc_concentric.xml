@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#121212" />
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="sweep"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:startColor="#00FFFFFF"
+                android:centerColor="#1AFFFFFF"
+                android:endColor="#00FFFFFF" />
+        </shape>
+    </item>
+
+    <item android:top="20dp" android:bottom="20dp" android:left="20dp" android:right="20dp">
+        <shape android:shape="oval">
+            <stroke android:width="0.5dp" android:color="#1AFFFFFF" />
+        </shape>
+    </item>
+
+    <item android:top="40dp" android:bottom="40dp" android:left="40dp" android:right="40dp">
+        <shape android:shape="oval">
+            <stroke android:width="0.5dp" android:color="#1AFFFFFF" />
+        </shape>
+    </item>
+
+    <item android:top="60dp" android:bottom="60dp" android:left="60dp" android:right="60dp">
+        <shape android:shape="oval">
+            <stroke android:width="0.5dp" android:color="#1AFFFFFF" />
+        </shape>
+    </item>
+
+    <item android:top="95dp" android:bottom="95dp" android:left="95dp" android:right="95dp">
+        <shape android:shape="oval">
+            <solid android:color="#3D2B52" />
+            <stroke android:width="2dp" android:color="#22FFFFFF" />
+        </shape>
+    </item>
+
+    <item android:top="138dp" android:bottom="138dp" android:left="138dp" android:right="138dp">
+        <shape android:shape="oval">
+            <solid android:color="#000000" />
+        </shape>
+    </item>
+
+</layer-list>

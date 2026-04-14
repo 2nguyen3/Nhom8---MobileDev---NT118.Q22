@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <queries>
         <package android:name="com.google.android.gms" />
@@ -35,6 +37,28 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+            <activity
+                android:name=".activities.RegisterActivity"
+                android:exported="false" />
+            <activity
+                android:name=".activities.ForgotPasswordActivity"
+                android:exported="false" />
+
+        <activity
+            android:name=".activities.OnboardingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.PermissionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.SetupAvatarActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.SetupBioActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.SetupGoalsActivity"
+            android:exported="false" />
 
         <activity
             android:name=".activities.HomeActivity"
@@ -52,6 +76,22 @@
         <activity
             android:name=".activities.TherapyActivity"
             android:exported="false" />
+            <activity
+                android:name=".activities.MusicPlayerActivity"
+                android:exported="false" />
+            <activity
+                android:name=".activities.NatureSoundActivity"
+                android:exported="false" />
+            <activity
+                android:name=".activities.BreathingActivity"
+                android:exported="false" />
+            <activity
+                android:name=".activities.PodcastActivity"
+                android:exported="false" />
+            <activity
+                android:name=".activities.BinauralPlayerActivity"
+                android:exported="false" />
+
 
         <activity
             android:name=".activities.CommunityActivity"
@@ -94,29 +134,6 @@
             <activity
                 android:name=".activities.SosActivity"
                 android:exported="false" />
-
-        <activity
-            android:name=".activities.OnboardingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.PermissionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupAvatarActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupBioActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupGoalsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.RegisterActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.ForgotPasswordActivity"
-            android:exported="false" />
 
         <meta-data
             android:name="preloaded_fonts"

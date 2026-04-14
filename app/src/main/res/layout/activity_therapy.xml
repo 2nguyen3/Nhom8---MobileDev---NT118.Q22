@@ -228,16 +228,17 @@
                                 android:layout_height="wrap_content"
                                 android:layout_toStartOf="@+id/tvTagSuggestMusic"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:background="@drawable/bg_tag_pink"
+                                    android:fontFamily="@font/quicksand_bold"
                                     android:paddingHorizontal="8dp"
                                     android:paddingVertical="2dp"
                                     android:text="🎵 Nhạc"
                                     android:textColor="#E86FA0"
-                                    android:textSize="10sp"
-                                    android:fontFamily="@font/quicksand_bold" />
+                                    android:textSize="10sp" />
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -274,6 +275,7 @@
                                 android:textColor="#E86FA0"
                                 android:textSize="10sp" />
                             <ImageButton
+                                android:id="@+id/btnOpenMusic"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -357,6 +359,7 @@
                                     android:textSize="10sp" />
                             </LinearLayout>
                             <ImageButton
+                                android:id="@+id/btnOpenNatureSound"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -428,7 +431,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Chuyện kể diệu dàng · Mindfulness"
+                                    android:text="Nếu cả đời không rực rỡ thì sao ?"
                                     android:textColor="#8E24AA"
                                     android:textSize="11sp" />
                                 <TextView
@@ -440,6 +443,7 @@
                                     android:textSize="10sp" />
                             </LinearLayout>
                             <ImageButton
+                                android:id="@+id/btnOpenPodcast"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -523,6 +527,7 @@
                                     android:textSize="10sp" />
                             </LinearLayout>
                             <ImageButton
+                                android:id="@+id/btnOpenBinarual"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -634,6 +639,7 @@
                                 android:textSize="10sp" />
 
                             <ImageButton
+                                android:id="@+id/btnOpen1Breath"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -722,6 +728,7 @@
                             </LinearLayout>
 
                             <ImageButton
+                                android:id="@+id/btnOpen3Breath"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -810,6 +817,7 @@
                             </LinearLayout>
 
                             <ImageButton
+                                android:id="@+id/btnOpen5Breath"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -1214,6 +1222,7 @@
                                 android:fontFamily="@font/quicksand_bold" />
 
                             <ImageButton
+                                android:id="@+id/btnOpenDoctor"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
@@ -1311,12 +1320,12 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-<!--    <include-->
-<!--        android:id="@+id/include_nav"-->
-<!--        layout="@layout/bottom_nav"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent" />-->
+    <!--    <include-->
+    <!--        android:id="@+id/include_nav"-->
+    <!--        layout="@layout/bottom_nav"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent" />-->
 
     <include
         android:id="@+id/include_nav"

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_breathing_smooth"
+    android:padding="20dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <ImageButton
+        android:id="@+id/btnMinimize"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:background="@drawable/bg_music_control_sub"
+        android:padding="12dp"
+        android:src="@drawable/ic_chevron_down"
+        app:tint="#FFFFFF" />
+
+    <LinearLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:gravity="center"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/quicksand_bold"
+            android:text="Sẵn sàng?"
+            android:textColor="#E0F7FA"
+            android:textSize="32sp" />
+        <TextView
+            android:id="@+id/tvInstruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/quicksand_medium"
+            android:text="Hãy ngồi thoải mái và thư giãn"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnAction"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginHorizontal="30dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_btn_glass_pink"
+        android:fontFamily="@font/quicksand_bold"
+        android:text="Bắt đầu"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:stateListAnimator="@null" />
+
+    <LinearLayout
+        android:id="@+id/layoutOptions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/btnAction"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="40dp"
+        android:gravity="center"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/btn1Min"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:background="@drawable/bg_circle_glass_active"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1" android:textColor="#FFF" android:textSize="20sp" android:fontFamily="@font/quicksand_bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="phút" android:textColor="#FFF" android:textSize="10sp" android:fontFamily="@font/quicksand_medium" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btn3Min"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginHorizontal="20dp"
+            android:background="@drawable/bg_circle_glass_inactive"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3" android:textColor="#FFF" android:textSize="20sp" android:fontFamily="@font/quicksand_bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="phút" android:textColor="#80FFFFFF" android:textSize="10sp" android:fontFamily="@font/quicksand_medium" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btn5Min"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:background="@drawable/bg_circle_glass_inactive"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5" android:textColor="#FFF" android:textSize="20sp" android:fontFamily="@font/quicksand_bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="phút" android:textColor="#80FFFFFF" android:textSize="10sp" android:fontFamily="@font/quicksand_medium" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutCycleInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/layoutOptions"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="15dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="invisible"> <LinearLayout
+        android:id="@+id/layoutDots"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginEnd="10dp" />
+
+        <TextView
+            android:id="@+id/tvCycleCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/quicksand_medium"
+            android:textColor="#B0BEC5"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/diskContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/layoutCycleInfo"
+        android:layout_below="@id/layoutHeader"
+        android:layout_centerInParent="true"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <View
+            android:id="@+id/viewPulseGlow"
+            android:layout_width="360dp"
+            android:layout_height="360dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_circle_outer_glow" />
+
+        <View
+            android:layout_width="310dp"
+            android:layout_height="310dp"
+            android:layout_gravity="center"
+            android:alpha="0.3"
+            android:background="@drawable/bg_circle_dark_navy" />
+
+        <View
+            android:layout_width="270dp"
+            android:layout_height="270dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_circle_inner_glass" />
+
+        <ProgressBar
+            android:id="@+id/cpbBreath"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="272dp"
+            android:layout_height="272dp"
+            android:layout_gravity="center"
+            android:indeterminate="false"
+            android:progressDrawable="@drawable/bg_breathing_circle_pink" />
+
+        <ImageView
+            android:id="@+id/imgCloud"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_cloud_happy"
+            android:elevation="10dp" />
+
+    </FrameLayout>
+
+</RelativeLayout>

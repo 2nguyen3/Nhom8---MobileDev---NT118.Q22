@@ -2,10 +2,12 @@ package com.example.heami.activities;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent; // Thêm dòng này
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.ImageButton; // Thêm dòng này
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -13,11 +15,25 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
 
+
 public class TherapyActivity extends AppCompatActivity {
 
     private TextView btnTatCa, btnAmThanh, btnHitTho, btnNhatKy, btnKeHoach;
     private LinearLayout layoutAmThanh, layoutHitTho, layoutNhatKy, layoutKeHoach;
     private ImageView imgCloud;
+    private ImageButton btnOpenMusic; // Khai báo ở đây
+    private ImageButton btnOpenNatureSound;
+
+    private ImageButton btnOpen1Breath;
+
+    private ImageButton btnOpen3Breath;
+    private ImageButton btnOpen5Breath;
+
+    private ImageButton btnOpenDoctor;
+
+    private ImageButton btnOpenPodcast;
+
+    private ImageButton btnOpenBinarual;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,10 +43,26 @@ public class TherapyActivity extends AppCompatActivity {
         initViews();
         setupFilterListeners();
 
-        // 1. Khởi tạo đám mây nhảy múa
+        // GỌI HÀM MỞ NHẠC Ở ĐÂY
+        setupMusicButton();
+
+        setupNatureButton();
+
+        setup1BreathButton();
+
+        setup3BreathButton();
+
+        setup5BreathButton();
+
+        setupDoctorButton();
+
+        setupPodcast();
+
+        setupBinarualButton();
+
         startCloudAnimation();
 
-        // 2. QUAN TRỌNG: Thiết lập Bottom Navigation ngay từ đầu
+
         BottomNavManager.setup(this, BottomNavManager.TAB_THERAPY);
     }
 
@@ -47,6 +79,106 @@ public class TherapyActivity extends AppCompatActivity {
         layoutKeHoach = findViewById(R.id.layoutKeHoach);
 
         imgCloud = findViewById(R.id.imgCloud);
+
+        btnOpenMusic = findViewById(R.id.btnOpenMusic);
+
+        btnOpenNatureSound = findViewById(R.id.btnOpenNatureSound);
+
+        btnOpen1Breath = findViewById(R.id.btnOpen1Breath);
+
+        btnOpen3Breath = findViewById(R.id.btnOpen3Breath);
+
+        btnOpen5Breath = findViewById(R.id.btnOpen5Breath);
+
+        btnOpenDoctor = findViewById(R.id.btnOpenDoctor);
+
+        btnOpenPodcast = findViewById(R.id.btnOpenPodcast);
+
+        btnOpenBinarual = findViewById(R.id.btnOpenBinarual);
+    }
+
+    private void setupMusicButton() {
+        if (btnOpenMusic != null) {
+            btnOpenMusic.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, MusicPlayerActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupNatureButton() {
+        if (btnOpenNatureSound != null) {
+            btnOpenNatureSound.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, NatureSoundActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setup1BreathButton() {
+        if (btnOpen1Breath != null) {
+            btnOpen1Breath.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
+                intent.putExtra("TARGET_TIME", 1); // Gửi số 1
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setup3BreathButton() {
+        if (btnOpen3Breath != null) {
+            btnOpen3Breath.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
+                intent.putExtra("TARGET_TIME", 3); // Gửi số 3
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setup5BreathButton() {
+        if (btnOpen5Breath != null) {
+            btnOpen5Breath.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
+                intent.putExtra("TARGET_TIME", 5); // Gửi số 5
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupDoctorButton() {
+        if (btnOpenDoctor != null) {
+            btnOpenDoctor.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, DoctorActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupPodcast() {
+        if (btnOpenPodcast != null) {
+            btnOpenPodcast.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, PodcastActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupBinarualButton() {
+        if (btnOpenBinarual != null) {
+            btnOpenBinarual.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, BinauralPlayerActivity.class);
+                startActivity(intent);
+
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
     }
 
     private void startCloudAnimation() {
@@ -68,24 +200,18 @@ public class TherapyActivity extends AppCompatActivity {
         btnKeHoach.setOnClickListener(v -> applyFilter("plan", btnKeHoach));
     }
 
-    /**
-     * Tối ưu hàm lọc để không gây nghẽn thanh Bottom Navigation
-     */
     private void applyFilter(String category, TextView selectedButton) {
         View[] layouts = {layoutAmThanh, layoutHitTho, layoutNhatKy, layoutKeHoach};
 
-        // Bước 1: Cho tất cả mờ dần đồng loạt để tạo hiệu ứng mượt
         for (View layout : layouts) {
-            layout.animate().alpha(0f).setDuration(100).start();
+            if (layout != null) layout.animate().alpha(0f).setDuration(100).start();
         }
 
-        // Bước 2: Sử dụng postDelayed để tách biệt luồng xử lý Animation và Logic hiển thị
-        // Việc này giúp thanh Bottom Nav luôn nhận được tương tác từ người dùng
         selectedButton.postDelayed(() -> {
-            layoutAmThanh.setVisibility(View.GONE);
-            layoutHitTho.setVisibility(View.GONE);
-            layoutNhatKy.setVisibility(View.GONE);
-            layoutKeHoach.setVisibility(View.GONE);
+            if(layoutAmThanh != null) layoutAmThanh.setVisibility(View.GONE);
+            if(layoutHitTho != null) layoutHitTho.setVisibility(View.GONE);
+            if(layoutNhatKy != null) layoutNhatKy.setVisibility(View.GONE);
+            if(layoutKeHoach != null) layoutKeHoach.setVisibility(View.GONE);
 
             switch (category) {
                 case "all":
@@ -107,14 +233,12 @@ public class TherapyActivity extends AppCompatActivity {
                     showWithAnimation(layoutKeHoach);
                     break;
             }
-
-            // Cập nhật màu sắc cho các nút Chip
             updateChipStyles(selectedButton);
-
-        }, 120); // Delay nhẹ 120ms
+        }, 120);
     }
 
     private void showWithAnimation(View view) {
+        if (view == null) return;
         view.setVisibility(View.VISIBLE);
         view.setAlpha(0f);
         view.setTranslationY(30f);
@@ -127,9 +251,10 @@ public class TherapyActivity extends AppCompatActivity {
 
     private void updateChipStyles(TextView selectedButton) {
         TextView[] allButtons = {btnTatCa, btnAmThanh, btnHitTho, btnNhatKy, btnKeHoach};
-
         for (TextView btn : allButtons) {
+            if (btn == null) continue;
             if (btn == selectedButton) {
+                // Giữ nguyên logic màu sắc của các bạn
                 if (btn == btnAmThanh) {
                     btn.setBackgroundResource(R.drawable.bg_chip_active_teal);
                     btn.setTextColor(Color.parseColor("#33ABA0"));
@@ -153,12 +278,10 @@ public class TherapyActivity extends AppCompatActivity {
         }
     }
 
-    // Xử lý nút Back hệ thống để luôn về HomeActivity
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        android.content.Intent intent = new android.content.Intent(this, HomeActivity.class);
-        intent.setFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        Intent intent = new Intent(this, HomeActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         finish();
