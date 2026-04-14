@@ -84,10 +84,8 @@ public class BottomNavManager {
 
         if (navTherapy != null) {
             navTherapy.setOnClickListener(v -> {
-                // Kiểm tra nếu không phải đang ở trang TherapyActivity thì mới chuyển
                 if (!(activity instanceof TherapyActivity)) {
                     activity.startActivity(new Intent(activity, TherapyActivity.class));
-                    // Hiệu ứng chuyển trang tức thì (không bị giật)
                     activity.overridePendingTransition(0, 0);
                     activity.finish();
                 }
@@ -100,6 +98,9 @@ public class BottomNavManager {
                     activity.startActivity(new Intent(activity, DoctorActivity.class));
                     activity.overridePendingTransition(0, 0);
                     activity.finish();
+                } else {
+                    // Nếu đã ở trang Doctor, cuộn lên đầu và refresh
+                    ((DoctorActivity) activity).scrollToTopAndRefresh();
                 }
             });
         }
@@ -132,7 +133,6 @@ public class BottomNavManager {
     private static void setActiveItem(LinearLayout item, ImageView icon, TextView text, int iconRes) {
         if (item != null) {
             item.setBackgroundResource(R.drawable.bg_nav_item_active);
-
             item.setScaleX(0.95f);
             item.setScaleY(0.95f);
             item.setAlpha(0.88f);
@@ -152,10 +152,8 @@ public class BottomNavManager {
 
         if (icon != null) {
             icon.setImageResource(iconRes);
-
             icon.setScaleX(0.92f);
             icon.setScaleY(0.92f);
-
             icon.animate()
                     .scaleX(1.06f)
                     .scaleY(1.06f)

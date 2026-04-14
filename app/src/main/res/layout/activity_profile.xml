@@ -1,492 +1,416 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/profileScrollView"
+    android:id="@+id/profileRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FDF8FA"
-    android:fillViewport="true">
+    android:background="@drawable/bg_doctor_screen"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+    <!-- Background blobs -->
+    <View
+        android:id="@+id/blobProfilePink"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:alpha="0.95"
+        android:background="@drawable/bg_blob_doctor_pink"
+        android:translationX="-36dp"
+        android:translationY="-48dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <RelativeLayout
+    <View
+        android:id="@+id/blobProfileMint"
+        android:layout_width="190dp"
+        android:layout_height="190dp"
+        android:alpha="0.95"
+        android:background="@drawable/bg_blob_doctor_mint"
+        android:translationX="36dp"
+        android:translationY="470dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/profileScrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:paddingTop="52dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp">
-
-            <ImageView
-                android:id="@+id/imgSettings"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentEnd="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="4dp"
-                android:src="@drawable/ic_setting"
-                app:tint="#313866"
-                tools:ignore="ContentDescription,SpeakableTextPresentCheck,TouchTargetSizeCheck" />
-
-            <RelativeLayout
-                android:id="@+id/layoutAvatar"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/ivAvatarProfile"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#FEE4F0"
-                    app:shapeAppearanceOverlay="@style/CircleAppearance"
-                    app:strokeColor="#FEE4F0"
-                    app:strokeWidth="2dp" />
-
-                <TextView
-                    android:id="@+id/tvAvatarEmoji"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:includeFontPadding="false"
-                    android:paddingBottom="4dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="44sp"
-                    tools:text="🌸" />
-            </RelativeLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="16dp"
-                android:layout_toStartOf="@id/imgSettings"
-                android:layout_toEndOf="@id/layoutAvatar"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tvProfileName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/quicksand_bold"
-                    android:text="Heami User"
-                    android:textColor="#313866"
-                    android:textSize="22sp" />
-
-                <TextView
-                    android:id="@+id/tvProfileBio"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:fontFamily="@font/quicksand_medium"
-                    android:text="&quot;Mỗi ngày là một khởi đầu mới 🌱&quot;"
-                    android:textColor="#7D8BB7"
-                    android:textSize="13sp" />
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:scrollbars="none"
-                    android:overScrollMode="never">
-
-                    <LinearLayout
-                        android:id="@+id/layoutGoalsContainer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipStress"
-                            style="@style/Widget.MaterialComponents.Chip.Action"
-                            android:layout_width="wrap_content"
-                            android:layout_height="32dp"
-                            android:text="😮‍💨 Giảm căng thẳng"
-                            android:textColor="#E86FA0"
-                            android:textSize="10sp"
-                            app:chipBackgroundColor="#FEE4F0"
-                            app:chipCornerRadius="16dp"
-                            app:chipStrokeWidth="0dp"
-                            app:fontFamily="@font/quicksand_bold"
-                            tools:ignore="TouchTargetSizeCheck" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipSleep"
-                            style="@style/Widget.MaterialComponents.Chip.Action"
-                            android:layout_width="wrap_content"
-                            android:layout_height="32dp"
-                            android:layout_marginStart="8dp"
-                            android:text="😴 Cải thiện giấc ngủ"
-                            android:textColor="#E86FA0"
-                            android:textSize="10sp"
-                            app:chipBackgroundColor="#FEE4F0"
-                            app:chipCornerRadius="16dp"
-                            app:chipStrokeWidth="0dp"
-                            app:fontFamily="@font/quicksand_bold"
-                            tools:ignore="TouchTargetSizeCheck" />
-                    </LinearLayout>
-                </HorizontalScrollView>
-            </LinearLayout>
-        </RelativeLayout>
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_stat_orange"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_fire"
-                            app:tint="#FF8A65" />
-
-                        <TextView
-                            android:id="@+id/tvStatStreak"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="7 ngày"
-                            android:textColor="#313866"
-                            android:textSize="18sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_medium"
-                            android:text="Chuỗi"
-                            android:textColor="#7D8BB7"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="4dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_stat_teal"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_heartbeat"
-                            app:tint="#4DB6AC" />
-
-                        <TextView
-                            android:id="@+id/tvStatCheckin"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="42"
-                            android:textColor="#313866"
-                            android:textSize="18sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_medium"
-                            android:text="Tổng check-in"
-                            android:textColor="#7D8BB7"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_stat_purple"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_task"
-                            app:tint="#9575CD" />
-
-                        <TextView
-                            android:id="@+id/tvStatTask"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="18"
-                            android:textColor="#313866"
-                            android:textSize="18sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_medium"
-                            android:text="Nhiệm vụ"
-                            android:textColor="#7D8BB7"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnViewAnalysis"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:fontFamily="@font/quicksand_bold"
-                    android:text="Xem phân tích chi tiết  ›"
-                    android:textAllCaps="false"
-                    android:textColor="#00BFA5"
-                    app:backgroundTint="#E0F7F4"
-                    app:cornerRadius="28dp"
-                    app:elevation="0dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnViewHistory"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="@font/quicksand_bold"
-                    android:text="Lịch sử tư vấn &amp; giao dịch  ›"
-                    android:textAllCaps="false"
-                    android:textColor="#E86FA0"
-                    app:backgroundTint="#FEE4F0"
-                    app:cornerRadius="28dp"
-                    app:elevation="0dp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardSOS"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/gradient_sos"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="20dp">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@drawable/bg_white_circle_alpha"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_phone"
-                    app:tint="@color/white" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/quicksand_bold"
-                        android:text="Cần hỗ trợ ngay"
-                        android:textColor="@color/white"
-                        android:textSize="17sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/quicksand_medium"
-                        android:text="Kết nối hỗ trợ khẩn cấp 24/7"
-                        android:textColor="#FEE4F0"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="@color/white" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="@font/quicksand_bold"
-            android:text="GIAO DIỆN"
-            android:textColor="#C0BACA"
-            android:textSize="12sp" />
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
+            android:orientation="vertical"
+            android:padding="20dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="12dp">
+                android:layout_marginBottom="24dp">
 
                 <ImageView
-                    android:id="@+id/iconDarkMode"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_light_blue_circle"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_moon"
-                    app:tint="#4A90E2" />
+                    android:id="@+id/imgSettings"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_setting"
+                    app:tint="#313866"
+                    tools:ignore="ContentDescription,SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+
+                <RelativeLayout
+                    android:id="@+id/layoutAvatar"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivAvatarProfile"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#FEE4F0"
+                        app:shapeAppearanceOverlay="@style/CircleAppearance"
+                        app:strokeColor="#FEE4F0"
+                        app:strokeWidth="1.5dp" />
+
+                    <TextView
+                        android:id="@+id/tvAvatarEmoji"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
+                        android:paddingBottom="2dp"
+                        android:textColor="@android:color/black"
+                        android:textSize="32sp"
+                        tools:text="🌸" />
+                </RelativeLayout>
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:layout_marginStart="12dp"
-                    android:layout_toEndOf="@id/iconDarkMode"
+                    android:layout_marginStart="14dp"
+                    android:layout_toStartOf="@id/imgSettings"
+                    android:layout_toEndOf="@id/layoutAvatar"
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tvProfileName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/quicksand_bold"
-                        android:text="Dark Mode"
+                        android:text="Heami User"
                         android:textColor="#313866"
-                        android:textSize="15sp" />
+                        android:textSize="18sp" />
 
                     <TextView
-                        android:id="@+id/tvDarkModeStatus"
+                        android:id="@+id/tvProfileBio"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
                         android:fontFamily="@font/quicksand_medium"
-                        android:text="Đang tắt"
+                        android:text="&quot;Mỗi ngày là một khởi đầu mới 🌱&quot;"
                         android:textColor="#7D8BB7"
                         android:textSize="12sp" />
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:overScrollMode="never"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/layoutGoalsContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipStress"
+                                style="@style/Widget.MaterialComponents.Chip.Action"
+                                android:layout_width="wrap_content"
+                                android:layout_height="27dp"
+                                android:minHeight="0dp"
+                                android:text="😮‍💨 Giảm căng thẳng"
+                                android:textColor="#E86FA0"
+                                android:textSize="10sp"
+                                app:chipBackgroundColor="#FEE4F0"
+                                app:chipCornerRadius="13.5dp"
+                                app:chipEndPadding="8dp"
+                                app:chipMinTouchTargetSize="0dp"
+                                app:chipStartPadding="8dp"
+                                app:chipStrokeWidth="0dp"
+                                app:fontFamily="@font/quicksand_bold"
+                                app:textEndPadding="0dp"
+                                app:textStartPadding="0dp"
+                                tools:ignore="TouchTargetSizeCheck" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipSleep"
+                                style="@style/Widget.MaterialComponents.Chip.Action"
+                                android:layout_width="wrap_content"
+                                android:layout_height="27dp"
+                                android:layout_marginStart="6dp"
+                                android:minHeight="0dp"
+                                android:text="😴 Cải thiện giấc ngủ"
+                                android:textColor="#E86FA0"
+                                android:textSize="10sp"
+                                app:chipBackgroundColor="#FEE4F0"
+                                app:chipCornerRadius="13.5dp"
+                                app:chipEndPadding="8dp"
+                                app:chipMinTouchTargetSize="0dp"
+                                app:chipStartPadding="8dp"
+                                app:chipStrokeWidth="0dp"
+                                app:fontFamily="@font/quicksand_bold"
+                                app:textEndPadding="0dp"
+                                app:textStartPadding="0dp"
+                                tools:ignore="TouchTargetSizeCheck" />
+                        </LinearLayout>
+                    </HorizontalScrollView>
                 </LinearLayout>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switchDarkMode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true" />
             </RelativeLayout>
-        </androidx.cardview.widget.CardView>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="@font/quicksand_bold"
-            android:text="THÔNG BÁO"
-            android:textColor="#C0BACA"
-            android:textSize="12sp" />
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp">
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp">
 
-                <RelativeLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="12dp">
-
-                    <ImageView
-                        android:id="@+id/iconNotiCheckin"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_light_pink_circle"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_bell"
-                        app:tint="#E86FA0" />
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconNotiCheckin"
+                        android:layout_marginBottom="20dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_stat_orange"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_fire"
+                                app:tint="#FF8A65" />
+
+                            <TextView
+                                android:id="@+id/tvStatStreak"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="7"
+                                android:textColor="#313866"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_medium"
+                                android:text="Chuỗi"
+                                android:textColor="#7D8BB7"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_stat_teal"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_heartbeat"
+                                app:tint="#4DB6AC" />
+
+                            <TextView
+                                android:id="@+id/tvStatCheckin"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="42"
+                                android:textColor="#313866"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_medium"
+                                android:text="Check-in"
+                                android:textColor="#7D8BB7"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_stat_purple"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_task"
+                                app:tint="#9575CD" />
+
+                            <TextView
+                                android:id="@+id/tvStatTask"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="18"
+                                android:textColor="#313866"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_medium"
+                                android:text="Nhiệm vụ"
+                                android:textColor="#7D8BB7"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnViewAnalysis"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Xem phân tích chi tiết  ›"
+                        android:textAllCaps="false"
+                        android:textColor="#00BFA5"
+                        app:backgroundTint="#E0F7F4"
+                        app:cornerRadius="28dp"
+                        app:elevation="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnViewHistory"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Lịch sử tư vấn &amp; giao dịch  ›"
+                        android:textAllCaps="false"
+                        android:textColor="#E86FA0"
+                        app:backgroundTint="#FEE4F0"
+                        app:cornerRadius="28dp"
+                        app:elevation="0dp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardSOS"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/gradient_sos"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_white_circle_alpha"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/white" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
                         android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/quicksand_bold"
-                            android:text="Check-in hàng ngày"
-                            android:textColor="#313866"
-                            android:textSize="15sp" />
+                            android:text="Cần hỗ trợ ngay"
+                            android:textColor="@color/white"
+                            android:textSize="17sp" />
 
                         <TextView
-                            android:id="@+id/tvNotiCheckinSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="09:00 mỗi sáng"
-                            android:textColor="#7D8BB7"
+                            android:fontFamily="@font/quicksand_medium"
+                            android:text="Kết nối hỗ trợ khẩn cấp 24/7"
+                            android:textColor="#FEE4F0"
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchNotiCheckin"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/white" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginHorizontal="12dp"
-                    android:background="#F5F5F5" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="GIAO DIỆN"
+                android:textColor="#C0BACA"
+                android:textSize="12sp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -494,246 +418,12 @@
                     android:padding="12dp">
 
                     <ImageView
-                        android:id="@+id/iconNotiPlan"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_light_teal_circle"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_sparkle"
-                        app:tint="#00BFA5" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconNotiPlan"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="Lịch trình cá nhân"
-                            android:textColor="#313866"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:id="@+id/tvNotiPlanSub"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Uống nước, bài thở, viết nhật ký..."
-                            android:textColor="#7D8BB7"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchNotiPlan"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginHorizontal="12dp"
-                    android:background="#F5F5F5" />
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="12dp">
-
-                    <ImageView
-                        android:id="@+id/iconNotiDr"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_light_purple_circle"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_nav_doctor"
-                        app:tint="#9C27B0" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconNotiDr"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="Tư vấn &amp; Trị liệu"
-                            android:textColor="#313866"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:id="@+id/tvNotiDrSub"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Lịch hẹn, tin nhắn từ bác sĩ"
-                            android:textColor="#7D8BB7"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchNotiDr"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginHorizontal="12dp"
-                    android:background="#F5F5F5" />
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="12dp">
-
-                    <ImageView
-                        android:id="@+id/iconNotiChat"
+                        android:id="@+id/iconDarkMode"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="@drawable/bg_light_blue_circle"
                         android:padding="10dp"
-                        android:src="@drawable/ic_comment_bubble"
-                        app:tint="#1E88E5" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconNotiChat"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="Tin nhắn"
-                            android:textColor="#313866"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:id="@+id/tvNotiChatSub"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Tin nhắn mới từ cộng đồng"
-                            android:textColor="#7D8BB7"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchNotiChat"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="@font/quicksand_bold"
-            android:text="QUYỀN RIÊNG TƯ"
-            android:textColor="#C0BACA"
-            android:textSize="12sp" />
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp">
-
-                <RelativeLayout
-                    android:id="@+id/layoutPrivacy1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="12dp">
-
-                    <ImageView
-                        android:id="@+id/iconPrivacy1_img"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_light_purple_circle"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_lock"
-                        app:tint="#9C27B0" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconPrivacy1_img"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="Chế độ riêng tư"
-                            android:textColor="#313866"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:id="@+id/tvPrivacySub"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Hồ sơ hiển thị với cộng đồng"
-                            android:textColor="#7D8BB7"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchPrivacy"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginHorizontal="12dp"
-                    android:background="#F5F5F5" />
-
-                <RelativeLayout
-                    android:id="@+id/layoutPrivacy2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="12dp">
-
-                    <ImageView
-                        android:id="@+id/iconPrivacy2_img"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_light_teal_circle"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_security"
+                        android:src="@drawable/ic_moon"
                         app:tint="#4A90E2" />
 
                     <LinearLayout
@@ -741,200 +431,562 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconPrivacy2_img"
+                        android:layout_toEndOf="@id/iconDarkMode"
                         android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/quicksand_bold"
-                            android:text="Dữ liệu &amp; Bảo mật"
+                            android:text="Dark Mode"
                             android:textColor="#313866"
                             android:textSize="15sp" />
 
                         <TextView
+                            android:id="@+id/tvDarkModeStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Xem chính sách quyền riêng tư"
+                            android:fontFamily="@font/quicksand_medium"
+                            android:text="Đang tắt"
                             android:textColor="#7D8BB7"
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:src="@drawable/ic_chevron_right"
-                        app:tint="#C0BACA" />
-                </RelativeLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="@font/quicksand_bold"
-            android:text="HELP &amp; FAQ"
-            android:textColor="#C0BACA"
-            android:textSize="12sp" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="2dp"
-            app:strokeWidth="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:animateLayoutChanges="true"
-                android:orientation="vertical"
-                android:padding="8dp">
-
-                <RelativeLayout
-                    android:id="@+id/layoutQuestion1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="16dp">
-                    <ImageView android:id="@+id/iconFaq1" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq1" android:layout_toStartOf="@id/imgChevron1" android:fontFamily="@font/quicksand_bold" android:text="Dữ liệu cảm xúc của tôi có bảo mật không?" android:textColor="#313866" android:textSize="14sp" />
-                    <ImageView android:id="@+id/imgChevron1" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
-                </RelativeLayout>
-                <LinearLayout android:id="@+id/layoutAnswer1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Có. Toàn bộ dữ liệu được mã hoá end-to-end và không chia sẻ với bên thứ ba." android:textColor="#7D8BB7" android:textSize="13sp" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginHorizontal="20dp" android:background="#F5F5F5" />
-
-                <RelativeLayout
-                    android:id="@+id/layoutQuestion2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="16dp">
-                    <ImageView android:id="@+id/iconFaq2" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq2" android:layout_toStartOf="@id/imgChevron2" android:fontFamily="@font/quicksand_bold" android:text="Tôi có thể thay đổi hồ sơ sau này không?" android:textColor="#313866" android:textSize="14sp" />
-                    <ImageView android:id="@+id/imgChevron2" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
-                </RelativeLayout>
-                <LinearLayout android:id="@+id/layoutAnswer2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Có, bạn có thể chỉnh sửa avatar, nickname, motto và mục tiêu bất kỳ lúc nào." android:textColor="#7D8BB7" android:textSize="13sp" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginHorizontal="20dp" android:background="#F5F5F5" />
-
-                <RelativeLayout
-                    android:id="@+id/layoutQuestion3"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="16dp">
-                    <ImageView android:id="@+id/iconFaq3" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq3" android:layout_toStartOf="@id/imgChevron3" android:fontFamily="@font/quicksand_bold" android:text="Mood Match hoạt động như thế nào?" android:textColor="#313866" android:textSize="14sp" />
-                    <ImageView android:id="@+id/imgChevron3" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
-                </RelativeLayout>
-                <LinearLayout android:id="@+id/layoutAnswer3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Heami ghép đôi bạn ẩn danh với người có cảm xúc tương tự để cùng chia sẻ." android:textColor="#7D8BB7" android:textSize="13sp" />
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginHorizontal="20dp" android:background="#F5F5F5" />
-
-                <RelativeLayout
-                    android:id="@+id/layoutQuestion4"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="16dp">
-                    <ImageView android:id="@+id/iconFaq4" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq4" android:layout_toStartOf="@id/imgChevron4" android:fontFamily="@font/quicksand_bold" android:text="Bác sĩ có thể xem dữ liệu của tôi không?" android:textColor="#313866" android:textSize="14sp" />
-                    <ImageView android:id="@+id/imgChevron4" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
-                </RelativeLayout>
-                <LinearLayout android:id="@+id/layoutAnswer4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Chỉ khi bạn đồng ý chia sẻ trong phiên tư vấn trực tiếp với bác sĩ." android:textColor="#7D8BB7" android:textSize="13sp" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="@font/quicksand_bold"
-            android:text="TÀI KHOẢN"
-            android:textColor="#C0BACA"
-            android:textSize="12sp" />
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp">
-
-                <!-- Nút Đăng xuất -->
-                <RelativeLayout
-                    android:id="@+id/layoutLogout"
-                    android:layout_width="match_parent"
-                    android:layout_height="64dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingHorizontal="12dp">
-
-                    <ImageView
-                        android:id="@+id/iconLogout"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/bg_light_gray_circle"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_logout"
-                        app:tint="#7D8BB7" />
-
-                    <TextView
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDarkMode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginStart="12dp"
-                        android:layout_toEndOf="@id/iconLogout"
-                        android:fontFamily="@font/quicksand_bold"
-                        android:text="Đăng xuất"
-                        android:textColor="#313866"
-                        android:textSize="15sp" />
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
                 </RelativeLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+            </androidx.cardview.widget.CardView>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="20dp"
-            android:text="Heami v1.0.0 · Nhóm 8"
-            android:textColor="#C0BACA"
-            android:textSize="12sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="THÔNG BÁO"
+                android:textColor="#C0BACA"
+                android:textSize="12sp" />
 
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:id="@+id/iconNotiCheckin"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_light_pink_circle"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_bell"
+                            app:tint="#E86FA0" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iconNotiCheckin"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="Check-in hàng ngày"
+                                android:textColor="#313866"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvNotiCheckinSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="09:00 mỗi sáng"
+                                android:textColor="#7D8BB7"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchNotiCheckin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="#F5F5F5" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:id="@+id/iconNotiPlan"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_light_teal_circle"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_sparkle"
+                            app:tint="#00BFA5" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iconNotiPlan"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="Lịch trình cá nhân"
+                                android:textColor="#313866"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvNotiPlanSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Uống nước, bài thở, viết nhật ký..."
+                                android:textColor="#7D8BB7"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchNotiPlan"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="#F5F5F5" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:id="@+id/iconNotiDr"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_light_purple_circle"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_nav_doctor"
+                            app:tint="#9C27B0" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iconNotiDr"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="Tư vấn &amp; Trị liệu"
+                                android:textColor="#313866"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvNotiDrSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Lịch hẹn, tin nhắn từ bác sĩ"
+                                android:textColor="#7D8BB7"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchNotiDr"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="#F5F5F5" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:id="@+id/iconNotiChat"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_light_blue_circle"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_comment_bubble"
+                            app:tint="#1E88E5" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iconNotiChat"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="Tin nhắn"
+                                android:textColor="#313866"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvNotiChatSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Tin nhắn mới từ cộng đồng"
+                                android:textColor="#7D8BB7"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchNotiChat"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="QUYỀN RIÊNG TƯ"
+                android:textColor="#C0BACA"
+                android:textSize="12sp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <RelativeLayout
+                        android:id="@+id/layoutPrivacy1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:id="@+id/iconPrivacy1_img"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_light_purple_circle"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_lock"
+                            app:tint="#9C27B0" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iconPrivacy1_img"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="Chế độ riêng tư"
+                                android:textColor="#313866"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvPrivacySub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Hồ sơ hiển thị với cộng đồng"
+                                android:textColor="#7D8BB7"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchPrivacy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="#F5F5F5" />
+
+                    <RelativeLayout
+                        android:id="@+id/layoutPrivacy2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:id="@+id/iconPrivacy2_img"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_light_teal_circle"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_security"
+                            app:tint="#4A90E2" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iconPrivacy2_img"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/quicksand_bold"
+                                android:text="Dữ liệu &amp; Bảo mật"
+                                android:textColor="#313866"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Xem chính sách quyền riêng tư"
+                                android:textColor="#7D8BB7"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:src="@drawable/ic_chevron_right"
+                            app:tint="#C0BACA" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="HELP &amp; FAQ"
+                android:textColor="#C0BACA"
+                android:textSize="12sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:animateLayoutChanges="true"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <RelativeLayout
+                        android:id="@+id/layoutQuestion1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="16dp">
+                        <ImageView android:id="@+id/iconFaq1" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq1" android:layout_toStartOf="@id/imgChevron1" android:fontFamily="@font/quicksand_bold" android:text="Dữ liệu cảm xúc của tôi có bảo mật không?" android:textColor="#313866" android:textSize="14sp" />
+                        <ImageView android:id="@+id/imgChevron1" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
+                    </RelativeLayout>
+                    <LinearLayout android:id="@+id/layoutAnswer1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Có. Toàn bộ dữ liệu được mã hoá end-to-end và không chia sẻ với bên thứ ba." android:textColor="#7D8BB7" android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginHorizontal="20dp" android:background="#F5F5F5" />
+
+                    <RelativeLayout
+                        android:id="@+id/layoutQuestion2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="16dp">
+                        <ImageView android:id="@+id/iconFaq2" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq2" android:layout_toStartOf="@id/imgChevron2" android:fontFamily="@font/quicksand_bold" android:text="Tôi có thể thay đổi hồ sơ sau này không?" android:textColor="#313866" android:textSize="14sp" />
+                        <ImageView android:id="@+id/imgChevron2" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
+                    </RelativeLayout>
+                    <LinearLayout android:id="@+id/layoutAnswer2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Có, bạn có thể chỉnh sửa avatar, nickname, motto và mục tiêu bất kỳ lúc nào." android:textColor="#7D8BB7" android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginHorizontal="20dp" android:background="#F5F5F5" />
+
+                    <RelativeLayout
+                        android:id="@+id/layoutQuestion3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="16dp">
+                        <ImageView android:id="@+id/iconFaq3" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq3" android:layout_toStartOf="@id/imgChevron3" android:fontFamily="@font/quicksand_bold" android:text="Mood Match hoạt động như thế nào?" android:textColor="#313866" android:textSize="14sp" />
+                        <ImageView android:id="@+id/imgChevron3" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
+                    </RelativeLayout>
+                    <LinearLayout android:id="@+id/layoutAnswer3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Heami ghép đôi bạn ẩn danh với người có cảm xúc tương tự để cùng chia sẻ." android:textColor="#7D8BB7" android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginHorizontal="20dp" android:background="#F5F5F5" />
+
+                    <RelativeLayout
+                        android:id="@+id/layoutQuestion4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="16dp">
+                        <ImageView android:id="@+id/iconFaq4" android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_light_yellow_circle" android:padding="10dp" android:src="@drawable/ic_help" app:tint="#FFB300" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="16dp" android:layout_toEndOf="@id/iconFaq4" android:layout_toStartOf="@id/imgChevron4" android:fontFamily="@font/quicksand_bold" android:text="Bác sĩ có thể xem dữ liệu của tôi không?" android:textColor="#313866" android:textSize="14sp" />
+                        <ImageView android:id="@+id/imgChevron4" android:layout_width="16dp" android:layout_height="16dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:src="@drawable/ic_chevron_right" app:tint="#C0BACA" />
+                    </RelativeLayout>
+                    <LinearLayout android:id="@+id/layoutAnswer4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_answer_light" android:padding="16dp" android:visibility="gone">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/quicksand_medium" android:lineSpacingExtra="4sp" android:text="Chỉ khi bạn đồng ý chia sẻ trong phiên tư vấn trực tiếp với bác sĩ." android:textColor="#7D8BB7" android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="TÀI KHOẢN"
+                android:textColor="#C0BACA"
+                android:textSize="12sp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <!-- Nút Đăng xuất -->
+                    <RelativeLayout
+                        android:id="@+id/layoutLogout"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:paddingHorizontal="12dp">
+
+                        <ImageView
+                            android:id="@+id/iconLogout"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/bg_light_gray_circle"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_logout"
+                            app:tint="#7D8BB7" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="12dp"
+                            android:layout_toEndOf="@id/iconLogout"
+                            android:fontFamily="@font/quicksand_bold"
+                            android:text="Đăng xuất"
+                            android:textColor="#313866"
+                            android:textSize="15sp" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="20dp"
+                android:text="Heami v1.0.0 · Nhóm 8"
+                android:textColor="#C0BACA"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

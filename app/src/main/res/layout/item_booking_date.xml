@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutDateItem"
+    android:layout_width="72dp"
+    android:layout_height="match_parent"
+    android:layout_marginEnd="12dp"
+    android:background="@drawable/bg_doctor_package_card"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/txtDayOfWeek"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/quicksand_bold"
+        android:text="Hôm nay"
+        android:textColor="#9E8AAA"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/txtDayNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="19/4"
+        android:textColor="#2D1B47"
+        android:textSize="24sp"
+        android:fontFamily="@font/quicksand_bold" />
+
+    <TextView
+        android:id="@+id/txtMonthYear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2026"
+        android:textColor="#9E8AAA"
+        android:textSize="11sp"
+        android:fontFamily="@font/quicksand_bold" />
+</LinearLayout>

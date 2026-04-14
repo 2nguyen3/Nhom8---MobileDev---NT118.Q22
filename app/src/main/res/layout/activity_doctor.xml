@@ -4,7 +4,9 @@
     android:id="@+id/doctorRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_doctor_screen">
+    android:background="@drawable/bg_doctor_screen"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
 
     <!-- Background blobs -->
     <View
@@ -30,7 +32,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Main scroll -->
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollDoctor"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -104,7 +106,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                android:background="@drawable/bg_doctor_notice"
+                android:background="@drawable/bg_doctor_onl"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="14dp"
@@ -131,7 +133,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="5 chuyên gia sẵn sàng hỗ trợ bạn"
+                    android:text="5 chuyên gia đang trực tuyến"
                     android:textColor="#9E8AAA"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -166,13 +168,24 @@
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
                     android:hint="Tìm bác sĩ, chuyên môn..."
-                    android:imeOptions="actionSearch"
+                    android:imeOptions="actionDone"
                     android:inputType="text"
                     android:padding="0dp"
                     android:textColor="#2D1B47"
                     android:textColorHint="#802D1B47"
                     android:textSize="14sp"
                     android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/btnDoctorSearchClear"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="8dp"
+                    android:alpha="0.4"
+                    android:src="@drawable/ic_close"
+                    app:tint="#2D1B47"
+                    android:visibility="gone"
+                    android:contentDescription="@string/clear_search" />
             </LinearLayout>
 
             <!-- Filter tabs -->
@@ -282,996 +295,113 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
-            <!-- Doctor cards container -->
-            <LinearLayout
-                android:id="@+id/layoutDoctorCards"
+            <!-- Recycler View for Doctors -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvDoctors"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:orientation="vertical">
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-                <!-- Doctor 1 -->
-                <LinearLayout
-                    android:id="@+id/cardDoctor1"
-                    android:layout_width="match_parent"
+            <!-- Empty State -->
+            <LinearLayout
+                android:id="@+id/layoutDoctorEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="60dp"
+                android:paddingBottom="40dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_doctor_card"
-                    android:elevation="8dp"
-                    android:translationZ="2dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp">
+                    android:text="🔍"
+                    android:textSize="48sp"
+                    android:layout_marginBottom="16dp" />
 
-                    <FrameLayout
-                        android:id="@+id/layoutDoctorAvatar1"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:background="@drawable/bg_doctor_avatar_pink">
-
-                        <ImageView
-                            android:id="@+id/imgDoctor1"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
-                            android:layout_gravity="center"
-                            android:background="@drawable/bg_doctor_image_clip"
-                            android:clipToOutline="true"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/img_doctor_1"
-                            android:contentDescription="doctor 1" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="top"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="TS. Nguyễn Minh Anh"
-                                android:textColor="#2D1B47"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
-                            <ImageButton
-                                android:id="@+id/btnDoctorBookmark1"
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:background="@drawable/bg_doctor_bookmark_btn"
-                                android:padding="5dp"
-                                android:scaleType="centerInside"
-                                android:src="@drawable/ic_doctor_bookmark"
-                                android:contentDescription="bookmark 1" />
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="181dp"
-                            android:layout_height="1dp"
-                            android:layout_marginTop="4dp"
-                            android:background="#E5E7EB" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Tâm lý lâm sàng"
-                            android:textColor="#FFB6D9"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:src="@drawable/ic_doctor_location"
-                                android:contentDescription="location" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="Hà Nội"
-                                android:textColor="#9E8AAA"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="·"
-                                android:textColor="#D0C0DC"
-                                android:textSize="11sp" />
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:layout_marginStart="6dp"
-                                android:src="@drawable/ic_doctor_star"
-                                android:contentDescription="star" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="4.9"
-                                android:textColor="#2D1B47"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="(312 reviews)"
-                                android:textColor="#B0A0C0"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="bottom"
-                                android:orientation="horizontal">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="250.000đ"
-                                    android:textColor="#2D1B47"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="/phiên"
-                                    android:textColor="#C0AEC8"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:id="@+id/badgeDoctorAvailable1"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_doctor_available_badge"
-                                android:clipChildren="false"
-                                android:clipToPadding="false"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingStart="8dp"
-                                android:paddingTop="4dp"
-                                android:paddingEnd="8dp"
-                                android:paddingBottom="4dp">
-
-                                <View
-                                    android:id="@+id/dotDoctorAvailable1"
-                                    android:layout_width="6dp"
-                                    android:layout_height="6dp"
-                                    android:background="@drawable/bg_doctor_available_dot" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="Có lịch"
-                                    android:textColor="#4CAF50"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Doctor 2 -->
-                <LinearLayout
-                    android:id="@+id/cardDoctor2"
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_doctor_card"
-                    android:elevation="8dp"
-                    android:translationZ="2dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp">
+                    android:text="Không tìm thấy bác sĩ nào phù hợp"
+                    android:textColor="#2D1B47"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
-                    <FrameLayout
-                        android:id="@+id/layoutDoctorAvatar2"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:background="@drawable/bg_doctor_avatar_violet">
-
-                        <ImageView
-                            android:id="@+id/imgDoctor2"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
-                            android:layout_gravity="center"
-                            android:background="@drawable/bg_doctor_image_clip"
-                            android:clipToOutline="true"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/img_doctor_2"
-                            android:contentDescription="doctor 2" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="top"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="CN. Lê Thị Hương"
-                                android:textColor="#2D1B47"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
-                            <ImageButton
-                                android:id="@+id/btnDoctorBookmark2"
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:background="@drawable/bg_doctor_bookmark_btn"
-                                android:padding="5dp"
-                                android:scaleType="centerInside"
-                                android:src="@drawable/ic_doctor_bookmark"
-                                android:contentDescription="bookmark 2" />
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="181dp"
-                            android:layout_height="1dp"
-                            android:layout_marginTop="4dp"
-                            android:background="#E5E7EB" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Tâm lý trị liệu"
-                            android:textColor="#C4A8E8"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:src="@drawable/ic_doctor_location"
-                                android:contentDescription="location" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="Đà Nẵng"
-                                android:textColor="#9E8AAA"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="·"
-                                android:textColor="#D0C0DC"
-                                android:textSize="11sp" />
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:layout_marginStart="6dp"
-                                android:src="@drawable/ic_doctor_star"
-                                android:contentDescription="star" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="4.9"
-                                android:textColor="#2D1B47"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="(445 reviews)"
-                                android:textColor="#B0A0C0"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="bottom"
-                                android:orientation="horizontal">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="200.000đ"
-                                    android:textColor="#2D1B47"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="/phiên"
-                                    android:textColor="#C0AEC8"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Doctor 3 -->
-                <LinearLayout
-                    android:id="@+id/cardDoctor3"
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_doctor_card"
-                    android:elevation="8dp"
-                    android:translationZ="2dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp">
-
-                    <FrameLayout
-                        android:id="@+id/layoutDoctorAvatar3"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:background="@drawable/bg_doctor_avatar_mint">
-
-                        <ImageView
-                            android:id="@+id/imgDoctor3"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
-                            android:layout_gravity="center"
-                            android:background="@drawable/bg_doctor_image_clip"
-                            android:clipToOutline="true"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/img_doctor_3"
-                            android:contentDescription="doctor 3" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="top"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="ThS. Trần Văn Hùng"
-                                android:textColor="#2D1B47"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
-                            <ImageButton
-                                android:id="@+id/btnDoctorBookmark3"
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:background="@drawable/bg_doctor_bookmark_btn"
-                                android:padding="5dp"
-                                android:scaleType="centerInside"
-                                android:src="@drawable/ic_doctor_bookmark"
-                                android:contentDescription="bookmark 3" />
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="181dp"
-                            android:layout_height="1dp"
-                            android:layout_marginTop="4dp"
-                            android:background="#E5E7EB" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Tâm thần học"
-                            android:textColor="#9EDDD0"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:src="@drawable/ic_doctor_location"
-                                android:contentDescription="location" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="TP. HCM"
-                                android:textColor="#9E8AAA"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="·"
-                                android:textColor="#D0C0DC"
-                                android:textSize="11sp" />
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:layout_marginStart="6dp"
-                                android:src="@drawable/ic_doctor_star"
-                                android:contentDescription="star" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="4.8"
-                                android:textColor="#2D1B47"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="(198 reviews)"
-                                android:textColor="#B0A0C0"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="bottom"
-                                android:orientation="horizontal">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="300.000đ"
-                                    android:textColor="#2D1B47"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="/phiên"
-                                    android:textColor="#C0AEC8"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:id="@+id/badgeDoctorAvailable3"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_doctor_available_badge"
-                                android:clipChildren="false"
-                                android:clipToPadding="false"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingStart="8dp"
-                                android:paddingTop="4dp"
-                                android:paddingEnd="8dp"
-                                android:paddingBottom="4dp">
-
-                                <View
-                                    android:id="@+id/dotDoctorAvailable3"
-                                    android:layout_width="6dp"
-                                    android:layout_height="6dp"
-                                    android:background="@drawable/bg_doctor_available_dot" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="Có lịch"
-                                    android:textColor="#4CAF50"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Doctor 4 -->
-                <LinearLayout
-                    android:id="@+id/cardDoctor4"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_doctor_card"
-                    android:elevation="8dp"
-                    android:translationZ="2dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp">
-
-                    <FrameLayout
-                        android:id="@+id/layoutDoctorAvatar4"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:background="@drawable/bg_doctor_avatar_blue">
-
-                        <ImageView
-                            android:id="@+id/imgDoctor4"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
-                            android:layout_gravity="center"
-                            android:background="@drawable/bg_doctor_image_clip"
-                            android:clipToOutline="true"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/img_doctor_4"
-                            android:contentDescription="doctor 4" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="top"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="ThS. Vũ Thị Lan"
-                                android:textColor="#2D1B47"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
-                            <ImageButton
-                                android:id="@+id/btnDoctorBookmark4"
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:background="@drawable/bg_doctor_bookmark_btn"
-                                android:padding="5dp"
-                                android:scaleType="centerInside"
-                                android:src="@drawable/ic_doctor_bookmark"
-                                android:contentDescription="bookmark 4" />
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="181dp"
-                            android:layout_height="1dp"
-                            android:layout_marginTop="4dp"
-                            android:background="#E5E7EB" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Chăm sóc tâm lý"
-                            android:textColor="#A8D4FF"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:src="@drawable/ic_doctor_location"
-                                android:contentDescription="location" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="TP. HCM"
-                                android:textColor="#9E8AAA"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="·"
-                                android:textColor="#D0C0DC"
-                                android:textSize="11sp" />
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:layout_marginStart="6dp"
-                                android:src="@drawable/ic_doctor_star"
-                                android:contentDescription="star" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="4.8"
-                                android:textColor="#2D1B47"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="(189 reviews)"
-                                android:textColor="#B0A0C0"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="bottom"
-                                android:orientation="horizontal">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="180.000đ"
-                                    android:textColor="#2D1B47"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="/phiên"
-                                    android:textColor="#C0AEC8"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:id="@+id/badgeDoctorAvailable4"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_doctor_available_badge"
-                                android:clipChildren="false"
-                                android:clipToPadding="false"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingStart="8dp"
-                                android:paddingTop="4dp"
-                                android:paddingEnd="8dp"
-                                android:paddingBottom="4dp">
-
-                                <View
-                                    android:id="@+id/dotDoctorAvailable4"
-                                    android:layout_width="6dp"
-                                    android:layout_height="6dp"
-                                    android:background="@drawable/bg_doctor_available_dot" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="Có lịch"
-                                    android:textColor="#4CAF50"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Doctor 5 -->
-                <LinearLayout
-                    android:id="@+id/cardDoctor5"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_doctor_card"
-                    android:elevation="8dp"
-                    android:translationZ="2dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp">
-
-                    <FrameLayout
-                        android:id="@+id/layoutDoctorAvatar5"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:background="@drawable/bg_doctor_avatar_orange">
-
-                        <ImageView
-                            android:id="@+id/imgDoctor5"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
-                            android:layout_gravity="center"
-                            android:background="@drawable/bg_doctor_image_clip"
-                            android:clipToOutline="true"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/img_doctor_5"
-                            android:contentDescription="doctor 5" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="top"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="TS. Phạm Quốc Bảo"
-                                android:textColor="#2D1B47"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
-                            <ImageButton
-                                android:id="@+id/btnDoctorBookmark5"
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:background="@drawable/bg_doctor_bookmark_btn"
-                                android:padding="5dp"
-                                android:scaleType="centerInside"
-                                android:src="@drawable/ic_doctor_bookmark"
-                                android:contentDescription="bookmark 5" />
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="181dp"
-                            android:layout_height="1dp"
-                            android:layout_marginTop="4dp"
-                            android:background="#E5E7EB" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Tâm lý tích cực"
-                            android:textColor="#FFD4A8"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:src="@drawable/ic_doctor_location"
-                                android:contentDescription="location" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="Hà Nội"
-                                android:textColor="#9E8AAA"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="·"
-                                android:textColor="#D0C0DC"
-                                android:textSize="11sp" />
-
-                            <ImageView
-                                android:layout_width="11dp"
-                                android:layout_height="11dp"
-                                android:layout_marginStart="6dp"
-                                android:src="@drawable/ic_doctor_star"
-                                android:contentDescription="star" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="4.7"
-                                android:textColor="#2D1B47"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:text="(267 reviews)"
-                                android:textColor="#B0A0C0"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="bottom"
-                                android:orientation="horizontal">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="280.000đ"
-                                    android:textColor="#2D1B47"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="/phiên"
-                                    android:textColor="#C0AEC8"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:id="@+id/badgeDoctorAvailable5"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_doctor_available_badge"
-                                android:clipChildren="false"
-                                android:clipToPadding="false"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingStart="8dp"
-                                android:paddingTop="4dp"
-                                android:paddingEnd="8dp"
-                                android:paddingBottom="4dp">
-
-                                <View
-                                    android:id="@+id/dotDoctorAvailable5"
-                                    android:layout_width="6dp"
-                                    android:layout_height="6dp"
-                                    android:background="@drawable/bg_doctor_available_dot" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="4dp"
-                                    android:text="Có lịch"
-                                    android:textColor="#4CAF50"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
+                    android:layout_marginTop="4dp"
+                    android:text="Hãy thử tìm kiếm bằng từ khoá khác nhé"
+                    android:textColor="#9E8AAA"
+                    android:textSize="13sp" />
             </LinearLayout>
+
+            <!-- Error State -->
+            <LinearLayout
+                android:id="@+id/layoutDoctorErrorState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="60dp"
+                android:paddingBottom="40dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📡"
+                    android:textSize="48sp"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Đã có lỗi xảy ra khi tải dữ liệu"
+                    android:textColor="#2D1B47"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Vui lòng kiểm tra kết nối mạng và thử lại"
+                    android:textColor="#9E8AAA"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnDoctorRetry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:backgroundTint="#F3E8FF"
+                    android:text="Thử lại"
+                    android:textColor="#E86FA0"
+                    android:textStyle="bold"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
+
+            <!-- Load More Button -->
+            <Button
+                android:id="@+id/btnDoctorLoadMore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="#F3E8FF"
+                android:text="Xem thêm bác sĩ"
+                android:textColor="#E86FA0"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:cornerRadius="12dp" />
+
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Bottom nav -->
     <include

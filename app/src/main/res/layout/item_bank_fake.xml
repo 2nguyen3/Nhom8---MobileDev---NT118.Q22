@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <!-- VCB -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_bank_item"
+        android:gravity="center"
+        android:minWidth="80dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="VCB"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- TCB -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_bank_item"
+        android:gravity="center"
+        android:minWidth="80dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="TCB"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- VTB -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_bank_item"
+        android:gravity="center"
+        android:minWidth="80dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="VTB"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- ACB -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_bank_item"
+        android:gravity="center"
+        android:minWidth="80dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="ACB"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- BIDV -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_bank_item"
+        android:gravity="center"
+        android:minWidth="80dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="BIDV"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- MB -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_bank_item"
+        android:gravity="center"
+        android:minWidth="80dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:text="MB"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
