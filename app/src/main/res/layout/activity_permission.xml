@@ -9,7 +9,7 @@
     android:background="@drawable/bg_permission_ombre"
     android:overScrollMode="never"
     android:scrollbars="none"
-    tools:context=".activities.PermissionActivity">
+    tools:context=".ui.main.PermissionActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

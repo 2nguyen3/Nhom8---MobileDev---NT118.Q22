@@ -9,7 +9,7 @@
     android:visibility="gone"
     android:elevation="20dp" >
 
-    <com.example.heami.views.LoadingView
+    <com.example.heami.ui.custom.LoadingView
         android:id="@+id/loadingView"
         android:layout_width="match_parent"
         android:layout_height="120dp"

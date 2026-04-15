@@ -7,9 +7,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.heami.models.AccountModel;
-import com.example.heami.models.UserModel;
-import com.example.heami.models.UserSettingsModel;
+import com.example.heami.data.models.AccountModel;
+import com.example.heami.data.models.UserModel;
+import com.example.heami.data.models.UserSettingsModel;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseNetworkException;

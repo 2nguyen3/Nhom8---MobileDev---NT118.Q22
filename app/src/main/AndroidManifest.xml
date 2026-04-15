@@ -30,7 +30,7 @@
         tools:targetApi="33">
 
         <activity
-            android:name=".activities.LoginActivity"
+            android:name=".ui.auth.LoginActivity"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -38,101 +38,101 @@
             </intent-filter>
         </activity>
             <activity
-                android:name=".activities.RegisterActivity"
+                android:name=".ui.auth.RegisterActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.ForgotPasswordActivity"
-                android:exported="false" />
-
-        <activity
-            android:name=".activities.OnboardingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.PermissionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupAvatarActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupBioActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SetupGoalsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.HomeActivity"
-            android:exported="false" />
-            <activity
-                android:name=".activities.CheckInAiActivity"
-                android:exported="false" />
-            <activity
-                android:name=".activities.ManualMoodActivity"
-                android:exported="false" />
-            <activity
-                android:name=".activities.CheckInResultActivity"
+                android:name=".ui.auth.ForgotPasswordActivity"
                 android:exported="false" />
 
         <activity
-            android:name=".activities.TherapyActivity"
+            android:name=".ui.onboarding.OnboardingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.main.PermissionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.auth.SetupAvatarActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.auth.SetupBioActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.auth.SetupGoalsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.main.HomeActivity"
             android:exported="false" />
             <activity
-                android:name=".activities.MusicPlayerActivity"
+                android:name=".ui.checkin.CheckInAiActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.NatureSoundActivity"
+                android:name=".ui.checkin.ManualMoodActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.BreathingActivity"
+                android:name=".ui.checkin.CheckInResultActivity"
+                android:exported="false" />
+
+        <activity
+            android:name=".ui.therapy.TherapyActivity"
+            android:exported="false" />
+            <activity
+                android:name=".ui.therapy.MusicPlayerActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.PodcastActivity"
+                android:name=".ui.therapy.NatureSoundActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.BinauralPlayerActivity"
+                android:name=".ui.therapy.BreathingActivity"
+                android:exported="false" />
+            <activity
+                android:name=".ui.therapy.PodcastActivity"
+                android:exported="false" />
+            <activity
+                android:name=".ui.therapy.BinauralPlayerActivity"
                 android:exported="false" />
 
 
         <activity
-            android:name=".activities.CommunityActivity"
+            android:name=".ui.community.CommunityActivity"
             android:exported="false" />
             <activity
-                android:name=".activities.MoodMatchActivity"
+                android:name=".ui.community.MoodMatchActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.ShareFeelingActivity"
+                android:name=".ui.community.ShareFeelingActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.PostCommentActivity"
+                android:name=".ui.community.PostCommentActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.MoodMatchChatActivity"
+                android:name=".ui.community.MoodMatchChatActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.CommunityChatListActivity"
+                android:name=".ui.community.CommunityChatListActivity"
                 android:exported="false" />
 
         <activity
-            android:name=".activities.DoctorActivity"
+            android:name=".ui.consultation.DoctorActivity"
             android:exported="false" />
             <activity
-                android:name=".activities.DoctorDetailActivity"
+                android:name=".ui.consultation.DoctorDetailActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.BookingFlowActivity"
+                android:name=".ui.consultation.BookingFlowActivity"
                 android:exported="false" />
 
         <activity
-            android:name=".activities.ProfileActivity"
+            android:name=".ui.main.ProfileActivity"
             android:exported="false" />
             <activity
-                android:name=".activities.StatsActivity"
+                android:name=".ui.main.StatsActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.ConsultationsActivity"
+                android:name=".ui.consultation.ConsultationsActivity"
                 android:exported="false" />
             <activity
-                android:name=".activities.SosActivity"
+                android:name=".ui.main.SosActivity"
                 android:exported="false" />
 
         <meta-data
