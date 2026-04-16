@@ -5,11 +5,23 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.example.heami.R;
+import com.example.heami.data.models.BookingModel;
+import com.example.heami.data.models.ConsultationModel;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class BookingFlowActivity extends AppCompatActivity {
 
@@ -18,6 +30,9 @@ public class BookingFlowActivity extends AppCompatActivity {
     private View layoutBtnPayVnpay;
     private View btnComplete;
     private int currentStep = 1;
+    private BookingModel bookingModel;
+    private FirebaseFirestore db;
+    private String lastSessionId; // Lưu lại sessionId để Step 3 hiển thị
 
     // Stepper Views
     private TextView step1Number, step2Number, step3Number;
@@ -29,11 +44,25 @@ public class BookingFlowActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_booking_flow);
 
+        // Khởi tạo Firestore
+        db = FirebaseFirestore.getInstance();
+
+        // Lấy dữ liệu booking từ intent
+        bookingModel = (BookingModel) getIntent().getSerializableExtra("booking_model");
+
         initViews();
         setupListeners();
         setupBackNavigation();
         
         updateStepUI(1);
+    }
+
+    public BookingModel getBookingModel() {
+        return bookingModel;
+    }
+
+    public String getLastSessionId() {
+        return lastSessionId;
     }
 
     private void initViews() {
@@ -67,12 +96,90 @@ public class BookingFlowActivity extends AppCompatActivity {
         }
 
         if (layoutBtnPayVnpay != null) {
-            layoutBtnPayVnpay.setOnClickListener(v -> updateStepUI(3));
+            layoutBtnPayVnpay.setOnClickListener(v -> {
+                // Thực hiện lưu dữ liệu vào Firestore thay vì chuyển step ngay lập tức
+                saveConsultationToFirestore();
+            });
         }
 
         if (btnComplete != null) {
             btnComplete.setOnClickListener(v -> finish());
         }
+    }
+
+    private void saveConsultationToFirestore() {
+        if (bookingModel == null) return;
+        
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập để tiếp tục", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Tạo ConsultationModel từ BookingModel
+        ConsultationModel consultation = new ConsultationModel();
+        consultation.setUserId(userId);
+        consultation.setDoctorId(bookingModel.getDoctorId());
+        consultation.setDoctorName(bookingModel.getDoctorName());
+        consultation.setDoctorAvatar(bookingModel.getDoctorAvatar());
+        consultation.setPackageType(bookingModel.getPackageType());
+        consultation.setFormatType(bookingModel.getFormatType());
+        consultation.setStatus("BOOKED");
+        consultation.setBookedAt(Timestamp.now());
+        consultation.setNote(bookingModel.getNote());
+        
+        // Giả lập transaction id cho đến khi tích hợp VNPay thật
+        consultation.setTransactionId("VNP_" + System.currentTimeMillis());
+
+        // Parse price: "250.000đ" -> 250000.0
+        try {
+            String priceStr = bookingModel.getPrice().replaceAll("[^\\d]", "");
+            consultation.setPrice(Double.parseDouble(priceStr));
+        } catch (Exception e) {
+            consultation.setPrice(0.0);
+        }
+
+        // Parse startTime và tính toán endTime
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date startDate = sdf.parse(bookingModel.getDate() + " " + bookingModel.getTime());
+            if (startDate != null) {
+                consultation.setStartTime(new Timestamp(startDate));
+                
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(startDate);
+                
+                String packageType = bookingModel.getPackageType().toLowerCase();
+                if (packageType.contains("15")) {
+                    calendar.add(Calendar.MINUTE, 15);
+                } else if (packageType.contains("30")) {
+                    calendar.add(Calendar.MINUTE, 30);
+                } else if (packageType.contains("7")) {
+                    calendar.add(Calendar.DAY_OF_YEAR, 7);
+                } else {
+                    calendar.add(Calendar.MINUTE, 30); // Mặc định
+                }
+                consultation.setEndTime(new Timestamp(calendar.getTime()));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Lưu vào Firestore collection "consultations"
+        db.collection("consultations")
+                .add(consultation)
+                .addOnSuccessListener(documentReference -> {
+                    // Sau khi lưu thành công, cập nhật sessionId bằng chính document ID
+                    String docId = documentReference.getId();
+                    lastSessionId = docId; // Lưu lại ID để Step 3 hiển thị
+                    db.collection("consultations").document(docId).update("sessionId", docId);
+                    
+                    // Chuyển sang Bước 3 (Hoàn tất)
+                    updateStepUI(3);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Lỗi khi lưu lịch hẹn: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void setupBackNavigation() {

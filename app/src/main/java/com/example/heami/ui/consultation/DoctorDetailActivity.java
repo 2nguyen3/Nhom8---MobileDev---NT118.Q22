@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.example.heami.R;
+import com.example.heami.data.models.BookingModel;
 import com.example.heami.utils.FavoriteManager;
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -92,7 +93,8 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
     private int selectedPackageType = 30;
     private String selectedFormatType = "call";
-    private String doctorId; // ID định danh bác sĩ
+    private String doctorId; 
+    private String doctorAvatarUrl;
     private Calendar selectedDate = null;
     private String selectedTime = null;
 
@@ -102,6 +104,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_doctor_detail);
 
         doctorId = getIntent().getStringExtra("doctor_id");
+        doctorAvatarUrl = getIntent().getStringExtra("doctor_avatar");
 
         bindViews();
         setupActions();
@@ -162,7 +165,6 @@ public class DoctorDetailActivity extends AppCompatActivity {
             btnBackDoctorDetail.setOnClickListener(v -> finish());
         }
 
-        // Logic Yêu thích: Lưu vào máy qua FavoriteManager
         if (btnDoctorDetailFavorite != null) {
             btnDoctorDetailFavorite.setOnClickListener(v -> {
                 if (doctorId == null) return;
@@ -174,18 +176,10 @@ public class DoctorDetailActivity extends AppCompatActivity {
             });
         }
 
-        // Setup click cho toàn bộ vùng card package
-        if (cardPackage15 != null) {
-            cardPackage15.setOnClickListener(v -> selectPackage(15));
-        }
-        if (cardPackage30 != null) {
-            cardPackage30.setOnClickListener(v -> selectPackage(30));
-        }
-        if (cardPackage7Days != null) {
-            cardPackage7Days.setOnClickListener(v -> selectPackage(7));
-        }
+        if (cardPackage15 != null) cardPackage15.setOnClickListener(v -> selectPackage(15));
+        if (cardPackage30 != null) cardPackage30.setOnClickListener(v -> selectPackage(30));
+        if (cardPackage7Days != null) cardPackage7Days.setOnClickListener(v -> selectPackage(7));
 
-        // Đồng bộ click trực tiếp vào RadioButton
         View.OnClickListener radioClickListener = v -> {
             if (v == radioPackage15) selectPackage(15);
             else if (v == radioPackage30) selectPackage(30);
@@ -213,14 +207,26 @@ public class DoctorDetailActivity extends AppCompatActivity {
                     Toast.makeText(this, "Vui lòng chọn lịch hẹn trước", Toast.LENGTH_SHORT).show();
                     showBookingDialog();
                 } else {
-                    // Mở màn hình BookingFlowActivity
+                    BookingModel bookingModel = new BookingModel();
+                    bookingModel.setDoctorId(doctorId);
+                    bookingModel.setDoctorName(txtDoctorDetailName.getText().toString());
+                    bookingModel.setDoctorAvatar(doctorAvatarUrl);
+                    bookingModel.setDoctorSpecialty(txtDoctorDetailSpecialty.getText().toString());
+                    
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", new Locale("vi", "VN"));
+                    bookingModel.setDate(dateFormat.format(selectedDate.getTime()));
+                    bookingModel.setTime(selectedTime);
+                    
+                    String packageLabel = selectedPackageType == 7 ? "Gói 7 ngày" : selectedPackageType + " phút";
+                    bookingModel.setPackageType(packageLabel);
+                    
+                    String formatLabel = "chat".equals(selectedFormatType) ? "Chat" : "Gọi video";
+                    bookingModel.setFormatType(formatLabel);
+                    
+                    bookingModel.setPrice(txtDoctorBottomSummaryPrice.getText().toString());
+
                     Intent intent = new Intent(DoctorDetailActivity.this, BookingFlowActivity.class);
-                    
-                    // Truyền thêm dữ liệu nếu cần
-                    intent.putExtra("doctor_id", doctorId);
-                    intent.putExtra("doctor_name", txtDoctorDetailName.getText().toString());
-                    intent.putExtra("price", txtDoctorBottomSummaryPrice.getText().toString());
-                    
+                    intent.putExtra("booking_model", bookingModel);
                     startActivity(intent);
                 }
             });
@@ -233,7 +239,6 @@ public class DoctorDetailActivity extends AppCompatActivity {
         View view = getLayoutInflater().inflate(R.layout.dialog_booking_calendar, null);
         bottomSheetDialog.setContentView(view);
 
-        // Reset temporary selection
         final Calendar[] tempSelectedDate = {selectedDate};
         final String[] tempSelectedTime = {selectedTime};
 
@@ -245,7 +250,6 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
         setupDynamicCalendar(dateContainer, timeContainer, btnConfirm, tempSelectedDate, tempSelectedTime);
 
-        // Nếu đã có ngày chọn trước đó, hiển thị giờ
         if (tempSelectedDate[0] != null) {
             setupTimeSlots(timeContainer, btnConfirm, tempSelectedDate, tempSelectedTime);
         }
@@ -280,10 +284,8 @@ public class DoctorDetailActivity extends AppCompatActivity {
             txtDoctorBottomBookingStatus.setText(selectedTime + " · " + dateFormat.format(selectedDate.getTime()));
             txtDoctorBottomBookingStatus.setTextColor(Color.parseColor("#E86FA0"));
             
-            // Cập nhật màu nút thanh toán
             btnDoctorCheckout.setBackgroundResource(R.drawable.bg_doctor_checkout_cta);
             
-            // Đổi màu text và icon trong nút thanh toán sang trắng cho nổi bật
             TextView txtCheckout = findViewById(R.id.txtDoctorCheckout);
             ImageView imgLeft = findViewById(R.id.imgCheckoutLeft);
             ImageView imgRight = findViewById(R.id.imgCheckoutRight);
@@ -323,14 +325,13 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
             dateView.setTag(itemDate.getTimeInMillis());
             
-            // Highlight nếu đã chọn
             boolean isInitiallySelected = tempDate[0] != null && 
                     itemDate.get(Calendar.DAY_OF_YEAR) == tempDate[0].get(Calendar.DAY_OF_YEAR);
             updateDateItemUI(dateView, isInitiallySelected);
 
             dateView.setOnClickListener(v -> {
                 tempDate[0] = itemDate;
-                tempTime[0] = null; // Reset time when date changes
+                tempTime[0] = null;
                 updateDateSelectionUI(dateContainer, tempDate[0]);
                 setupTimeSlots(timeContainer, btnConfirm, tempDate, tempTime);
                 btnConfirm.setEnabled(false);
@@ -357,7 +358,6 @@ public class DoctorDetailActivity extends AppCompatActivity {
                 TextView txtTime = (TextView) timeView;
                 txtTime.setText(time);
                 
-                // Giả lập một số khung giờ đã được đặt (Demo)
                 boolean isBooked = (time.equals("09:00") || time.equals("10:30") || time.equals("14:00"));
                 
                 boolean isSelected = time.equals(tempTime[0]);

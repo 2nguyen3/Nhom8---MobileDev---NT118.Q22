@@ -62,6 +62,7 @@
                             android:textColor="#9E8AAA"
                             android:textSize="13sp"/>
                         <TextView
+                            android:id="@+id/txtTransactionId"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
@@ -87,6 +88,7 @@
                             android:textColor="#9E8AAA"
                             android:textSize="13sp"/>
                         <TextView
+                            android:id="@+id/txtFinalDateTime"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
@@ -112,6 +114,7 @@
                             android:textColor="#9E8AAA"
                             android:textSize="13sp"/>
                         <TextView
+                            android:id="@+id/txtFinalPackage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
@@ -137,6 +140,7 @@
                             android:textColor="#9E8AAA"
                             android:textSize="13sp"/>
                         <TextView
+                            android:id="@+id/txtFinalFormat"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
