@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.checkin.CheckInConstants;
 
 public class ManualMoodActivity extends AppCompatActivity {
 
@@ -69,15 +70,15 @@ public class ManualMoodActivity extends AppCompatActivity {
             btnBackManualMood.setOnClickListener(v -> finish());
         }
 
-        setupMoodClick(cardMoodStress, "Căng thẳng");
-        setupMoodClick(cardMoodFear, "Sợ hãi");
-        setupMoodClick(cardMoodHappy, "Vui vẻ");
-        setupMoodClick(cardMoodSad, "Buồn");
-        setupMoodClick(cardMoodDisgust, "Ghê tởm");
-        setupMoodClick(cardMoodAngry, "Tức giận");
+        setupMoodClick(cardMoodStress, "Căng thẳng", CheckInConstants.MOOD_STRESS);
+        setupMoodClick(cardMoodFear, "Sợ hãi", CheckInConstants.MOOD_FEAR);
+        setupMoodClick(cardMoodHappy, "Vui vẻ", CheckInConstants.MOOD_HAPPY);
+        setupMoodClick(cardMoodSad, "Buồn", CheckInConstants.MOOD_SAD);
+        setupMoodClick(cardMoodDisgust, "Ghê tởm", CheckInConstants.MOOD_DISGUST);
+        setupMoodClick(cardMoodAngry, "Tức giận", CheckInConstants.MOOD_ANGRY);
     }
 
-    private void setupMoodClick(View card, String moodName) {
+    private void setupMoodClick(View card, String moodName, String moodTag) {
         if (card == null) return;
 
         card.setOnClickListener(v -> {
@@ -87,8 +88,11 @@ public class ManualMoodActivity extends AppCompatActivity {
             intent.putExtra("mood_name", moodName);
             intent.putExtra("mood_emoji", getMoodEmoji(moodName));
             intent.putExtra("mood_desc", getMoodDescription(moodName));
-            intent.putExtra("mood_percent", 87);
-            intent.putExtra("source", "manual");
+            intent.putExtra("mood_percent", 100);
+            intent.putExtra(CheckInConstants.EXTRA_MOOD_TAG, moodTag);
+            intent.putExtra(CheckInConstants.EXTRA_CONFIDENCE, 1.0);
+            intent.putExtra(CheckInConstants.EXTRA_AI_ANALYSIS, "Bạn đã chọn cảm xúc thủ công.");
+            intent.putExtra(CheckInConstants.EXTRA_SOURCE, CheckInConstants.SOURCE_MANUAL);
 
             startActivity(intent);
         });

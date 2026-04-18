@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.checkin.CheckInConstants;
 
 public class CheckInAiActivity extends AppCompatActivity {
 
@@ -349,11 +350,18 @@ public class CheckInAiActivity extends AppCompatActivity {
     private void openResultFromAiScan() {
         Intent intent = new Intent(CheckInAiActivity.this, CheckInResultActivity.class);
 
+        String moodTag = CheckInConstants.MOOD_STRESS;
+        double confidence = 0.87;
+        String aiAnalysis = "AI nhận thấy bạn có dấu hiệu căng thẳng nhẹ hôm nay.";
+
         intent.putExtra("mood_name", "Căng thẳng");
         intent.putExtra("mood_emoji", "😤");
         intent.putExtra("mood_desc", "Hơi nhiều áp lực hôm nay...");
-        intent.putExtra("mood_percent", 87);
-        intent.putExtra("source", "ai_scan");
+        intent.putExtra("mood_percent", (int) (confidence * 100));
+        intent.putExtra(CheckInConstants.EXTRA_MOOD_TAG, moodTag);
+        intent.putExtra(CheckInConstants.EXTRA_CONFIDENCE, confidence);
+        intent.putExtra(CheckInConstants.EXTRA_AI_ANALYSIS, aiAnalysis);
+        intent.putExtra(CheckInConstants.EXTRA_SOURCE, CheckInConstants.SOURCE_AI);
 
         startActivity(intent);
     }

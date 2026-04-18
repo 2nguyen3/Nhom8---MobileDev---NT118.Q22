@@ -13,12 +13,20 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.checkin.CheckInConstants;
+import com.example.heami.checkin.CheckInRepository;
 
 public class CheckInResultActivity extends AppCompatActivity {
 
@@ -53,6 +61,12 @@ public class CheckInResultActivity extends AppCompatActivity {
     private String moodEmoji;
     private String moodDesc;
     private int moodPercent;
+    private String moodTag;
+    private double moodConfidence;
+    private String aiAnalysis;
+    private String source;
+
+    private final CheckInRepository checkInRepository = new CheckInRepository();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +112,10 @@ public class CheckInResultActivity extends AppCompatActivity {
         moodEmoji = getIntent().getStringExtra("mood_emoji");
         moodDesc = getIntent().getStringExtra("mood_desc");
         moodPercent = getIntent().getIntExtra("mood_percent", 87);
+        moodTag = getIntent().getStringExtra(CheckInConstants.EXTRA_MOOD_TAG);
+        moodConfidence = getIntent().getDoubleExtra(CheckInConstants.EXTRA_CONFIDENCE, moodPercent / 100.0);
+        aiAnalysis = getIntent().getStringExtra(CheckInConstants.EXTRA_AI_ANALYSIS);
+        source = getIntent().getStringExtra(CheckInConstants.EXTRA_SOURCE);
 
         if (moodName == null || moodName.trim().isEmpty()) {
             moodName = "Căng thẳng";
@@ -117,6 +135,16 @@ public class CheckInResultActivity extends AppCompatActivity {
 
         if (moodPercent > 100) {
             moodPercent = 100;
+        }
+
+        if (moodTag == null || moodTag.trim().isEmpty()) {
+            moodTag = mapMoodNameToTag(moodName);
+        }
+        if (source == null || source.trim().isEmpty()) {
+            source = CheckInConstants.SOURCE_MANUAL;
+        }
+        if (aiAnalysis == null) {
+            aiAnalysis = moodDesc != null ? moodDesc : "";
         }
 
         if (txtResultMoodName != null) {
@@ -147,16 +175,7 @@ public class CheckInResultActivity extends AppCompatActivity {
 
         if (btnSaveCheckInResult != null) {
             btnSaveCheckInResult.setOnClickListener(v -> {
-                Toast.makeText(
-                        CheckInResultActivity.this,
-                        "Heami đã lưu check-in hôm nay 💗",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
+                saveCheckInResult();
             });
         }
     }
@@ -202,6 +221,46 @@ public class CheckInResultActivity extends AppCompatActivity {
             default:
                 return "Heami đã ghi nhận cảm xúc của bạn hôm nay. Cảm ơn bạn vì đã lắng nghe chính mình";
         }
+    }
+
+    private void saveCheckInResult() {
+        if (btnSaveCheckInResult != null) {
+            btnSaveCheckInResult.setEnabled(false);
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("mood_tag", moodTag);
+        payload.put("confidence", moodConfidence);
+        payload.put("ai_analysis", aiAnalysis);
+        payload.put("source", source);
+        payload.put("energy_level", null);
+        payload.put("bpm", null);
+        payload.put("causes", getSelectedCausesText());
+        payload.put("note", edtResultNote != null && edtResultNote.getText() != null
+                ? edtResultNote.getText().toString().trim()
+                : "");
+
+        checkInRepository.upsertToday(payload, new CheckInRepository.SaveCallback() {
+            @Override
+            public void onSuccess(String recordId) {
+                if (btnSaveCheckInResult != null) {
+                    btnSaveCheckInResult.setEnabled(true);
+                }
+                Toast.makeText(CheckInResultActivity.this, "Heami đã lưu check-in hôm nay 💗", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
+            }
+
+            @Override
+            public void onError(@NonNull Exception e) {
+                if (btnSaveCheckInResult != null) {
+                    btnSaveCheckInResult.setEnabled(true);
+                }
+                Toast.makeText(CheckInResultActivity.this, "Lưu thất bại: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void startResultAnimations() {
@@ -284,6 +343,16 @@ public class CheckInResultActivity extends AppCompatActivity {
         animateCauseChip(chip);
     }
 
+    private List<String> getSelectedCausesText() {
+        List<String> causes = new ArrayList<>();
+        for (TextView chip : selectedCauseChips) {
+            if (chip == null || chip.getText() == null) continue;
+            String text = chip.getText().toString().replace("  ✓", "").trim();
+            if (!text.isEmpty()) causes.add(text);
+        }
+        return causes;
+    }
+
     private void setCauseChipSelected(TextView chip) {
         chip.setBackgroundResource(R.drawable.bg_result_cause_chip_selected);
         chip.setTextColor(0xFFE86FA0);
@@ -317,5 +386,17 @@ public class CheckInResultActivity extends AppCompatActivity {
                         .setDuration(120)
                         .start())
                 .start();
+    }
+
+    private String mapMoodNameToTag(String moodNameVi) {
+        if (moodNameVi == null) return CheckInConstants.MOOD_STRESS;
+        String v = moodNameVi.toLowerCase();
+        if (v.contains("vui")) return CheckInConstants.MOOD_HAPPY;
+        if (v.contains("buồn")) return CheckInConstants.MOOD_SAD;
+        if (v.contains("căng")) return CheckInConstants.MOOD_STRESS;
+        if (v.contains("sợ")) return CheckInConstants.MOOD_FEAR;
+        if (v.contains("ghê")) return CheckInConstants.MOOD_DISGUST;
+        if (v.contains("tức") || v.contains("giận")) return CheckInConstants.MOOD_ANGRY;
+        return CheckInConstants.MOOD_STRESS;
     }
 }
