@@ -86,8 +86,15 @@ public class ManualMoodActivity extends AppCompatActivity {
             intent.putExtra("mood_name", moodName);
             intent.putExtra("mood_emoji", getMoodEmoji(moodName));
             intent.putExtra("mood_desc", getMoodDescription(moodName));
-            intent.putExtra("mood_percent", 87);
-            intent.putExtra("source", "manual");
+            intent.putExtra("mood_percent", getManualMoodPercent(moodName));
+
+            // metadata để đi chung pipeline lưu MoodHistory
+            intent.putExtra("source", "manual_checkin");
+            intent.putExtra("raw_emotion_label", getManualMoodTag(moodName));
+            intent.putExtra("ai_confidence", 0f);
+            intent.putExtra("model_name", "manual");
+            intent.putExtra("model_version", "manual");
+            intent.putExtra("confidence_level", "manual");
 
             startActivity(intent);
         });
@@ -120,7 +127,6 @@ public class ManualMoodActivity extends AppCompatActivity {
 
     private void resetMoodCard(View card) {
         if (card == null) return;
-
         if (card == selectedMoodCard) return;
 
         card.animate()
@@ -257,6 +263,44 @@ public class ManualMoodActivity extends AppCompatActivity {
         set.start();
     }
 
+    private String getManualMoodTag(String moodName) {
+        switch (moodName) {
+            case "Căng thẳng":
+                return "stress";
+            case "Sợ hãi":
+                return "fear";
+            case "Vui vẻ":
+                return "happy";
+            case "Buồn":
+                return "sad";
+            case "Ghê tởm":
+                return "disgust";
+            case "Tức giận":
+                return "angry";
+            default:
+                return "neutral";
+        }
+    }
+
+    private int getManualMoodPercent(String moodName) {
+        switch (moodName) {
+            case "Vui vẻ":
+                return 85;
+            case "Buồn":
+                return 74;
+            case "Căng thẳng":
+                return 78;
+            case "Sợ hãi":
+                return 72;
+            case "Ghê tởm":
+                return 70;
+            case "Tức giận":
+                return 80;
+            default:
+                return 70;
+        }
+    }
+
     private String getMoodEmoji(String moodName) {
         switch (moodName) {
             case "Căng thẳng":
@@ -272,26 +316,32 @@ public class ManualMoodActivity extends AppCompatActivity {
             case "Tức giận":
                 return "🤬";
             default:
-                return "😤";
+                return "😌";
         }
     }
 
     private String getMoodDescription(String moodName) {
         switch (moodName) {
             case "Căng thẳng":
-                return "Hơi nhiều áp lực hôm nay...";
+                return "Heami ghi nhận hôm nay bạn đang có khá nhiều áp lực.";
+
             case "Sợ hãi":
-                return "Năng lượng nhẹ nhàng, dễ chịu";
+                return "Heami cảm nhận bạn đang cần thêm cảm giác an toàn.";
+
             case "Vui vẻ":
-                return "Heami thấy bạn đang rất ổn!";
+                return "Heami thấy bạn đang có nguồn năng lượng rất tích cực.";
+
             case "Buồn":
-                return "Hôm nay có gì nặng lòng không?";
+                return "Heami thấy hôm nay bạn có vẻ hơi nặng lòng một chút.";
+
             case "Ghê tởm":
-                return "Cơ thể đang cần nghỉ ngơi...";
+                return "Heami cảm nhận cơ thể và cảm xúc của bạn đang hơi khó chịu.";
+
             case "Tức giận":
-                return "Có điều gì đó đang bất an...";
+                return "Heami thấy có điều gì đó đang khiến bạn khá bức bối.";
+
             default:
-                return "Hơi nhiều áp lực hôm nay...";
+                return "Heami đã ghi nhận cảm xúc hiện tại của bạn.";
         }
     }
 }

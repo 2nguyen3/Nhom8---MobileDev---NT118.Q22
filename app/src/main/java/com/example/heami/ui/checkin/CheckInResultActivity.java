@@ -3,19 +3,20 @@ package com.example.heami.ui.checkin;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.util.HashSet;
-import java.util.Set;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.heami.R;
 import com.example.heami.data.models.MoodHistoryModel;
 import com.example.heami.ui.main.HomeActivity;
 import com.google.firebase.Timestamp;
@@ -23,14 +24,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
-
-import androidx.appcompat.app.AppCompatActivity;
-
-import com.example.heami.R;
+import java.util.Set;
 
 public class CheckInResultActivity extends AppCompatActivity {
 
@@ -47,6 +45,7 @@ public class CheckInResultActivity extends AppCompatActivity {
 
     private EditText edtResultNote;
     private LinearLayout btnSaveCheckInResult;
+    private TextView txtSaveCheckInResult;
 
     private TextView chipCauseWork;
     private TextView chipCauseStudy;
@@ -80,10 +79,16 @@ public class CheckInResultActivity extends AppCompatActivity {
     private TextView txtTherapyJournalTitle;
     private TextView txtTherapyJournalDesc;
 
+    private FirebaseFirestore firestore;
+    private FirebaseAuth auth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_checkin_result);
+
+        firestore = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         bindViews();
         bindResultData();
@@ -109,6 +114,7 @@ public class CheckInResultActivity extends AppCompatActivity {
 
         edtResultNote = findViewById(R.id.edtResultNote);
         btnSaveCheckInResult = findViewById(R.id.btnSaveCheckInResult);
+        txtSaveCheckInResult = findViewById(R.id.txtSaveCheckInResult);
 
         chipCauseWork = findViewById(R.id.chipCauseWork);
         chipCauseStudy = findViewById(R.id.chipCauseStudy);
@@ -128,56 +134,37 @@ public class CheckInResultActivity extends AppCompatActivity {
     }
 
     private void bindResultData() {
-        moodName = getIntent().getStringExtra("mood_name");
-        moodEmoji = getIntent().getStringExtra("mood_emoji");
-        moodDesc = getIntent().getStringExtra("mood_desc");
-        moodPercent = getIntent().getIntExtra("mood_percent", 87);
+        moodName = safeText(getIntent().getStringExtra("mood_name"), "Bình thường");
+        moodEmoji = safeText(getIntent().getStringExtra("mood_emoji"), "😌");
+        moodDesc = safeText(
+                getIntent().getStringExtra("mood_desc"),
+                "Heami thấy trạng thái của bạn hiện tại khá ổn định."
+        );
+        moodPercent = getIntent().getIntExtra("mood_percent", 60);
 
-        source = getIntent().getStringExtra("source");
-
-        if (source == null || source.trim().isEmpty()) {
-            source = "unknown";
-        }
-
-        rawEmotionLabel = getIntent().getStringExtra("raw_emotion_label");
+        source = safeText(getIntent().getStringExtra("source"), "manual");
+        rawEmotionLabel = safeText(getIntent().getStringExtra("raw_emotion_label"), "unknown");
         aiConfidence = getIntent().getFloatExtra("ai_confidence", 0f);
-        modelName = getIntent().getStringExtra("model_name");
-        modelVersion = getIntent().getStringExtra("model_version");
+        modelName = safeText(
+                getIntent().getStringExtra("model_name"),
+                isAiSource(source) ? "MediaPipe Face Landmarker" : "manual"
+        );
+        modelVersion = safeText(
+                getIntent().getStringExtra("model_version"),
+                isAiSource(source) ? "unknown" : "manual"
+        );
 
-        if (rawEmotionLabel == null || rawEmotionLabel.trim().isEmpty()) {
-            rawEmotionLabel = "unknown";
+        String intentConfidenceLevel = getIntent().getStringExtra("confidence_level");
+        if (intentConfidenceLevel == null || intentConfidenceLevel.trim().isEmpty()) {
+            confidenceLevel = getConfidenceLevel(aiConfidence);
+        } else {
+            confidenceLevel = intentConfidenceLevel;
         }
 
-        if (modelName == null || modelName.trim().isEmpty()) {
-            modelName = "unknown";
-        }
+        if (moodPercent < 0) moodPercent = 0;
+        if (moodPercent > 100) moodPercent = 100;
 
-        if (modelVersion == null || modelVersion.trim().isEmpty()) {
-            modelVersion = "unknown";
-        }
-
-        if (moodName == null || moodName.trim().isEmpty()) {
-            moodName = "Căng thẳng";
-        }
-
-        if (moodEmoji == null || moodEmoji.trim().isEmpty()) {
-            moodEmoji = "😤";
-        }
-
-        if (moodDesc == null || moodDesc.trim().isEmpty()) {
-            moodDesc = "Hơi nhiều áp lực hôm nay...";
-        }
-
-        confidenceLevel = getConfidenceLevel(aiConfidence);
         moodDesc = getSoftMoodDescIfLowConfidence(moodName, moodDesc);
-
-        if (moodPercent < 0) {
-            moodPercent = 0;
-        }
-
-        if (moodPercent > 100) {
-            moodPercent = 100;
-        }
 
         if (txtResultMoodName != null) {
             txtResultMoodName.setText(moodName);
@@ -229,47 +216,169 @@ public class CheckInResultActivity extends AppCompatActivity {
     }
 
     private String getConfidenceLevel(float confidence) {
-        if (confidence >= 0.75f) {
-            return "high";
-        }
-
-        if (confidence >= 0.50f) {
-            return "medium";
-        }
-
+        if (confidence >= 0.75f) return "high";
+        if (confidence >= 0.50f) return "medium";
         return "low";
+    }
+
+    private boolean isAiSource(String src) {
+        if (src == null) return false;
+        String s = src.toLowerCase(Locale.ROOT);
+        return s.contains("ai") || s.contains("mediapipe");
+    }
+
+    private String safeText(String value, String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim();
+    }
+
+    private float clamp01(float value) {
+        if (value < 0f) return 0f;
+        if (value > 1f) return 1f;
+        return value;
+    }
+
+    private String normalizeMoodTag(String moodName, String rawEmotionLabel) {
+        String raw = rawEmotionLabel == null ? "" : rawEmotionLabel.trim().toLowerCase(Locale.ROOT);
+
+        switch (raw) {
+            case "happy":
+            case "sad":
+            case "angry":
+            case "fear":
+            case "stress":
+            case "neutral":
+            case "disgust":
+                return raw;
+        }
+
+        switch (moodName) {
+            case "Vui vẻ":
+                return "happy";
+            case "Buồn":
+                return "sad";
+            case "Tức giận":
+                return "angry";
+            case "Lo lắng":
+            case "Sợ hãi":
+                return "fear";
+            case "Căng thẳng":
+                return "stress";
+            case "Khó chịu":
+            case "Ghê tởm":
+                return "disgust";
+            case "Bình thường":
+            default:
+                return "neutral";
+        }
+    }
+
+    private String normalizeSource(String src) {
+        if (src == null || src.trim().isEmpty()) {
+            return "manual_checkin";
+        }
+
+        String s = src.trim().toLowerCase(Locale.ROOT);
+
+        if (s.contains("mediapipe")) {
+            return "ai_checkin_mediapipe";
+        }
+
+        if (s.contains("ai")) {
+            return "ai_checkin";
+        }
+
+        return "manual_checkin";
+    }
+
+    private String normalizeConfidenceLevel(String currentLevel, float confidence, boolean aiAnalysis) {
+        if (!aiAnalysis) {
+            return "manual";
+        }
+
+        if ("high".equals(currentLevel) || "medium".equals(currentLevel) || "low".equals(currentLevel)) {
+            return currentLevel;
+        }
+
+        return getConfidenceLevel(confidence);
+    }
+
+    private int getEnergyLevelForMood(String moodName) {
+        switch (moodName) {
+            case "Vui vẻ":
+                return 85;
+            case "Tức giận":
+                return 72;
+            case "Căng thẳng":
+                return 42;
+            case "Lo lắng":
+            case "Sợ hãi":
+                return 34;
+            case "Buồn":
+                return 28;
+            case "Khó chịu":
+            case "Ghê tởm":
+                return 30;
+            case "Bình thường":
+            default:
+                return 58;
+        }
+    }
+
+    private ArrayList<String> sanitizeStringList(ArrayList<String> input) {
+        LinkedHashSet<String> cleaned = new LinkedHashSet<>();
+
+        if (input != null) {
+            for (String item : input) {
+                if (item == null) continue;
+                String trimmed = item.trim();
+                if (!trimmed.isEmpty()) {
+                    cleaned.add(trimmed);
+                }
+            }
+        }
+
+        return new ArrayList<>(cleaned);
+    }
+
+    private String buildMoodRecordId(Timestamp timestamp) {
+        return "mood_" + timestamp.getSeconds() + "_" + timestamp.getNanoseconds();
     }
 
     private String getHeamiMessage(String moodName) {
         switch (moodName) {
             case "Bình thường":
-                return "Heami thấy cảm xúc của bạn hôm nay khá ổn định. Đây cũng là một trạng thái rất đáng trân trọng đó";
+                return "Heami thấy cảm xúc của bạn hôm nay khá ổn định. Đây cũng là một trạng thái rất đáng trân trọng đó.";
 
             case "Căng thẳng":
-                return "Heami thấy bạn đang mang nhiều áp lực hôm nay. Hãy để Heami cùng bạn thở nhẹ một chút nhé";
+                return "Heami thấy bạn đang mang nhiều áp lực hôm nay. Hãy để Heami cùng bạn thở nhẹ một chút nhé.";
 
+            case "Lo lắng":
             case "Sợ hãi":
-                return "Heami cảm nhận bạn đang cần một cảm giác an toàn hơn. Mình cứ đi chậm lại một chút thôi nhé";
+                return "Heami cảm nhận bạn đang cần một cảm giác an toàn hơn. Mình cứ đi chậm lại một chút thôi nhé.";
 
             case "Vui vẻ":
-                return "Heami thấy năng lượng của bạn hôm nay rất tươi sáng. Hãy lưu lại khoảnh khắc này nha";
+                return "Heami thấy năng lượng của bạn hôm nay rất tươi sáng. Hãy lưu lại khoảnh khắc này nha.";
 
             case "Buồn":
-                return "Heami thấy hôm nay bạn có vẻ hơi nặng lòng. Bạn không cần phải ổn ngay lập tức đâu";
+                return "Heami thấy hôm nay bạn có vẻ hơi nặng lòng. Bạn không cần phải ổn ngay lập tức đâu.";
 
+            case "Khó chịu":
             case "Ghê tởm":
-                return "Heami cảm nhận cơ thể và tâm trí bạn đang cần được nghỉ ngơi. Hãy nhẹ nhàng với bản thân hơn nhé";
+                return "Heami cảm nhận cơ thể và tâm trí bạn đang cần được nghỉ ngơi. Hãy nhẹ nhàng với bản thân hơn nhé.";
 
             case "Tức giận":
-                return "Heami thấy bên trong bạn đang có nhiều điều bị dồn nén. Mình thử hít thở chậm lại trước nha";
+                return "Heami thấy bên trong bạn đang có nhiều điều bị dồn nén. Mình thử hít thở chậm lại trước nha.";
 
             default:
-                return "Heami đã ghi nhận cảm xúc của bạn hôm nay. Cảm ơn bạn vì đã lắng nghe chính mình";
+                return "Heami đã ghi nhận cảm xúc của bạn hôm nay. Cảm ơn bạn vì đã lắng nghe chính mình.";
         }
     }
 
     private String getSoftMoodDescIfLowConfidence(String moodName, String originalDesc) {
-        if (!source.contains("ai_camera_tflite")) {
+        if (!isAiSource(source)) {
             return originalDesc;
         }
 
@@ -287,9 +396,11 @@ public class CheckInResultActivity extends AppCompatActivity {
             case "Tức giận":
                 return "Heami chưa thật sự chắc chắn, nhưng nhận thấy bạn có vẻ đang hơi căng bên trong.";
 
+            case "Lo lắng":
             case "Sợ hãi":
                 return "Heami chưa thật sự chắc chắn, nhưng thấy bạn có vẻ cần thêm cảm giác an toàn.";
 
+            case "Khó chịu":
             case "Ghê tởm":
                 return "Heami chưa thật sự chắc chắn, nhưng cảm nhận cơ thể bạn có vẻ đang không thoải mái.";
 
@@ -364,7 +475,6 @@ public class CheckInResultActivity extends AppCompatActivity {
 
     private void setupCauseChip(TextView chip) {
         if (chip == null) return;
-
         chip.setOnClickListener(v -> toggleCauseChip(chip));
     }
 
@@ -425,7 +535,6 @@ public class CheckInResultActivity extends AppCompatActivity {
                 String text = chip.getText().toString()
                         .replace("  ✓", "")
                         .trim();
-
                 causes.add(text);
             }
         }
@@ -433,8 +542,21 @@ public class CheckInResultActivity extends AppCompatActivity {
         return causes;
     }
 
+    private void setSaveLoading(boolean isLoading) {
+        if (btnSaveCheckInResult != null) {
+            btnSaveCheckInResult.setEnabled(!isLoading);
+            btnSaveCheckInResult.setAlpha(isLoading ? 0.65f : 1f);
+        }
+
+        if (txtSaveCheckInResult != null) {
+            txtSaveCheckInResult.setText(
+                    isLoading ? "Đang lưu check-in..." : "Lưu & Nhận gợi ý trị liệu"
+            );
+        }
+    }
+
     private void saveCheckInToFirestore() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseUser user = auth.getCurrentUser();
 
         if (user == null) {
             Toast.makeText(
@@ -445,34 +567,47 @@ public class CheckInResultActivity extends AppCompatActivity {
             return;
         }
 
-        if (btnSaveCheckInResult != null) {
-            btnSaveCheckInResult.setEnabled(false);
-            btnSaveCheckInResult.setAlpha(0.65f);
-        }
+        setSaveLoading(true);
 
         String note = "";
         if (edtResultNote != null) {
             note = edtResultNote.getText().toString().trim();
         }
 
-        ArrayList<String> causes = getSelectedCauses();
-        ArrayList<String> recommendations = getTherapyRecommendations();
+        ArrayList<String> causes = sanitizeStringList(getSelectedCauses());
+        ArrayList<String> recommendations = sanitizeStringList(getTherapyRecommendations());
 
-        String recordId = new SimpleDateFormat("yyyyMMdd", Locale.getDefault())
-                .format(new Date());
+        boolean aiAnalysis = isAiSource(source);
+        String normalizedSource = normalizeSource(source);
+        String normalizedMoodTag = normalizeMoodTag(moodName, rawEmotionLabel);
+        String normalizedRawEmotionLabel = aiAnalysis
+                ? normalizeMoodTag(moodName, rawEmotionLabel)
+                : normalizedMoodTag;
+
+        float normalizedAiConfidence = aiAnalysis ? clamp01(aiConfidence) : 0f;
+        String normalizedConfidenceLevel = normalizeConfidenceLevel(
+                confidenceLevel,
+                normalizedAiConfidence,
+                aiAnalysis
+        );
+        String normalizedModelName = aiAnalysis ? safeText(modelName, "MediaPipe Face Landmarker") : "manual";
+        String normalizedModelVersion = aiAnalysis ? safeText(modelVersion, "unknown") : "manual";
+
+        int energyLevel = getEnergyLevelForMood(moodName);
 
         Timestamp now = Timestamp.now();
+        String recordId = buildMoodRecordId(now);
 
         MoodHistoryModel moodHistory = new MoodHistoryModel(
                 recordId,
                 user.getUid(),
-                moodName,
+                normalizedMoodTag,
                 moodEmoji,
                 moodDesc,
                 moodPercent,
-                moodPercent,
-                source,
-                source != null && source.contains("ai"),
+                energyLevel,
+                normalizedSource,
+                aiAnalysis,
                 causes,
                 note,
                 now,
@@ -480,15 +615,13 @@ public class CheckInResultActivity extends AppCompatActivity {
         );
 
         moodHistory.setRecommendations(recommendations);
+        moodHistory.setRaw_emotion_label(normalizedRawEmotionLabel);
+        moodHistory.setAi_confidence(normalizedAiConfidence);
+        moodHistory.setModel_name(normalizedModelName);
+        moodHistory.setModel_version(normalizedModelVersion);
+        moodHistory.setConfidence_level(normalizedConfidenceLevel);
 
-        moodHistory.setRaw_emotion_label(rawEmotionLabel);
-        moodHistory.setAi_confidence(aiConfidence);
-        moodHistory.setModel_name(modelName);
-        moodHistory.setModel_version(modelVersion);
-        moodHistory.setConfidence_level(confidenceLevel);
-
-        FirebaseFirestore.getInstance()
-                .collection("users")
+        firestore.collection("users")
                 .document(user.getUid())
                 .collection("mood_history")
                 .document(recordId)
@@ -496,21 +629,18 @@ public class CheckInResultActivity extends AppCompatActivity {
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(
                             CheckInResultActivity.this,
-                            "Heami đã lưu check-in hôm nay 💗",
+                            "Heami đã lưu một check-in mới 💗",
                             Toast.LENGTH_SHORT
                     ).show();
 
                     Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
+                    intent.putExtra("refresh_mood_today", true);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     startActivity(intent);
                     finish();
                 })
                 .addOnFailureListener(e -> {
-                    if (btnSaveCheckInResult != null) {
-                        btnSaveCheckInResult.setEnabled(true);
-                        btnSaveCheckInResult.setAlpha(1f);
-                    }
-
+                    setSaveLoading(false);
                     Toast.makeText(
                             CheckInResultActivity.this,
                             "Lưu check-in thất bại: " + e.getMessage(),
@@ -585,6 +715,7 @@ public class CheckInResultActivity extends AppCompatActivity {
                 journalDesc = "Xả cảm xúc an toàn";
                 break;
 
+            case "Lo lắng":
             case "Sợ hãi":
                 musicTitle = "Âm thanh an toàn";
                 musicDesc = "6 phút · Grounding";
@@ -596,6 +727,7 @@ public class CheckInResultActivity extends AppCompatActivity {
                 journalDesc = "Viết 3 điều nhỏ";
                 break;
 
+            case "Khó chịu":
             case "Ghê tởm":
                 musicTitle = "Âm thanh nghỉ ngơi";
                 musicDesc = "5 phút · Làm dịu cơ thể";
@@ -636,3 +768,4 @@ public class CheckInResultActivity extends AppCompatActivity {
         return recommendations;
     }
 }
+

@@ -70,9 +70,6 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.6.0")
     implementation("androidx.camera:camera-view:1.6.0")
 
-    // ML Kit Face Detection
-    implementation("com.google.mlkit:face-detection:16.1.7")
-
-    // LiteRT / TensorFlow Lite runtime
-    implementation("com.google.ai.edge.litert:litert:1.0.1")
+    // MediaPipe Face Landmarker
+    implementation("com.google.mediapipe:tasks-vision:latest.release")
 }

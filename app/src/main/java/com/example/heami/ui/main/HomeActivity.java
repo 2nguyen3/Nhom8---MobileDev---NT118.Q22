@@ -8,56 +8,132 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
 import com.example.heami.ui.checkin.CheckInAiActivity;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private TextView txtGreetingLabel, txtGreetingTitle;
+    private TextView txtGreetingLabel;
+    private TextView txtGreetingTitle;
+    private TextView txtGreetingSubtitle;
+
+    private TextView txtHelloTitle;
+    private TextView txtHelloSub;
+
+    private TextView txtAiTitle;
+    private TextView txtAiSubtitle;
+    private TextView txtStartAi;
+
+    private TextView txtSchedule1;
+    private TextView txtSchedule2;
+    private TextView txtSchedule3;
+    private TextView txtSchedule4;
+    private TextView txtScheduleProgress;
+
+    private LinearLayout layoutAiReady;
+    private View checkDone1;
+    private View checkEmpty2;
+    private View checkEmpty3;
+    private View checkEmpty4;
+    private View btnStartAi;
+
+    private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        auth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
+
         initViews();
         BottomNavManager.setup(this, BottomNavManager.TAB_HOME);
 
         loadUserData();
+        loadTodayMoodState();
+
         applyStaticStyles();
         startHomeAnimations();
         setupActions();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateGreetingLabel();
+        loadTodayMoodState();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+
+        updateGreetingLabel();
+        loadTodayMoodState();
+    }
+
     private void initViews() {
         txtGreetingLabel = findViewById(R.id.txtGreetingLabel);
         txtGreetingTitle = findViewById(R.id.txtGreetingTitle);
+        txtGreetingSubtitle = findViewById(R.id.txtGreetingSubtitle);
+
+        txtHelloTitle = findViewById(R.id.txtHelloTitle);
+        txtHelloSub = findViewById(R.id.txtHelloSub);
+
+        txtAiTitle = findViewById(R.id.txtAiTitle);
+        txtAiSubtitle = findViewById(R.id.txtAiSubtitle);
+        txtStartAi = findViewById(R.id.txtStartAi);
+
+        txtSchedule1 = findViewById(R.id.txtSchedule1);
+        txtSchedule2 = findViewById(R.id.txtSchedule2);
+        txtSchedule3 = findViewById(R.id.txtSchedule3);
+        txtSchedule4 = findViewById(R.id.txtSchedule4);
+        txtScheduleProgress = findViewById(R.id.txtScheduleProgress);
+
+        layoutAiReady = findViewById(R.id.txtAiReady);
+
+        checkDone1 = findViewById(R.id.checkDone1);
+        checkEmpty2 = findViewById(R.id.checkEmpty2);
+        checkEmpty3 = findViewById(R.id.checkEmpty3);
+        checkEmpty4 = findViewById(R.id.checkEmpty4);
+
+        btnStartAi = findViewById(R.id.btnStartAi);
     }
 
     private void loadUserData() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseUser user = auth.getCurrentUser();
         if (user != null) {
-            // Lấy nickname từ Firestore
-            FirebaseFirestore.getInstance().collection("users").document(user.getUid()).get()
+            firestore.collection("users")
+                    .document(user.getUid())
+                    .get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
                             String nickname = documentSnapshot.getString("nickname");
-                            if (nickname != null && !nickname.isEmpty()) {
-                                txtGreetingTitle.setText(nickname + " ơi!");
+                            if (nickname != null && !nickname.trim().isEmpty()) {
+                                txtGreetingTitle.setText(nickname.trim() + " ơi!");
                             }
                         }
                     });
         }
-        
+
         updateGreetingLabel();
     }
 
@@ -65,7 +141,6 @@ public class HomeActivity extends AppCompatActivity {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         String greeting;
 
-        // Logic 4 mốc thời gian: Sáng, Trưa, Chiều, Tối
         if (hour >= 4 && hour < 10) {
             greeting = "🌅 Chào buổi sáng,";
         } else if (hour >= 10 && hour < 13) {
@@ -75,62 +150,342 @@ public class HomeActivity extends AppCompatActivity {
         } else {
             greeting = "🌙 Chào buổi tối,";
         }
-        
+
         if (txtGreetingLabel != null) {
             txtGreetingLabel.setText(greeting);
         }
     }
 
-    private void applyStaticStyles() {
-        TextView txtSchedule1 = findViewById(R.id.txtSchedule1);
-        if (txtSchedule1 != null) {
-            txtSchedule1.setPaintFlags(
-                    txtSchedule1.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG
-            );
+    private void loadTodayMoodState() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            applyNoCheckInState();
+            applyTodaySchedule(false);
+            return;
+        }
+
+        Timestamp startOfToday = getStartOfToday();
+        Timestamp startOfTomorrow = getStartOfTomorrow();
+
+        firestore.collection("users")
+                .document(user.getUid())
+                .collection("mood_history")
+                .whereGreaterThanOrEqualTo("timestamp", startOfToday)
+                .whereLessThan("timestamp", startOfTomorrow)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    boolean hasMoodCheckinToday = querySnapshot != null && !querySnapshot.isEmpty();
+
+                    if (hasMoodCheckinToday) {
+                        DocumentSnapshot latestSnapshot = querySnapshot.getDocuments().get(0);
+                        applyTodayMoodState(latestSnapshot);
+                    } else {
+                        applyNoCheckInState();
+                    }
+
+                    applyTodaySchedule(hasMoodCheckinToday);
+                })
+                .addOnFailureListener(e -> {
+                    applyNoCheckInState();
+                    applyTodaySchedule(false);
+                });
+    }
+
+    private Timestamp getStartOfToday() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Timestamp(new Date(cal.getTimeInMillis()));
+    }
+
+    private Timestamp getStartOfTomorrow() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Timestamp(new Date(cal.getTimeInMillis()));
+    }
+
+    private void applyNoCheckInState() {
+        if (txtGreetingSubtitle != null) {
+            txtGreetingSubtitle.setText("Hôm nay là một ngày tuyệt vời");
+        }
+
+        if (txtHelloTitle != null) {
+            txtHelloTitle.setText("Xin chào, bạn!");
+        }
+
+        if (txtHelloSub != null) {
+            txtHelloSub.setText("Mình ở đây cùng bạn nhé!");
+        }
+
+        if (txtAiTitle != null) {
+            txtAiTitle.setText("Để Heami đọc\ntâm trạng của bạn");
+        }
+
+        if (txtAiSubtitle != null) {
+            txtAiSubtitle.setText("Nhận diện cảm xúc qua khuôn mặt\nchính xác — chỉ trong 3 giây");
+        }
+
+        setAiReadyText("AI đang sẵn sàng nhận diện");
+
+        if (txtStartAi != null) {
+            txtStartAi.setText("Bắt đầu nhận diện ngay");
         }
     }
 
+    private void applyTodayMoodState(DocumentSnapshot snapshot) {
+        String moodTag = safeText(snapshot.getString("mood_tag"), "neutral");
+        String moodEmoji = safeText(snapshot.getString("mood_emoji"), getMoodEmojiFallback(moodTag));
+        String moodDesc = safeText(snapshot.getString("mood_desc"), getShortMoodDesc(moodTag));
+
+        Long moodPercentLong = snapshot.getLong("mood_percent");
+        int moodPercent = moodPercentLong != null ? moodPercentLong.intValue() : 60;
+        if (moodPercent < 0) moodPercent = 0;
+        if (moodPercent > 100) moodPercent = 100;
+
+        String source = safeText(snapshot.getString("source"), "manual_checkin");
+
+        String moodName = mapMoodTagToDisplayName(moodTag);
+        String sourceLabel = source.contains("ai") ? "AI check-in" : "Check-in thủ công";
+
+        if (txtGreetingSubtitle != null) {
+            txtGreetingSubtitle.setText("Mood hôm nay: " + moodEmoji + " " + moodName + " · " + moodPercent + "%");
+        }
+
+        if (txtHelloTitle != null) {
+            txtHelloTitle.setText("Bạn đã check-in hôm nay");
+        }
+
+        if (txtHelloSub != null) {
+            txtHelloSub.setText(moodEmoji + " " + moodName + " · " + moodPercent + "%");
+        }
+
+        if (txtAiTitle != null) {
+            txtAiTitle.setText("Hôm nay bạn đang\n" + moodEmoji + " " + moodName);
+        }
+
+        if (txtAiSubtitle != null) {
+            txtAiSubtitle.setText(
+                    "Kết quả gần nhất: " + moodPercent + "% · " + sourceLabel +
+                            "\n" + buildHomeAiSubline(moodName, moodDesc)
+            );
+        }
+
+        setAiReadyText("Đã check-in hôm nay");
+
+        if (txtStartAi != null) {
+            txtStartAi.setText("Check-in lại ngay");
+        }
+    }
+
+    private void applyTodaySchedule(boolean hasMoodCheckinToday) {
+        // Hiện tại chỉ có check-in cảm xúc là task có dữ liệu lưu thật.
+        boolean waterDone = false;
+        boolean moodCheckinDone = hasMoodCheckinToday;
+        boolean breathDone = false;
+        boolean relaxDone = false;
+
+        setScheduleTaskState(txtSchedule1, checkDone1, "Uống 1 ly nước", waterDone);
+        setScheduleTaskState(txtSchedule2, checkEmpty2, "Check-in cảm xúc buổi sáng", moodCheckinDone);
+        setScheduleTaskState(txtSchedule3, checkEmpty3, "Thở sâu 3 phút", breathDone);
+        setScheduleTaskState(txtSchedule4, checkEmpty4, "Thư giãn giữa buổi", relaxDone);
+
+        int doneSteps = 0;
+        if (waterDone) doneSteps++;
+        if (moodCheckinDone) doneSteps++;
+        if (breathDone) doneSteps++;
+        if (relaxDone) doneSteps++;
+
+        setScheduleProgress(doneSteps);
+    }
+
+    private String buildHomeAiSubline(String moodName, String moodDesc) {
+        switch (moodName) {
+            case "Vui vẻ":
+                return "Giữ nguồn năng lượng tích cực này nhé";
+
+            case "Buồn":
+                return "Heami vẫn ở đây cùng bạn, cứ đi chậm thôi";
+
+            case "Căng thẳng":
+                return "Bạn có thể check-in lại nếu áp lực thay đổi";
+
+            case "Tức giận":
+                return "Nếu cần, mình check-in lại sau vài phút thở chậm";
+
+            case "Lo lắng":
+            case "Sợ hãi":
+                return "Heami ghi nhận trạng thái hiện tại của bạn";
+
+            case "Khó chịu":
+            case "Ghê tởm":
+                return "Bạn có thể check-in lại nếu cảm xúc dịu hơn";
+
+            case "Bình thường":
+            default:
+                return "Bạn có thể check-in lại bất cứ lúc nào";
+        }
+    }
+
+    private String mapMoodTagToDisplayName(String moodTag) {
+        switch (moodTag.toLowerCase(Locale.ROOT)) {
+            case "happy":
+                return "Vui vẻ";
+            case "sad":
+                return "Buồn";
+            case "angry":
+                return "Tức giận";
+            case "fear":
+                return "Lo lắng";
+            case "stress":
+                return "Căng thẳng";
+            case "disgust":
+                return "Khó chịu";
+            case "neutral":
+            default:
+                return "Bình thường";
+        }
+    }
+
+    private String getMoodEmojiFallback(String moodTag) {
+        switch (moodTag.toLowerCase(Locale.ROOT)) {
+            case "happy":
+                return "😊";
+            case "sad":
+                return "🥲";
+            case "angry":
+                return "😤";
+            case "fear":
+                return "😟";
+            case "stress":
+                return "😮‍💨";
+            case "disgust":
+                return "😣";
+            case "neutral":
+            default:
+                return "😌";
+        }
+    }
+
+    private String getShortMoodDesc(String moodTag) {
+        switch (moodTag.toLowerCase(Locale.ROOT)) {
+            case "happy":
+                return "Heami cảm nhận bạn đang có năng lượng khá tích cực.";
+            case "sad":
+                return "Heami thấy hôm nay bạn có vẻ hơi nặng lòng một chút.";
+            case "angry":
+                return "Heami cảm nhận có điều gì đó đang khiến bạn khá khó chịu.";
+            case "fear":
+                return "Heami thấy bạn đang hơi lo lắng hoặc thiếu cảm giác an toàn.";
+            case "stress":
+                return "Heami cảm nhận bạn đang hơi căng thẳng và cần thả lỏng một chút.";
+            case "disgust":
+                return "Heami cảm nhận bạn đang có phản ứng khá khó chịu với điều gì đó.";
+            case "neutral":
+            default:
+                return "Heami thấy trạng thái của bạn hiện tại khá ổn định.";
+        }
+    }
+
+    private String safeText(String value, String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim();
+    }
+
+    private void setScheduleProgress(int doneSteps) {
+        int totalSteps = 4;
+
+        if (doneSteps < 0) doneSteps = 0;
+        if (doneSteps > totalSteps) doneSteps = totalSteps;
+
+        if (txtScheduleProgress != null) {
+            txtScheduleProgress.setText(doneSteps + "/" + totalSteps + " xong");
+        }
+    }
+
+    private void setScheduleTaskState(TextView taskTextView, View checkView, String label, boolean done) {
+        if (taskTextView != null) {
+            taskTextView.setText(label);
+
+            int currentFlags = taskTextView.getPaintFlags();
+
+            if (done) {
+                taskTextView.setPaintFlags(currentFlags | Paint.STRIKE_THRU_TEXT_FLAG);
+                taskTextView.setAlpha(0.55f);
+                taskTextView.setTextColor(0xFFA7BDC2);
+            } else {
+                taskTextView.setPaintFlags(currentFlags & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                taskTextView.setAlpha(1f);
+                taskTextView.setTextColor(0xFF2D3A5E);
+            }
+        }
+
+        if (checkView != null) {
+            checkView.setBackgroundResource(done ? R.drawable.bg_check_done : R.drawable.bg_check_empty);
+            checkView.setAlpha(1f);
+
+            if (checkView instanceof TextView) {
+                ((TextView) checkView).setText(done ? "✓" : "");
+            }
+        }
+    }
+
+    private void setAiReadyText(String text) {
+        if (layoutAiReady == null || layoutAiReady.getChildCount() < 2) {
+            return;
+        }
+
+        View child = layoutAiReady.getChildAt(1);
+        if (child instanceof TextView) {
+            ((TextView) child).setText(text);
+        }
+    }
+
+    private void applyStaticStyles() {
+        // Không hardcode task nào done ở đây nữa.
+    }
+
     private void startHomeAnimations() {
-        // Cloud
         startFloatY(findViewById(R.id.imgHeamiCloud), 6f, 4800, 0);
 
-        // Flowers
         startFlowerFloat(findViewById(R.id.decorFlowerPinkTop), 8f, 12f, 5600, 0);
         startFlowerFloat(findViewById(R.id.decorFlowerPinkLeft), 8f, 12f, 5600, 800);
         startFlowerFloat(findViewById(R.id.decorFlowerMintMid), 8f, 12f, 5600, 1400);
         startFlowerFloat(findViewById(R.id.decorFlowerPurpleAi), 8f, 12f, 5600, 2100);
 
-        // Bell dot
         startPulse(findViewById(R.id.viewBellDot), 1.0f, 1.18f, 2000, 0);
 
-        // Camera orb group
         startFloatY(findViewById(R.id.layoutCameraOrb), 3f, 4800, 0);
         startPulseScaleAlpha(findViewById(R.id.viewCameraRing), 1.0f, 1.035f, 0.40f, 0.65f, 3200, 0);
         startPulseScaleAlpha(findViewById(R.id.viewCameraFocus), 1.0f, 1.045f, 0.35f, 0.72f, 2800, 0);
         startPulseScaleAlpha(findViewById(R.id.viewCameraCore), 1.0f, 1.06f, 0.95f, 1.0f, 2600, 0);
 
-        // Scan + twinkle inside camera
         startScan(findViewById(R.id.viewScanLine), findViewById(R.id.viewScanGlow));
         startTwinkleInside(findViewById(R.id.viewTwinkle1), 2800, 200);
         startTwinkleInside(findViewById(R.id.viewTwinkle2), 2800, 1200);
         startTwinkleInside(findViewById(R.id.viewTwinkle3), 2800, 2000);
 
-        // Leaves
         startLeafTop(findViewById(R.id.imgCameraLeafTop));
         startLeafLeft(findViewById(R.id.imgCameraLeafLeft));
         startLeafRight(findViewById(R.id.imgCameraLeafRight));
 
-        // Twinkle stars on AI card
         startTwinkle(findViewById(R.id.starAi1), 3600, 200);
         startTwinkle(findViewById(R.id.starAi2), 3600, 1100);
         startTwinkle(findViewById(R.id.starAi3), 3600, 2000);
         startTwinkle(findViewById(R.id.starAi4), 3600, 2800);
 
-        // CTA subtle breathing
         startSubtleButtonBreath(findViewById(R.id.btnStartAi));
         startArrowShift(findViewById(R.id.txtStartAiArrow));
 
-        // Ready pill subtle pulse
         startAlphaBreath(findViewById(R.id.txtAiReady), 0.92f, 1.0f, 2200);
         startAiReadyDotAnimation(
                 findViewById(R.id.viewAiReadyDot),
@@ -407,6 +762,7 @@ public class HomeActivity extends AppCompatActivity {
         dotScaleX.setInterpolator(new AccelerateDecelerateInterpolator());
         dotScaleY.setInterpolator(new AccelerateDecelerateInterpolator());
         dotAlpha.setInterpolator(new AccelerateDecelerateInterpolator());
+
         ObjectAnimator glowScaleX = ObjectAnimator.ofFloat(glow, View.SCALE_X, 0.7f, 1.9f, 2.3f);
         ObjectAnimator glowScaleY = ObjectAnimator.ofFloat(glow, View.SCALE_Y, 0.7f, 1.9f, 2.3f);
         ObjectAnimator glowAlpha = ObjectAnimator.ofFloat(glow, View.ALPHA, 0.0f, 0.30f, 0.0f);
@@ -419,16 +775,17 @@ public class HomeActivity extends AppCompatActivity {
         glowScaleX.setInterpolator(new AccelerateDecelerateInterpolator());
         glowScaleY.setInterpolator(new AccelerateDecelerateInterpolator());
         glowAlpha.setInterpolator(new AccelerateDecelerateInterpolator());
+
         AnimatorSet dotSet = new AnimatorSet();
         dotSet.playTogether(dotScaleX, dotScaleY, dotAlpha);
         dotSet.start();
+
         AnimatorSet glowSet = new AnimatorSet();
         glowSet.playTogether(glowScaleX, glowScaleY, glowAlpha);
         glowSet.start();
     }
 
     private void setupActions() {
-        View btnStartAi = findViewById(R.id.btnStartAi);
         if (btnStartAi != null) {
             btnStartAi.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, CheckInAiActivity.class);
@@ -437,3 +794,4 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 }
+
