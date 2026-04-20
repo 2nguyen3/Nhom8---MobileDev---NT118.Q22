@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Dialog;
 import android.content.Intent;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,7 +13,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,6 +29,7 @@ import com.example.heami.R;
 import com.example.heami.data.models.CommunityPostModel;
 import com.example.heami.data.repositories.CommunityRepository;
 import com.example.heami.ui.main.BottomNavManager;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
@@ -54,6 +58,8 @@ public class CommunityActivity extends AppCompatActivity {
     private final Map<String, Boolean> myEmpathyStateMap = new HashMap<>();
     private final Set<String> loadingMyEmpathyStatePostIds = new HashSet<>();
     private final Set<String> processingEmpathyPostIds = new HashSet<>();
+
+    private final Set<String> processingReportPostIds = new HashSet<>();
 
     private String currentFilter = "all";
     private boolean isLoadingPosts = false;
@@ -224,6 +230,8 @@ public class CommunityActivity extends AppCompatActivity {
                 loadingMyEmpathyStatePostIds.clear();
                 processingEmpathyPostIds.clear();
 
+                processingReportPostIds.clear();
+
                 renderPosts();
                 preloadMyInteractionStates(posts);
             }
@@ -381,6 +389,7 @@ public class CommunityActivity extends AppCompatActivity {
         TextView txtPostHugCount = postView.findViewById(R.id.txtPostHugCount);
         TextView txtPostCommentCount = postView.findViewById(R.id.txtPostCommentCount);
         TextView txtPostEmpathyLabel = postView.findViewById(R.id.txtPostEmpathyLabel);
+        ImageView imgPostEmpathyIcon = postView.findViewById(R.id.imgPostEmpathyIcon);
 
         LinearLayout btnPostHugAction = postView.findViewById(R.id.btnPostHugAction);
         LinearLayout btnPostCommentAction = postView.findViewById(R.id.btnPostCommentAction);
@@ -393,8 +402,11 @@ public class CommunityActivity extends AppCompatActivity {
         int myHugCount = myHugCountMap.containsKey(postId) ? myHugCountMap.get(postId) : 0;
         boolean isProcessingHug = processingHugPostIds.contains(postId);
 
-        boolean hasEmpathy = myEmpathyStateMap.containsKey(postId) && Boolean.TRUE.equals(myEmpathyStateMap.get(postId));
+        boolean hasEmpathy = myEmpathyStateMap.containsKey(postId)
+                && Boolean.TRUE.equals(myEmpathyStateMap.get(postId));
         boolean isProcessingEmpathy = processingEmpathyPostIds.contains(postId);
+
+        boolean isProcessingReport = processingReportPostIds.contains(postId);
 
         if (txtUserName != null) {
             String displayName = post.isIs_anonymous()
@@ -419,7 +431,6 @@ public class CommunityActivity extends AppCompatActivity {
 
         if (txtPostHugCount != null) {
             txtPostHugCount.setText(buildHugLabel(post.getLike_count(), myHugCount));
-            txtPostHugCount.setTextColor(myHugCount > 0 ? 0xFF7F5AF0 : 0xFFB0A0C0);
         }
 
         if (txtPostCommentCount != null) {
@@ -428,8 +439,17 @@ public class CommunityActivity extends AppCompatActivity {
 
         if (txtPostEmpathyLabel != null) {
             txtPostEmpathyLabel.setText(buildEmpathyLabel(post.getEmpathy_count(), hasEmpathy));
-            txtPostEmpathyLabel.setTextColor(hasEmpathy ? 0xFF2FAF9A : 0xFF4BBDAD);
         }
+
+        applyHugActionVisual(btnPostHugAction, txtPostHugCount, myHugCount > 0, isProcessingHug);
+        applyCommentActionVisual(btnPostCommentAction, txtPostCommentCount);
+        applyEmpathyActionVisual(
+                btnPostEmpathyAction,
+                txtPostEmpathyLabel,
+                imgPostEmpathyIcon,
+                hasEmpathy,
+                isProcessingEmpathy
+        );
 
         applyPostMoodStyle(mood, accent, txtAvatarEmoji, avatarStatus);
 
@@ -458,11 +478,9 @@ public class CommunityActivity extends AppCompatActivity {
         }
 
         if (btnPostReport != null) {
-            btnPostReport.setOnClickListener(v -> Toast.makeText(
-                    CommunityActivity.this,
-                    "Chức năng Báo cáo sẽ được hoàn thiện sau",
-                    Toast.LENGTH_SHORT
-            ).show());
+            btnPostReport.setEnabled(!isProcessingReport);
+            btnPostReport.setAlpha(isProcessingReport ? 0.55f : 1f);
+            btnPostReport.setOnClickListener(v -> showReportDialog(post));
         }
     }
 
@@ -729,19 +747,380 @@ public class CommunityActivity extends AppCompatActivity {
         });
     }
 
+    private void showReportDialog(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để báo cáo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingReportPostIds.contains(postId)) {
+            return;
+        }
+
+        if (isFinishing()) return;
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_report_post, null);
+        dialog.setContentView(view);
+        dialog.setCancelable(true);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        TextView optionHarassment = view.findViewById(R.id.optionReportHarassment);
+        TextView optionInappropriate = view.findViewById(R.id.optionReportInappropriate);
+        TextView optionSpam = view.findViewById(R.id.optionReportSpam);
+        TextView optionDangerous = view.findViewById(R.id.optionReportDangerous);
+        TextView optionMisinformation = view.findViewById(R.id.optionReportMisinformation);
+        TextView optionOther = view.findViewById(R.id.optionReportOther);
+
+        EditText edtExtraNote = view.findViewById(R.id.edtReportExtraNote);
+        TextView btnCancelReport = view.findViewById(R.id.btnCancelReport);
+        TextView btnSubmitReport = view.findViewById(R.id.btnSubmitReport);
+
+        TextView[] allOptions = new TextView[]{
+                optionHarassment,
+                optionInappropriate,
+                optionSpam,
+                optionDangerous,
+                optionMisinformation,
+                optionOther
+        };
+
+        final String[] selectedReasonCode = {""};
+        final String[] selectedReasonLabel = {""};
+
+        if (optionHarassment != null) {
+            setupReportReasonOption(
+                    optionHarassment,
+                    allOptions,
+                    "HARASSMENT",
+                    "Quấy rối / xúc phạm",
+                    selectedReasonCode,
+                    selectedReasonLabel,
+                    btnSubmitReport
+            );
+        }
+
+        if (optionInappropriate != null) {
+            setupReportReasonOption(
+                    optionInappropriate,
+                    allOptions,
+                    "INAPPROPRIATE",
+                    "Nội dung không phù hợp",
+                    selectedReasonCode,
+                    selectedReasonLabel,
+                    btnSubmitReport
+            );
+        }
+
+        if (optionSpam != null) {
+            setupReportReasonOption(
+                    optionSpam,
+                    allOptions,
+                    "SPAM",
+                    "Spam / quảng cáo",
+                    selectedReasonCode,
+                    selectedReasonLabel,
+                    btnSubmitReport
+            );
+        }
+
+        if (optionDangerous != null) {
+            setupReportReasonOption(
+                    optionDangerous,
+                    allOptions,
+                    "DANGEROUS",
+                    "Nội dung tiêu cực nguy hiểm",
+                    selectedReasonCode,
+                    selectedReasonLabel,
+                    btnSubmitReport
+            );
+        }
+
+        if (optionMisinformation != null) {
+            setupReportReasonOption(
+                    optionMisinformation,
+                    allOptions,
+                    "MISINFORMATION",
+                    "Thông tin sai lệch",
+                    selectedReasonCode,
+                    selectedReasonLabel,
+                    btnSubmitReport
+            );
+        }
+
+        if (optionOther != null) {
+            setupReportReasonOption(
+                    optionOther,
+                    allOptions,
+                    "OTHER",
+                    "Khác",
+                    selectedReasonCode,
+                    selectedReasonLabel,
+                    btnSubmitReport
+            );
+        }
+
+        updateReportSubmitButtonState(btnSubmitReport, false);
+
+        if (btnCancelReport != null) {
+            btnCancelReport.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnSubmitReport != null) {
+            btnSubmitReport.setOnClickListener(v -> {
+                if (selectedReasonCode[0].trim().isEmpty()) {
+                    return;
+                }
+
+                String extraNote = "";
+                if (edtExtraNote != null && edtExtraNote.getText() != null) {
+                    extraNote = edtExtraNote.getText().toString().trim();
+                }
+
+                dialog.dismiss();
+                submitReportPost(post, selectedReasonCode[0], selectedReasonLabel[0], extraNote);
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void setupReportReasonOption(
+            @NonNull TextView optionView,
+            @NonNull TextView[] allOptions,
+            @NonNull String reasonCode,
+            @NonNull String reasonLabel,
+            @NonNull String[] selectedReasonCode,
+            @NonNull String[] selectedReasonLabel,
+            TextView btnSubmitReport
+    ) {
+        optionView.setOnClickListener(v -> {
+            for (TextView option : allOptions) {
+                if (option == null) continue;
+                option.setBackgroundResource(R.drawable.bg_report_reason_default);
+                option.setTextColor(0xFF6D5A88);
+            }
+
+            optionView.setBackgroundResource(R.drawable.bg_report_reason_selected);
+            optionView.setTextColor(0xFF7F5AF0);
+
+            selectedReasonCode[0] = reasonCode;
+            selectedReasonLabel[0] = reasonLabel;
+
+            updateReportSubmitButtonState(btnSubmitReport, true);
+        });
+    }
+
+    private void updateReportSubmitButtonState(TextView btnSubmitReport, boolean enabled) {
+        if (btnSubmitReport == null) return;
+
+        btnSubmitReport.setEnabled(enabled);
+        btnSubmitReport.setAlpha(enabled ? 1f : 0.75f);
+        btnSubmitReport.setBackgroundResource(
+                enabled ? R.drawable.bg_report_submit_active : R.drawable.bg_report_submit_inactive
+        );
+    }
+
+    private void submitReportPost(
+            @NonNull CommunityPostModel post,
+            @NonNull String reasonCode,
+            @NonNull String reasonLabel,
+            @NonNull String extraNote
+    ) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để báo cáo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingReportPostIds.contains(postId)) {
+            return;
+        }
+
+        int removedIndex = findPostIndexInAllPosts(postId);
+
+        processingReportPostIds.add(postId);
+        renderPosts();
+
+        communityRepository.submitPostReport(
+                postId,
+                reasonCode,
+                reasonLabel,
+                extraNote,
+                new CommunityRepository.SubmitReportListener() {
+                    @Override
+                    public void onSuccess(boolean autoHidden) {
+                        processingReportPostIds.remove(postId);
+                        removePostFromFeed(postId);
+                        renderPosts();
+                        showReportUndoSnackbar(post, removedIndex, autoHidden);
+                    }
+
+                    @Override
+                    public void onAlreadyReported() {
+                        processingReportPostIds.remove(postId);
+                        removePostFromFeed(postId);
+                        renderPosts();
+
+                        Toast.makeText(
+                                CommunityActivity.this,
+                                "Bạn đã báo cáo bài viết này rồi",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        processingReportPostIds.remove(postId);
+                        renderPosts();
+
+                        Toast.makeText(
+                                CommunityActivity.this,
+                                errorMessage,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
+        );
+    }
+
+    private int findPostIndexInAllPosts(@NonNull String postId) {
+        for (int i = 0; i < allPosts.size(); i++) {
+            CommunityPostModel item = allPosts.get(i);
+            if (item != null && postId.equals(safeText(item.getPost_id(), ""))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void showReportUndoSnackbar(
+            @NonNull CommunityPostModel post,
+            int removedIndex,
+            boolean autoHidden
+    ) {
+        View anchor = findViewById(R.id.communityRoot);
+        if (anchor == null) {
+            anchor = findViewById(android.R.id.content);
+        }
+
+        String message = autoHidden
+                ? "Đã báo cáo. Bài viết đã bị ẩn khỏi cộng đồng."
+                : "Đã báo cáo. Bài viết đã bị ẩn khỏi feed của bạn.";
+
+        Snackbar snackbar = Snackbar.make(anchor, message, Snackbar.LENGTH_LONG);
+        snackbar.setDuration(5000);
+        snackbar.setAction("Hoàn tác", v -> undoReportedPost(post, removedIndex));
+
+        snackbar.setBackgroundTint(0xFFFFF7FB);
+        snackbar.setTextColor(0xFF4E3A68);
+        snackbar.setActionTextColor(0xFFE56AA6);
+        snackbar.setTextMaxLines(3);
+
+        View snackbarView = snackbar.getView();
+
+        ViewGroup.LayoutParams rawParams = snackbarView.getLayoutParams();
+        if (rawParams instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) rawParams;
+            params.leftMargin = dp(16);
+            params.rightMargin = dp(16);
+            params.bottomMargin = dp(20);
+            snackbarView.setLayoutParams(params);
+        }
+
+        snackbarView.setElevation(dp(6));
+
+        snackbar.show();
+    }
+
+    private void undoReportedPost(@NonNull CommunityPostModel post, int removedIndex) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để hoàn tác", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        communityRepository.undoPostReport(postId, new CommunityRepository.UndoReportListener() {
+            @Override
+            public void onSuccess(boolean postVisibleAgain) {
+                if (postVisibleAgain) {
+                    restorePostToFeed(post, removedIndex);
+
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Đã hoàn tác báo cáo",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                } else {
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Đã hoàn tác báo cáo nhưng bài viết vẫn bị ẩn do cộng đồng đã báo cáo",
+                            Toast.LENGTH_LONG
+                    ).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                Toast.makeText(
+                        CommunityActivity.this,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+    }
+
+    private void restorePostToFeed(@NonNull CommunityPostModel post, int insertIndex) {
+        String postId = safeText(post.getPost_id(), "");
+
+        for (CommunityPostModel item : allPosts) {
+            if (item != null && postId.equals(safeText(item.getPost_id(), ""))) {
+                return;
+            }
+        }
+
+        if (insertIndex >= 0 && insertIndex <= allPosts.size()) {
+            allPosts.add(insertIndex, post);
+        } else {
+            allPosts.add(0, post);
+        }
+
+        fetchMyHugCountForPost(postId, false);
+        fetchMyEmpathyStateForPost(postId, false);
+        renderPosts();
+    }
+
+    private void removePostFromFeed(@NonNull String postId) {
+        allPosts.removeIf(post -> post != null && postId.equals(safeText(post.getPost_id(), "")));
+        myHugCountMap.remove(postId);
+        myEmpathyStateMap.remove(postId);
+        loadingMyHugCountPostIds.remove(postId);
+        loadingMyEmpathyStatePostIds.remove(postId);
+        processingHugPostIds.remove(postId);
+        processingEmpathyPostIds.remove(postId);
+        processingReportPostIds.remove(postId);
+    }
+
     @NonNull
     private String buildHugLabel(int totalHugCount, int myHugCount) {
         if (myHugCount > 0) {
-            return "Ôm " + totalHugCount + " · Bạn " + myHugCount;
+            return "Ôm " + totalHugCount + " • " + myHugCount;
         }
         return "Ôm " + totalHugCount;
     }
 
     @NonNull
     private String buildEmpathyLabel(int totalEmpathyCount, boolean hasEmpathy) {
-        if (hasEmpathy) {
-            return "Đã đồng cảm · " + totalEmpathyCount;
-        }
         return "Đồng cảm " + totalEmpathyCount;
     }
 
@@ -916,6 +1295,71 @@ public class CommunityActivity extends AppCompatActivity {
         if (diff < hour) return (diff / minute) + " phút trước";
         if (diff < day) return (diff / hour) + " giờ trước";
         return (diff / day) + " ngày trước";
+    }
+
+    private void applyHugActionVisual(
+            LinearLayout button,
+            TextView label,
+            boolean hasMyHug,
+            boolean isProcessing
+    ) {
+        if (button != null) {
+            button.setBackgroundResource(
+                    hasMyHug
+                            ? R.drawable.bg_post_action_hug_active
+                            : R.drawable.bg_post_action_neutral
+            );
+            button.setAlpha(isProcessing ? 0.55f : 1f);
+        }
+
+        if (label != null) {
+            label.setTextColor(hasMyHug ? 0xFF7F5AF0 : 0xFF9E8DB5);
+        }
+    }
+
+    private void applyCommentActionVisual(
+            LinearLayout button,
+            TextView label
+    ) {
+        if (button != null) {
+            button.setBackgroundResource(R.drawable.bg_post_action_neutral);
+            button.setAlpha(1f);
+        }
+
+        if (label != null) {
+            label.setTextColor(0xFF9E8DB5);
+        }
+    }
+
+    private void applyEmpathyActionVisual(
+            LinearLayout button,
+            TextView label,
+            ImageView icon,
+            boolean hasEmpathy,
+            boolean isProcessing
+    ) {
+        int activeColor = 0xFF2FAF9A;
+        int inactiveColor = 0xFF7C6B96;
+
+        if (button != null) {
+            button.setBackgroundResource(
+                    hasEmpathy
+                            ? R.drawable.bg_post_action_empathy_active
+                            : R.drawable.bg_post_action_neutral
+            );
+            button.setAlpha(isProcessing ? 0.55f : 1f);
+        }
+
+        if (label != null) {
+            label.setTextColor(hasEmpathy ? activeColor : inactiveColor);
+        }
+
+        if (icon != null) {
+            icon.setColorFilter(
+                    hasEmpathy ? activeColor : inactiveColor,
+                    PorterDuff.Mode.SRC_IN
+            );
+        }
     }
 
     @NonNull

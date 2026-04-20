@@ -5,9 +5,9 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
     android:background="@drawable/bg_post_card_white"
-    android:orientation="horizontal"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:orientation="horizontal">
 
     <View
         android:id="@+id/viewPostAccent"
@@ -142,10 +142,11 @@
                 android:id="@+id/btnPostHugAction"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_action_btn"
+                android:background="@drawable/bg_post_action_neutral"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:minHeight="38dp"
                 android:orientation="horizontal"
                 android:paddingStart="14dp"
                 android:paddingTop="7dp"
@@ -174,10 +175,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
-                android:background="@drawable/bg_action_btn"
+                android:background="@drawable/bg_post_action_neutral"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:minHeight="38dp"
                 android:orientation="horizontal"
                 android:paddingStart="14dp"
                 android:paddingTop="7dp"
@@ -206,10 +208,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
-                android:background="@drawable/bg_empathy_btn"
+                android:background="@drawable/bg_post_action_neutral"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:minHeight="38dp"
                 android:orientation="horizontal"
                 android:paddingStart="12dp"
                 android:paddingTop="7dp"
@@ -217,6 +220,7 @@
                 android:paddingBottom="7dp">
 
                 <ImageView
+                    android:id="@+id/imgPostEmpathyIcon"
                     android:layout_width="12dp"
                     android:layout_height="12dp"
                     android:contentDescription="empathy"
@@ -228,7 +232,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
                     android:text="Đồng cảm 0"
-                    android:textColor="#4BBDAD"
+                    android:textColor="#7C6B96"
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>

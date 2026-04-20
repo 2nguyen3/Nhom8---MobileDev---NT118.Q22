@@ -6,6 +6,7 @@ import com.example.heami.data.models.CommunityPostModel;
 import com.example.heami.data.models.PostCommentModel;
 import com.example.heami.data.models.PostEmpathyModel;
 import com.example.heami.data.models.PostHugModel;
+import com.example.heami.data.models.PostReportModel;
 import com.example.heami.data.models.UserModel;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
@@ -17,9 +18,14 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CommunityRepository {
+
+    private static final int AUTO_HIDE_REPORT_THRESHOLD = 5;
 
     public interface CreatePostListener {
         void onSuccess(@NonNull String postId);
@@ -78,6 +84,22 @@ public class CommunityRepository {
 
     public interface LoadPostEmpathiesListener {
         void onSuccess(@NonNull List<PostEmpathyModel> empathies);
+        void onFailure(@NonNull String errorMessage);
+    }
+
+    public interface LoadMyReportStateListener {
+        void onSuccess(boolean hasReported);
+        void onFailure(@NonNull String errorMessage);
+    }
+
+    public interface SubmitReportListener {
+        void onSuccess(boolean autoHidden);
+        void onAlreadyReported();
+        void onFailure(@NonNull String errorMessage);
+    }
+
+    public interface UndoReportListener {
+        void onSuccess(boolean postVisibleAgain);
         void onFailure(@NonNull String errorMessage);
     }
 
@@ -163,6 +185,42 @@ public class CommunityRepository {
     }
 
     public void getCommunityPosts(@NonNull LoadPostsListener listener) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            loadPostsWithHiddenFilter(new HashSet<>(), listener);
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+
+        firestore.collection("users")
+                .document(uid)
+                .collection("hidden_posts")
+                .get()
+                .addOnSuccessListener(hiddenSnapshots -> {
+                    Set<String> hiddenPostIds = new HashSet<>();
+
+                    if (hiddenSnapshots != null) {
+                        for (DocumentSnapshot document : hiddenSnapshots.getDocuments()) {
+                            hiddenPostIds.add(document.getId());
+                        }
+                    }
+
+                    loadPostsWithHiddenFilter(hiddenPostIds, listener);
+                })
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể tải danh sách bài viết đã ẩn";
+                    listener.onFailure(message);
+                });
+    }
+
+    private void loadPostsWithHiddenFilter(
+            @NonNull Set<String> hiddenPostIds,
+            @NonNull LoadPostsListener listener
+    ) {
         firestore.collection("community_posts")
                 .orderBy("created_at", Query.Direction.DESCENDING)
                 .get()
@@ -172,12 +230,19 @@ public class CommunityRepository {
                     if (queryDocumentSnapshots != null) {
                         for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
                             CommunityPostModel post = document.toObject(CommunityPostModel.class);
-                            if (post != null) {
-                                if (post.getPost_id() == null || post.getPost_id().trim().isEmpty()) {
-                                    post.setPost_id(document.getId());
-                                }
-                                posts.add(post);
+                            if (post == null) continue;
+
+                            if (post.getPost_id() == null || post.getPost_id().trim().isEmpty()) {
+                                post.setPost_id(document.getId());
                             }
+
+                            String postId = safeText(post.getPost_id(), "");
+                            String status = safeText(post.getStatus(), "ACTIVE");
+
+                            if (!"ACTIVE".equals(status)) continue;
+                            if (hiddenPostIds.contains(postId)) continue;
+
+                            posts.add(post);
                         }
                     }
 
@@ -716,6 +781,186 @@ public class CommunityRepository {
                             : "Không thể tải danh sách đồng cảm";
                     listener.onFailure(message);
                 });
+    }
+
+    public void submitPostReport(
+            @NonNull String postId,
+            @NonNull String reasonCode,
+            @NonNull String reasonLabel,
+            @NonNull String extraNote,
+            @NonNull SubmitReportListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+
+        firestore.collection("users")
+                .document(uid)
+                .get()
+                .addOnSuccessListener(userSnapshot -> {
+                    if (!userSnapshot.exists()) {
+                        listener.onFailure("Không tìm thấy thông tin người dùng");
+                        return;
+                    }
+
+                    UserModel user = userSnapshot.toObject(UserModel.class);
+                    if (user == null) {
+                        listener.onFailure("Không đọc được dữ liệu người dùng");
+                        return;
+                    }
+
+                    DocumentReference postRef = firestore.collection("community_posts").document(postId);
+                    DocumentReference reportRef = postRef.collection("reports").document(uid);
+                    DocumentReference hiddenPostRef = firestore.collection("users")
+                            .document(uid)
+                            .collection("hidden_posts")
+                            .document(postId);
+
+                    Timestamp now = Timestamp.now();
+
+                    String authorName = safeText(user.getNickname(), "Người dùng Heami");
+                    String authorAvatar = safeText(user.getAvatar_url(), "");
+
+                    firestore.runTransaction(transaction -> {
+                        DocumentSnapshot postSnapshot = transaction.get(postRef);
+                        if (!postSnapshot.exists()) {
+                            throw new RuntimeException("Không tìm thấy bài viết");
+                        }
+
+                        DocumentSnapshot reportSnapshot = transaction.get(reportRef);
+
+                        HashMap<String, Object> hiddenPostData = new HashMap<>();
+                        hiddenPostData.put("post_id", postId);
+                        hiddenPostData.put("reason", "REPORTED_POST");
+                        hiddenPostData.put("created_at", now);
+
+                        if (reportSnapshot.exists()) {
+                            transaction.set(hiddenPostRef, hiddenPostData);
+                            return "ALREADY_REPORTED";
+                        }
+
+                        int currentReportCount = safeInt(postSnapshot.get("report_count"));
+                        int newReportCount = currentReportCount + 1;
+
+                        String newPostStatus = newReportCount >= AUTO_HIDE_REPORT_THRESHOLD
+                                ? "AUTO_HIDDEN"
+                                : "ACTIVE";
+
+                        PostReportModel reportModel = new PostReportModel(
+                                uid,
+                                authorName,
+                                authorAvatar,
+                                reasonCode,
+                                reasonLabel,
+                                extraNote.trim(),
+                                now,
+                                now,
+                                "PENDING"
+                        );
+
+                        transaction.set(reportRef, reportModel);
+                        transaction.set(hiddenPostRef, hiddenPostData);
+                        transaction.update(
+                                postRef,
+                                "report_count", newReportCount,
+                                "status", newPostStatus,
+                                "updated_at", now
+                        );
+
+                        return newPostStatus;
+                    }).addOnSuccessListener(result -> {
+                        if ("ALREADY_REPORTED".equals(result)) {
+                            listener.onAlreadyReported();
+                            return;
+                        }
+
+                        boolean autoHidden = "AUTO_HIDDEN".equals(result);
+                        listener.onSuccess(autoHidden);
+                    }).addOnFailureListener(e -> {
+                        String message = e.getMessage() != null
+                                ? e.getMessage()
+                                : "Không thể gửi báo cáo lúc này";
+                        listener.onFailure(message);
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể đọc thông tin người dùng";
+                    listener.onFailure(message);
+                });
+    }
+
+    public void undoPostReport(
+            @NonNull String postId,
+            @NonNull UndoReportListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+
+        DocumentReference postRef = firestore.collection("community_posts").document(postId);
+        DocumentReference reportRef = postRef.collection("reports").document(uid);
+        DocumentReference hiddenPostRef = firestore.collection("users")
+                .document(uid)
+                .collection("hidden_posts")
+                .document(postId);
+
+        Timestamp now = Timestamp.now();
+
+        firestore.runTransaction(transaction -> {
+            DocumentSnapshot postSnapshot = transaction.get(postRef);
+            if (!postSnapshot.exists()) {
+                throw new RuntimeException("Không tìm thấy bài viết");
+            }
+
+            DocumentSnapshot reportSnapshot = transaction.get(reportRef);
+
+            if (!reportSnapshot.exists()) {
+                return "NO_REPORT";
+            }
+
+            int currentReportCount = safeInt(postSnapshot.get("report_count"));
+            int newReportCount = Math.max(0, currentReportCount - 1);
+
+            String newPostStatus = newReportCount >= AUTO_HIDE_REPORT_THRESHOLD
+                    ? "AUTO_HIDDEN"
+                    : "ACTIVE";
+
+            transaction.delete(reportRef);
+            transaction.delete(hiddenPostRef);
+            transaction.update(
+                    postRef,
+                    "report_count", newReportCount,
+                    "status", newPostStatus,
+                    "updated_at", now
+            );
+
+            return newPostStatus;
+        }).addOnSuccessListener(result -> {
+            if ("NO_REPORT".equals(result)) {
+                listener.onFailure("Không tìm thấy báo cáo để hoàn tác");
+                return;
+            }
+
+            boolean postVisibleAgain = "ACTIVE".equals(result);
+            listener.onSuccess(postVisibleAgain);
+        }).addOnFailureListener(e -> {
+            String message = e.getMessage() != null
+                    ? e.getMessage()
+                    : "Không thể hoàn tác báo cáo lúc này";
+            listener.onFailure(message);
+        });
     }
 
     @NonNull

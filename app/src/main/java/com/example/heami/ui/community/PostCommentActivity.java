@@ -1,12 +1,14 @@
 package com.example.heami.ui.community;
 
 import android.content.Intent;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,9 +32,11 @@ public class PostCommentActivity extends AppCompatActivity {
     private TextView txtPostCommentTitle;
     private TextView txtPreviewAvatar;
     private TextView txtPreviewContent;
+    private LinearLayout layoutInputShell;
     private LinearLayout layoutCommentsContainer;
     private EditText edtPostComment;
     private FrameLayout btnSendComment;
+    private ImageView imgSendComment;
 
     private CommunityRepository communityRepository;
 
@@ -66,8 +70,10 @@ public class PostCommentActivity extends AppCompatActivity {
         txtPreviewAvatar = findViewById(R.id.txtPreviewAvatar);
         txtPreviewContent = findViewById(R.id.txtPreviewContent);
         layoutCommentsContainer = findViewById(R.id.layoutCommentsContainer);
+        layoutInputShell = findViewById(R.id.layoutInputShell);
         edtPostComment = findViewById(R.id.edtPostComment);
         btnSendComment = findViewById(R.id.btnSendComment);
+        imgSendComment = findViewById(R.id.imgSendComment);
     }
 
     private void initData() {
@@ -155,16 +161,37 @@ public class PostCommentActivity extends AppCompatActivity {
     }
 
     private void updateSendButtonState() {
-        if (btnSendComment == null) return;
-
         boolean hasText = edtPostComment != null
                 && edtPostComment.getText() != null
                 && !edtPostComment.getText().toString().trim().isEmpty();
 
         boolean enabled = hasText && !isSendingComment;
 
-        btnSendComment.setEnabled(enabled);
-        btnSendComment.setAlpha(enabled ? 1f : 0.55f);
+        if (btnSendComment != null) {
+            btnSendComment.setEnabled(enabled);
+            btnSendComment.setAlpha(1f);
+            btnSendComment.setBackgroundResource(
+                    enabled
+                            ? R.drawable.bg_post_comment_send_btn_active
+                            : R.drawable.bg_post_comment_send_btn_inactive
+            );
+        }
+
+        if (imgSendComment != null) {
+            imgSendComment.setColorFilter(
+                    enabled ? 0xFFFFFFFF : 0xFFAE9BC5,
+                    PorterDuff.Mode.SRC_IN
+            );
+        }
+
+        if (layoutInputShell != null) {
+            layoutInputShell.setBackgroundResource(
+                    hasText
+                            ? R.drawable.bg_post_comment_input_shell_active
+                            : R.drawable.bg_post_comment_input_shell_inactive
+            );
+            layoutInputShell.setAlpha(isSendingComment ? 0.75f : 1f);
+        }
     }
 
     private void loadPostAndComments() {
@@ -329,6 +356,7 @@ public class PostCommentActivity extends AppCompatActivity {
                         isSendingComment = false;
                         edtPostComment.setEnabled(true);
                         edtPostComment.setText("");
+                        edtPostComment.clearFocus();
                         updateSendButtonState();
 
                         Toast.makeText(
@@ -362,10 +390,18 @@ public class PostCommentActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         ));
-        textView.setPadding(dp(10), dp(12), dp(10), dp(12));
+        int padH = dp(16);
+        int padV = dp(14);
+        textView.setPadding(padH, padV, padH, padV);
         textView.setText(message);
         textView.setTextSize(13f);
         textView.setTextColor(0xFF8E7AA7);
+        textView.setBackgroundResource(R.drawable.bg_post_comment_state_box);
+
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) textView.getLayoutParams();
+        params.bottomMargin = dp(8);
+        textView.setLayoutParams(params);
+
         return textView;
     }
 

@@ -12,13 +12,21 @@
         android:layout_height="0dp"
         android:layout_marginTop="250dp"
         android:background="@drawable/bg_post_comment_sheet"
-        android:orientation="vertical"
         android:clipChildren="false"
         android:clipToPadding="false"
-        app:layout_constraintTop_toTopOf="parent"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
+
+        <View
+            android:layout_width="42dp"
+            android:layout_height="5dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/bg_post_comment_state_box" />
 
         <LinearLayout
             android:id="@+id/layoutPostCommentHeader"
@@ -61,10 +69,10 @@
                 android:layout_width="33dp"
                 android:layout_height="33dp"
                 android:background="@drawable/bg_post_comment_close_btn"
-                android:padding="7dp"
-                android:src="@drawable/ic_close"
                 android:contentDescription="Đóng"
+                android:padding="7dp"
                 android:scaleType="centerInside"
+                android:src="@drawable/ic_close"
                 app:tint="#AEA1BE" />
         </LinearLayout>
 
@@ -77,6 +85,7 @@
             android:id="@+id/layoutPostPreview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:baselineAligned="false"
             android:gravity="top"
             android:orientation="horizontal"
             android:paddingStart="26dp"
@@ -91,18 +100,26 @@
                 android:text="🦊"
                 android:textSize="24sp" />
 
-            <TextView
-                android:id="@+id/txtPreviewContent"
+            <ScrollView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="14dp"
                 android:layout_weight="1"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:text="Hôm nay nhận tin không vui từ gia đình. Không biết chia sẻ với ai, nên ra đây vi..."
-                android:textColor="#6F6188"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:fillViewport="true"
+                android:maxHeight="96dp"
+                android:overScrollMode="ifContentScrolls"
+                android:scrollbars="vertical">
+
+                <TextView
+                    android:id="@+id/txtPreviewContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:lineSpacingExtra="3dp"
+                    android:text="Hôm nay nhận tin không vui từ gia đình. Không biết chia sẻ với ai, nên ra đây vi..."
+                    android:textColor="#6F6188"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </ScrollView>
         </LinearLayout>
 
         <View
@@ -120,14 +137,13 @@
             android:paddingStart="22dp"
             android:paddingTop="18dp"
             android:paddingEnd="22dp"
-            android:paddingBottom="8dp">
+            android:paddingBottom="14dp">
 
             <LinearLayout
                 android:id="@+id/layoutCommentsContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
-            </LinearLayout>
+                android:orientation="vertical" />
         </ScrollView>
 
         <LinearLayout
@@ -159,10 +175,10 @@
                 <LinearLayout
                     android:id="@+id/layoutInputShell"
                     android:layout_width="0dp"
-                    android:layout_height="45dp"
+                    android:layout_height="48dp"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_post_comment_input_shell"
+                    android:background="@drawable/bg_post_comment_input_shell_inactive"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingStart="18dp"
@@ -186,9 +202,10 @@
                         android:id="@+id/btnSendComment"
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:background="@drawable/bg_post_comment_send_btn">
+                        android:background="@drawable/bg_post_comment_send_btn_inactive">
 
                         <ImageView
+                            android:id="@+id/imgSendComment"
                             android:layout_width="15dp"
                             android:layout_height="15dp"
                             android:layout_gravity="center"
