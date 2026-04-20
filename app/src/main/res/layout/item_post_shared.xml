@@ -118,11 +118,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="11dp"
+            android:ellipsize="end"
             android:lineSpacingExtra="4dp"
+            android:maxLines="5"
             android:text="Nội dung bài viết"
             android:textColor="#3A2A4A"
             android:textSize="14sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtPostExpandToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Xem thêm"
+            android:textColor="#C96AE6"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <View
             android:layout_width="match_parent"

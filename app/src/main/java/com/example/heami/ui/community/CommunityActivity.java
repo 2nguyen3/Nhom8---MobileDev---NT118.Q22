@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.TextUtils;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -31,6 +32,8 @@ import com.example.heami.data.repositories.CommunityRepository;
 import com.example.heami.ui.main.BottomNavManager;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,8 +64,13 @@ public class CommunityActivity extends AppCompatActivity {
 
     private final Set<String> processingReportPostIds = new HashSet<>();
 
+    private final Set<String> processingMyPostActionPostIds = new HashSet<>();
+
     private String currentFilter = "all";
     private boolean isLoadingPosts = false;
+
+    private static final int COLLAPSED_POST_MAX_LINES = 4;
+    private final Set<String> expandedPostIds = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -232,6 +240,8 @@ public class CommunityActivity extends AppCompatActivity {
 
                 processingReportPostIds.clear();
 
+                processingMyPostActionPostIds.clear();
+
                 renderPosts();
                 preloadMyInteractionStates(posts);
             }
@@ -389,6 +399,7 @@ public class CommunityActivity extends AppCompatActivity {
         TextView txtPostHugCount = postView.findViewById(R.id.txtPostHugCount);
         TextView txtPostCommentCount = postView.findViewById(R.id.txtPostCommentCount);
         TextView txtPostEmpathyLabel = postView.findViewById(R.id.txtPostEmpathyLabel);
+        TextView txtPostExpandToggle = postView.findViewById(R.id.txtPostExpandToggle);
         ImageView imgPostEmpathyIcon = postView.findViewById(R.id.imgPostEmpathyIcon);
 
         LinearLayout btnPostHugAction = postView.findViewById(R.id.btnPostHugAction);
@@ -408,6 +419,9 @@ public class CommunityActivity extends AppCompatActivity {
 
         boolean isProcessingReport = processingReportPostIds.contains(postId);
 
+        boolean isMyPost = isCurrentUserPost(post);
+        boolean isProcessingMyPostAction = processingMyPostActionPostIds.contains(postId);
+
         if (txtUserName != null) {
             String displayName = post.isIs_anonymous()
                     ? "Ẩn danh"
@@ -425,9 +439,7 @@ public class CommunityActivity extends AppCompatActivity {
             txtPostTime.setText("· " + formatRelativeTime(post.getCreated_at()));
         }
 
-        if (txtPostContent != null) {
-            txtPostContent.setText(safeText(post.getContent(), ""));
-        }
+        bindExpandablePostContent(post, txtPostContent, txtPostExpandToggle);
 
         if (txtPostHugCount != null) {
             txtPostHugCount.setText(buildHugLabel(post.getLike_count(), myHugCount));
@@ -478,9 +490,30 @@ public class CommunityActivity extends AppCompatActivity {
         }
 
         if (btnPostReport != null) {
-            btnPostReport.setEnabled(!isProcessingReport);
-            btnPostReport.setAlpha(isProcessingReport ? 0.55f : 1f);
-            btnPostReport.setOnClickListener(v -> showReportDialog(post));
+            boolean disableButton = isMyPost ? isProcessingMyPostAction : isProcessingReport;
+
+            btnPostReport.setEnabled(!disableButton);
+            btnPostReport.setAlpha(disableButton ? 0.55f : 1f);
+
+            if (isMyPost) {
+                btnPostReport.setImageResource(R.drawable.ic_more_heami);
+                btnPostReport.setBackgroundResource(R.drawable.bg_post_owner_menu_btn);
+                btnPostReport.setColorFilter(0xFFB59FCB, PorterDuff.Mode.SRC_IN);
+                btnPostReport.setContentDescription("Tùy chọn bài viết");
+            } else {
+                btnPostReport.setImageResource(R.drawable.ic_report_flag);
+                btnPostReport.setBackgroundResource(R.drawable.bg_report_btn);
+                btnPostReport.setColorFilter(0xFFB59FCB, PorterDuff.Mode.SRC_IN);
+                btnPostReport.setContentDescription("Báo cáo");
+            }
+
+            btnPostReport.setOnClickListener(v -> {
+                if (isMyPost) {
+                    showMyPostOptions(post);
+                } else {
+                    showReportDialog(post);
+                }
+            });
         }
     }
 
@@ -1109,6 +1142,258 @@ public class CommunityActivity extends AppCompatActivity {
         processingHugPostIds.remove(postId);
         processingEmpathyPostIds.remove(postId);
         processingReportPostIds.remove(postId);
+        processingMyPostActionPostIds.remove(postId);
+    }
+
+    private boolean isCurrentUserPost(@NonNull CommunityPostModel post) {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) return false;
+
+        String currentUid = safeText(firebaseUser.getUid(), "");
+        String ownerUid = safeText(post.getUser_id(), "");
+
+        return !currentUid.isEmpty() && currentUid.equals(ownerUid);
+    }
+
+    private void showMyPostOptions(@NonNull CommunityPostModel post) {
+        if (isFinishing()) return;
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_my_post_actions, null);
+        dialog.setContentView(view);
+        dialog.setCancelable(true);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.88f);
+            dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        View rowEditMyPost = view.findViewById(R.id.rowEditMyPost);
+        View rowDeleteMyPost = view.findViewById(R.id.rowDeleteMyPost);
+        View btnDismissMyPostActions = view.findViewById(R.id.btnDismissMyPostActions);
+
+        if (rowEditMyPost != null) {
+            rowEditMyPost.setOnClickListener(v -> {
+                dialog.dismiss();
+                showEditPostDialog(post);
+            });
+        }
+
+        if (rowDeleteMyPost != null) {
+            rowDeleteMyPost.setOnClickListener(v -> {
+                dialog.dismiss();
+                showDeletePostDialog(post);
+            });
+        }
+
+        if (btnDismissMyPostActions != null) {
+            btnDismissMyPostActions.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
+    }
+
+    private void showEditPostDialog(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để chỉnh sửa", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingMyPostActionPostIds.contains(postId)) {
+            return;
+        }
+
+        if (isFinishing()) return;
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_edit_post, null);
+        dialog.setContentView(view);
+        dialog.setCancelable(true);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.90f);
+            dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        EditText edtEditPostContent = view.findViewById(R.id.edtEditPostContent);
+        View btnCancelEditPost = view.findViewById(R.id.btnCancelEditPost);
+        View btnSaveEditPost = view.findViewById(R.id.btnSaveEditPost);
+
+        if (edtEditPostContent != null) {
+            edtEditPostContent.setText(safeText(post.getContent(), ""));
+            edtEditPostContent.setSelection(edtEditPostContent.getText().length());
+        }
+
+        if (btnCancelEditPost != null) {
+            btnCancelEditPost.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnSaveEditPost != null) {
+            btnSaveEditPost.setOnClickListener(v -> {
+                String newContent = edtEditPostContent != null && edtEditPostContent.getText() != null
+                        ? edtEditPostContent.getText().toString().trim()
+                        : "";
+
+                String oldContent = safeText(post.getContent(), "");
+
+                if (newContent.isEmpty()) {
+                    Toast.makeText(this, "Nội dung bài viết không được để trống", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (newContent.equals(oldContent)) {
+                    dialog.dismiss();
+                    return;
+                }
+
+                dialog.dismiss();
+                submitEditPost(post, newContent);
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void submitEditPost(@NonNull CommunityPostModel post, @NonNull String newContent) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để chỉnh sửa", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingMyPostActionPostIds.contains(postId)) {
+            return;
+        }
+
+        processingMyPostActionPostIds.add(postId);
+        renderPosts();
+
+        communityRepository.updateMyPostContent(postId, newContent, new CommunityRepository.UpdatePostListener() {
+            @Override
+            public void onSuccess(@NonNull Timestamp updatedAt) {
+                processingMyPostActionPostIds.remove(postId);
+
+                post.setContent(newContent.trim());
+                post.setUpdated_at(updatedAt);
+                expandedPostIds.remove(postId);
+
+                renderPosts();
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        "Đã cập nhật bài viết",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                processingMyPostActionPostIds.remove(postId);
+                renderPosts();
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+    }
+
+    private void showDeletePostDialog(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để xóa", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingMyPostActionPostIds.contains(postId)) {
+            return;
+        }
+
+        if (isFinishing()) return;
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_delete_post, null);
+        dialog.setContentView(view);
+        dialog.setCancelable(true);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.88f);
+            dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        View btnCancelDeletePost = view.findViewById(R.id.btnCancelDeletePost);
+        View btnConfirmDeletePost = view.findViewById(R.id.btnConfirmDeletePost);
+
+        if (btnCancelDeletePost != null) {
+            btnCancelDeletePost.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnConfirmDeletePost != null) {
+            btnConfirmDeletePost.setOnClickListener(v -> {
+                dialog.dismiss();
+                submitDeletePost(post);
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void submitDeletePost(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để xóa", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingMyPostActionPostIds.contains(postId)) {
+            return;
+        }
+
+        processingMyPostActionPostIds.add(postId);
+        renderPosts();
+
+        communityRepository.deleteMyPost(postId, new CommunityRepository.DeletePostListener() {
+            @Override
+            public void onSuccess() {
+                processingMyPostActionPostIds.remove(postId);
+                expandedPostIds.remove(postId);
+                removePostFromFeed(postId);
+                renderPosts();
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        "Đã xóa bài viết",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                processingMyPostActionPostIds.remove(postId);
+                renderPosts();
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
     }
 
     @NonNull
@@ -1360,6 +1645,79 @@ public class CommunityActivity extends AppCompatActivity {
                     PorterDuff.Mode.SRC_IN
             );
         }
+    }
+
+    private void bindExpandablePostContent(
+            @NonNull CommunityPostModel post,
+            TextView txtPostContent,
+            TextView txtPostExpandToggle
+    ) {
+        if (txtPostContent == null || txtPostExpandToggle == null) return;
+
+        String postId = safeText(post.getPost_id(), "");
+        String content = safeText(post.getContent(), "");
+
+        txtPostContent.setText(content);
+
+        boolean isExpanded = expandedPostIds.contains(postId);
+
+        txtPostContent.setMaxLines(COLLAPSED_POST_MAX_LINES);
+        txtPostContent.setEllipsize(TextUtils.TruncateAt.END);
+        txtPostExpandToggle.setVisibility(View.GONE);
+
+        txtPostContent.post(() -> {
+            if (txtPostContent.getLayout() == null) return;
+
+            int lineCount = txtPostContent.getLayout().getLineCount();
+            int lastVisibleLine = Math.max(0, Math.min(COLLAPSED_POST_MAX_LINES - 1, lineCount - 1));
+
+            boolean shouldShowToggle =
+                    lineCount > COLLAPSED_POST_MAX_LINES
+                            || txtPostContent.getLayout().getEllipsisCount(lastVisibleLine) > 0;
+
+            if (!shouldShowToggle) {
+                txtPostExpandToggle.setVisibility(View.GONE);
+                txtPostContent.setMaxLines(Integer.MAX_VALUE);
+                txtPostContent.setEllipsize(null);
+                return;
+            }
+
+            applyExpandedPostUi(txtPostContent, txtPostExpandToggle, isExpanded);
+        });
+
+        txtPostExpandToggle.setOnClickListener(v -> {
+            boolean currentlyExpanded = expandedPostIds.contains(postId);
+
+            if (currentlyExpanded) {
+                expandedPostIds.remove(postId);
+            } else {
+                expandedPostIds.add(postId);
+            }
+
+            applyExpandedPostUi(
+                    txtPostContent,
+                    txtPostExpandToggle,
+                    expandedPostIds.contains(postId)
+            );
+        });
+    }
+
+    private void applyExpandedPostUi(
+            @NonNull TextView txtPostContent,
+            @NonNull TextView txtPostExpandToggle,
+            boolean isExpanded
+    ) {
+        if (isExpanded) {
+            txtPostContent.setMaxLines(Integer.MAX_VALUE);
+            txtPostContent.setEllipsize(null);
+            txtPostExpandToggle.setText("Thu gọn");
+        } else {
+            txtPostContent.setMaxLines(COLLAPSED_POST_MAX_LINES);
+            txtPostContent.setEllipsize(TextUtils.TruncateAt.END);
+            txtPostExpandToggle.setText("Xem thêm");
+        }
+
+        txtPostExpandToggle.setVisibility(View.VISIBLE);
     }
 
     @NonNull

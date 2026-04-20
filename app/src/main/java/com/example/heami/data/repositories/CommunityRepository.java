@@ -103,6 +103,16 @@ public class CommunityRepository {
         void onFailure(@NonNull String errorMessage);
     }
 
+    public interface UpdatePostListener {
+        void onSuccess(@NonNull Timestamp updatedAt);
+        void onFailure(@NonNull String errorMessage);
+    }
+
+    public interface DeletePostListener {
+        void onSuccess();
+        void onFailure(@NonNull String errorMessage);
+    }
+
     private final FirebaseAuth auth;
     private final FirebaseFirestore firestore;
 
@@ -961,6 +971,112 @@ public class CommunityRepository {
                     : "Không thể hoàn tác báo cáo lúc này";
             listener.onFailure(message);
         });
+    }
+
+    public void updateMyPostContent(
+            @NonNull String postId,
+            @NonNull String newContent,
+            @NonNull UpdatePostListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+        String trimmedContent = newContent.trim();
+
+        if (trimmedContent.isEmpty()) {
+            listener.onFailure("Nội dung bài viết không được để trống");
+            return;
+        }
+
+        DocumentReference postRef = firestore.collection("community_posts").document(postId);
+
+        postRef.get()
+                .addOnSuccessListener(postSnapshot -> {
+                    if (!postSnapshot.exists()) {
+                        listener.onFailure("Không tìm thấy bài viết");
+                        return;
+                    }
+
+                    String ownerId = safeText(postSnapshot.getString("user_id"), "");
+                    if (!uid.equals(ownerId)) {
+                        listener.onFailure("Bạn không có quyền chỉnh sửa bài viết này");
+                        return;
+                    }
+
+                    Timestamp now = Timestamp.now();
+
+                    postRef.update(
+                                    "content", trimmedContent,
+                                    "updated_at", now
+                            )
+                            .addOnSuccessListener(unused -> listener.onSuccess(now))
+                            .addOnFailureListener(e -> {
+                                String message = e.getMessage() != null
+                                        ? e.getMessage()
+                                        : "Không thể cập nhật bài viết";
+                                listener.onFailure(message);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể đọc thông tin bài viết";
+                    listener.onFailure(message);
+                });
+    }
+
+    public void deleteMyPost(
+            @NonNull String postId,
+            @NonNull DeletePostListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+        DocumentReference postRef = firestore.collection("community_posts").document(postId);
+
+        postRef.get()
+                .addOnSuccessListener(postSnapshot -> {
+                    if (!postSnapshot.exists()) {
+                        listener.onFailure("Không tìm thấy bài viết");
+                        return;
+                    }
+
+                    String ownerId = safeText(postSnapshot.getString("user_id"), "");
+                    if (!uid.equals(ownerId)) {
+                        listener.onFailure("Bạn không có quyền xóa bài viết này");
+                        return;
+                    }
+
+                    Timestamp now = Timestamp.now();
+
+                    postRef.update(
+                                    "status", "DELETED",
+                                    "updated_at", now
+                            )
+                            .addOnSuccessListener(unused -> listener.onSuccess())
+                            .addOnFailureListener(e -> {
+                                String message = e.getMessage() != null
+                                        ? e.getMessage()
+                                        : "Không thể xóa bài viết";
+                                listener.onFailure(message);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể đọc thông tin bài viết";
+                    listener.onFailure(message);
+                });
     }
 
     @NonNull
