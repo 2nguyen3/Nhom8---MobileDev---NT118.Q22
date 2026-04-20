@@ -3,37 +3,60 @@ package com.example.heami.ui.community;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.app.Dialog;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.data.models.CommunityPostModel;
+import com.example.heami.data.repositories.CommunityRepository;
 import com.example.heami.ui.main.BottomNavManager;
+import com.google.firebase.Timestamp;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class CommunityActivity extends AppCompatActivity {
 
     private LinearLayout layoutPostsContainer;
-
-    private View btnHugPost1;
-    private TextView txtHugCountPost1;
-    private boolean isHuggedPost1 = false;
-    private int hugCountPost1 = 24;
-
-    private View btnCommentPost1;
-    private TextView txtCommentCountPost1;
-
-    private View btnEmpathyPost1;
-    private boolean isEmpathyPost1Active = false;
-
-    private View btnReportPost1;
-
+    private TextView txtPostsCount;
     private View btnCommunityChat;
+
+    private CommunityRepository communityRepository;
+    private ActivityResultLauncher<Intent> postCommentLauncher;
+
+    private final List<CommunityPostModel> allPosts = new ArrayList<>();
+
+    private final Map<String, Integer> myHugCountMap = new HashMap<>();
+    private final Set<String> loadingMyHugCountPostIds = new HashSet<>();
+    private final Set<String> processingHugPostIds = new HashSet<>();
+
+    private final Map<String, Boolean> myEmpathyStateMap = new HashMap<>();
+    private final Set<String> loadingMyEmpathyStatePostIds = new HashSet<>();
+    private final Set<String> processingEmpathyPostIds = new HashSet<>();
+
+    private String currentFilter = "all";
+    private boolean isLoadingPosts = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,38 +66,48 @@ public class CommunityActivity extends AppCompatActivity {
         BottomNavManager.setup(this, BottomNavManager.TAB_COMMUNITY);
 
         bindViews();
+        initData();
+        initLaunchers();
         allowOverflow();
         setupActions();
         setupFilters();
-        setupHugActions();
-        setupCommentActions();
-        setupEmpathyActions();
-        setupReportActions();
-        handleSharedPostIntent();
         startCommunityAnimations();
+        loadCommunityPosts();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        handleSharedPostIntent();
+
+        if (intent != null && intent.getBooleanExtra("refresh_community_feed", false)) {
+            loadCommunityPosts();
+            intent.removeExtra("refresh_community_feed");
+            intent.removeExtra("created_post_id");
+        }
     }
 
     private void bindViews() {
         layoutPostsContainer = findViewById(R.id.layoutPostsContainer);
-
-        btnHugPost1 = findViewById(R.id.btnHugPost1);
-        txtHugCountPost1 = findViewById(R.id.txtHugCountPost1);
-
-        btnCommentPost1 = findViewById(R.id.btnCommentPost1);
-        txtCommentCountPost1 = findViewById(R.id.txtCommentCountPost1);
-
-        btnEmpathyPost1 = findViewById(R.id.btnEmpathyPost1);
-
-        btnReportPost1 = findViewById(R.id.btnReportPost1);
-
+        txtPostsCount = findViewById(R.id.txtPostsCount);
         btnCommunityChat = findViewById(R.id.btnCommunityChat);
+    }
+
+    private void initData() {
+        communityRepository = new CommunityRepository();
+    }
+
+    private void initLaunchers() {
+        postCommentLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK
+                            && result.getData() != null
+                            && result.getData().getBooleanExtra("refresh_community_feed", false)) {
+                        loadCommunityPosts();
+                    }
+                }
+        );
     }
 
     private void allowOverflow() {
@@ -141,26 +174,9 @@ public class CommunityActivity extends AppCompatActivity {
     }
 
     private void applyFilter(String filter) {
+        currentFilter = filter;
         updateFilterTabStyles(filter);
-
-        View post1 = findViewById(R.id.postCard1); // sad
-        View post2 = findViewById(R.id.postCard2); // stress
-        View post3 = findViewById(R.id.postCard3); // happy
-        View post4 = findViewById(R.id.postCard4); // sad
-        View post5 = findViewById(R.id.postCard5); // happy
-        View post6 = findViewById(R.id.postCard6); // stress
-
-        setPostVisible(post1, filter.equals("all") || filter.equals("sad"));
-        setPostVisible(post2, filter.equals("all") || filter.equals("stress"));
-        setPostVisible(post3, filter.equals("all") || filter.equals("happy"));
-        setPostVisible(post4, filter.equals("all") || filter.equals("sad"));
-        setPostVisible(post5, filter.equals("all") || filter.equals("happy"));
-        setPostVisible(post6, filter.equals("all") || filter.equals("stress"));
-    }
-
-    private void setPostVisible(View view, boolean visible) {
-        if (view == null) return;
-        view.setVisibility(visible ? View.VISIBLE : View.GONE);
+        renderPosts();
     }
 
     private void updateFilterTabStyles(String activeFilter) {
@@ -186,30 +202,174 @@ public class CommunityActivity extends AppCompatActivity {
         }
     }
 
-    private void handleSharedPostIntent() {
-        Intent intent = getIntent();
-        if (intent == null) return;
+    private void loadCommunityPosts() {
+        if (isLoadingPosts) return;
 
-        boolean fromShareFeeling = intent.getBooleanExtra("from_share_feeling", false);
-        if (!fromShareFeeling) return;
+        isLoadingPosts = true;
+        showLoadingState();
 
-        String content = intent.getStringExtra("new_post_content");
-        String mood = intent.getStringExtra("new_post_mood");
+        communityRepository.getCommunityPosts(new CommunityRepository.LoadPostsListener() {
+            @Override
+            public void onSuccess(@NonNull List<CommunityPostModel> posts) {
+                isLoadingPosts = false;
 
-        if (content == null || content.trim().isEmpty()) return;
+                allPosts.clear();
+                allPosts.addAll(posts);
 
-        addNewSharedPost(content, mood);
+                myHugCountMap.clear();
+                loadingMyHugCountPostIds.clear();
+                processingHugPostIds.clear();
 
-        intent.removeExtra("from_share_feeling");
-        intent.removeExtra("new_post_content");
-        intent.removeExtra("new_post_mood");
+                myEmpathyStateMap.clear();
+                loadingMyEmpathyStatePostIds.clear();
+                processingEmpathyPostIds.clear();
+
+                renderPosts();
+                preloadMyInteractionStates(posts);
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                isLoadingPosts = false;
+
+                if (layoutPostsContainer != null) {
+                    layoutPostsContainer.removeAllViews();
+                    layoutPostsContainer.addView(createInfoTextView("Không thể tải bảng tin cộng đồng"));
+                }
+
+                updatePostsCount(0);
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
     }
 
-    private void addNewSharedPost(String content, String mood) {
+    private void preloadMyInteractionStates(@NonNull List<CommunityPostModel> posts) {
+        for (CommunityPostModel post : posts) {
+            if (post == null) continue;
+
+            String postId = safeText(post.getPost_id(), "");
+            if (postId.isEmpty()) continue;
+
+            fetchMyHugCountForPost(postId, false);
+            fetchMyEmpathyStateForPost(postId, false);
+        }
+    }
+
+    private void fetchMyHugCountForPost(@NonNull String postId, boolean showErrorToast) {
+        if (postId.isEmpty()) return;
+        if (loadingMyHugCountPostIds.contains(postId)) return;
+
+        loadingMyHugCountPostIds.add(postId);
+
+        communityRepository.getMyHugCountForPost(postId, new CommunityRepository.LoadMyHugCountListener() {
+            @Override
+            public void onSuccess(int myHugCount) {
+                loadingMyHugCountPostIds.remove(postId);
+                myHugCountMap.put(postId, myHugCount);
+                renderPosts();
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                loadingMyHugCountPostIds.remove(postId);
+
+                if (showErrorToast) {
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            errorMessage,
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            }
+        });
+    }
+
+    private void fetchMyEmpathyStateForPost(@NonNull String postId, boolean showErrorToast) {
+        if (postId.isEmpty()) return;
+        if (loadingMyEmpathyStatePostIds.contains(postId)) return;
+
+        loadingMyEmpathyStatePostIds.add(postId);
+
+        communityRepository.getMyEmpathyStateForPost(postId, new CommunityRepository.LoadMyEmpathyStateListener() {
+            @Override
+            public void onSuccess(boolean hasEmpathy) {
+                loadingMyEmpathyStatePostIds.remove(postId);
+                myEmpathyStateMap.put(postId, hasEmpathy);
+                renderPosts();
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                loadingMyEmpathyStatePostIds.remove(postId);
+
+                if (showErrorToast) {
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            errorMessage,
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            }
+        });
+    }
+
+    private void showLoadingState() {
         if (layoutPostsContainer == null) return;
 
-        View postView = getLayoutInflater().inflate(R.layout.item_post_shared, layoutPostsContainer, false);
+        layoutPostsContainer.removeAllViews();
+        layoutPostsContainer.addView(createInfoTextView("Đang tải chia sẻ cộng đồng..."));
+        updatePostsCount(0);
+    }
 
+    private void renderPosts() {
+        if (layoutPostsContainer == null) return;
+
+        layoutPostsContainer.removeAllViews();
+
+        List<CommunityPostModel> filteredPosts = getFilteredPosts();
+
+        updatePostsCount(filteredPosts.size());
+
+        if (filteredPosts.isEmpty()) {
+            layoutPostsContainer.addView(createInfoTextView(getEmptyMessageByFilter()));
+            return;
+        }
+
+        for (CommunityPostModel post : filteredPosts) {
+            View postView = getLayoutInflater().inflate(
+                    R.layout.item_post_shared,
+                    layoutPostsContainer,
+                    false
+            );
+
+            bindPostView(postView, post);
+            layoutPostsContainer.addView(postView);
+        }
+    }
+
+    @NonNull
+    private List<CommunityPostModel> getFilteredPosts() {
+        List<CommunityPostModel> filtered = new ArrayList<>();
+
+        for (CommunityPostModel post : allPosts) {
+            if (post == null) continue;
+
+            String mood = safeText(post.getMood_tag(), "stress");
+
+            if ("all".equals(currentFilter) || currentFilter.equals(mood)) {
+                filtered.add(post);
+            }
+        }
+
+        return filtered;
+    }
+
+    private void bindPostView(@NonNull View postView, @NonNull CommunityPostModel post) {
         View accent = postView.findViewById(R.id.viewPostAccent);
         View avatarStatus = postView.findViewById(R.id.viewPostAvatarStatus);
 
@@ -220,25 +380,417 @@ public class CommunityActivity extends AppCompatActivity {
         TextView txtPostContent = postView.findViewById(R.id.txtPostContent);
         TextView txtPostHugCount = postView.findViewById(R.id.txtPostHugCount);
         TextView txtPostCommentCount = postView.findViewById(R.id.txtPostCommentCount);
+        TextView txtPostEmpathyLabel = postView.findViewById(R.id.txtPostEmpathyLabel);
 
-        txtUserName.setText(getAnonymousNameByMood(mood));
-        txtMoodTag.setText(getMoodLabel(mood));
-        txtMoodTag.setBackgroundResource(getMoodTagBackground(mood));
-        txtMoodTag.setTextColor(getMoodTextColor(mood));
-        txtPostTime.setText("· Vừa xong");
-        txtPostContent.setText(content);
-        txtPostHugCount.setText("Ôm 0");
-        txtPostCommentCount.setText("0");
+        LinearLayout btnPostHugAction = postView.findViewById(R.id.btnPostHugAction);
+        LinearLayout btnPostCommentAction = postView.findViewById(R.id.btnPostCommentAction);
+        LinearLayout btnPostEmpathyAction = postView.findViewById(R.id.btnPostEmpathyAction);
+        ImageButton btnPostReport = postView.findViewById(R.id.btnPostReport);
+
+        String postId = safeText(post.getPost_id(), "");
+        String mood = safeText(post.getMood_tag(), "stress");
+
+        int myHugCount = myHugCountMap.containsKey(postId) ? myHugCountMap.get(postId) : 0;
+        boolean isProcessingHug = processingHugPostIds.contains(postId);
+
+        boolean hasEmpathy = myEmpathyStateMap.containsKey(postId) && Boolean.TRUE.equals(myEmpathyStateMap.get(postId));
+        boolean isProcessingEmpathy = processingEmpathyPostIds.contains(postId);
+
+        if (txtUserName != null) {
+            String displayName = post.isIs_anonymous()
+                    ? "Ẩn danh"
+                    : safeText(post.getAuthor_name(), "Người dùng Heami");
+            txtUserName.setText(displayName);
+        }
+
+        if (txtMoodTag != null) {
+            txtMoodTag.setText(getMoodLabel(mood));
+            txtMoodTag.setBackgroundResource(getMoodTagBackground(mood));
+            txtMoodTag.setTextColor(getMoodTextColor(mood));
+        }
+
+        if (txtPostTime != null) {
+            txtPostTime.setText("· " + formatRelativeTime(post.getCreated_at()));
+        }
+
+        if (txtPostContent != null) {
+            txtPostContent.setText(safeText(post.getContent(), ""));
+        }
+
+        if (txtPostHugCount != null) {
+            txtPostHugCount.setText(buildHugLabel(post.getLike_count(), myHugCount));
+            txtPostHugCount.setTextColor(myHugCount > 0 ? 0xFF7F5AF0 : 0xFFB0A0C0);
+        }
+
+        if (txtPostCommentCount != null) {
+            txtPostCommentCount.setText(String.valueOf(post.getComment_count()));
+        }
+
+        if (txtPostEmpathyLabel != null) {
+            txtPostEmpathyLabel.setText(buildEmpathyLabel(post.getEmpathy_count(), hasEmpathy));
+            txtPostEmpathyLabel.setTextColor(hasEmpathy ? 0xFF2FAF9A : 0xFF4BBDAD);
+        }
 
         applyPostMoodStyle(mood, accent, txtAvatarEmoji, avatarStatus);
 
-        layoutPostsContainer.addView(postView, 0);
+        postView.setOnClickListener(v -> openPostComments(post));
+
+        if (btnPostHugAction != null) {
+            btnPostHugAction.setEnabled(!isProcessingHug);
+            btnPostHugAction.setAlpha(isProcessingHug ? 0.55f : 1f);
+
+            btnPostHugAction.setOnClickListener(v -> submitAddHug(post));
+
+            btnPostHugAction.setOnLongClickListener(v -> {
+                handleHugLongPress(post);
+                return true;
+            });
+        }
+
+        if (btnPostCommentAction != null) {
+            btnPostCommentAction.setOnClickListener(v -> openPostComments(post));
+        }
+
+        if (btnPostEmpathyAction != null) {
+            btnPostEmpathyAction.setEnabled(!isProcessingEmpathy);
+            btnPostEmpathyAction.setAlpha(isProcessingEmpathy ? 0.55f : 1f);
+            btnPostEmpathyAction.setOnClickListener(v -> submitToggleEmpathy(post));
+        }
+
+        if (btnPostReport != null) {
+            btnPostReport.setOnClickListener(v -> Toast.makeText(
+                    CommunityActivity.this,
+                    "Chức năng Báo cáo sẽ được hoàn thiện sau",
+                    Toast.LENGTH_SHORT
+            ).show());
+        }
+    }
+
+    private void openPostComments(@NonNull CommunityPostModel post) {
+        Intent intent = new Intent(CommunityActivity.this, PostCommentActivity.class);
+        intent.putExtra("post_id", post.getPost_id());
+        postCommentLauncher.launch(intent);
+        overridePendingTransition(0, 0);
+    }
+
+    private void submitAddHug(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để gửi ôm", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingHugPostIds.contains(postId)) {
+            return;
+        }
+
+        processingHugPostIds.add(postId);
+        renderPosts();
+
+        communityRepository.addHugToPost(postId, new CommunityRepository.AddHugListener() {
+            @Override
+            public void onSuccess(int newMyHugCount) {
+                processingHugPostIds.remove(postId);
+
+                myHugCountMap.put(postId, newMyHugCount);
+                post.setLike_count(post.getLike_count() + 1);
+
+                renderPosts();
+
+                if (newMyHugCount <= 1) {
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Bạn đã gửi một cái ôm 🤗",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                } else {
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Bạn đã ôm " + newMyHugCount + " lần 🤗",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                processingHugPostIds.remove(postId);
+                renderPosts();
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+    }
+
+    private void handleHugLongPress(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để huỷ ôm", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingHugPostIds.contains(postId)) {
+            return;
+        }
+
+        if (!myHugCountMap.containsKey(postId)) {
+            fetchMyHugCountForPost(postId, true);
+            Toast.makeText(
+                    this,
+                    "Đang tải số ôm của bạn, hãy nhấn giữ lại sau một chút",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        int myHugCount = myHugCountMap.get(postId);
+
+        if (myHugCount <= 0) {
+            Toast.makeText(
+                    this,
+                    "Bạn chưa gửi ôm nào để huỷ",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        showUnhugDialog(post, myHugCount);
+    }
+
+    private void showUnhugDialog(@NonNull CommunityPostModel post, int myHugCount) {
+        if (isFinishing()) return;
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_unhug_confirm, null);
+        dialog.setContentView(view);
+        dialog.setCancelable(true);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        TextView txtTitle = view.findViewById(R.id.txtUnhugDialogTitle);
+        TextView txtSubtitle = view.findViewById(R.id.txtUnhugDialogSubtitle);
+        TextView txtMessage = view.findViewById(R.id.txtUnhugDialogMessage);
+        TextView btnKeepHug = view.findViewById(R.id.btnKeepHug);
+        TextView btnConfirmUnhug = view.findViewById(R.id.btnConfirmUnhug);
+
+        if (txtTitle != null) {
+            txtTitle.setText(myHugCount == 1 ? "Huỷ cái ôm này?" : "Huỷ những cái ôm này?");
+        }
+
+        if (txtSubtitle != null) {
+            txtSubtitle.setText(myHugCount == 1
+                    ? "Bạn sắp rút lại 1 cái ôm đã gửi."
+                    : "Bạn sắp rút lại " + myHugCount + " cái ôm đã gửi.");
+        }
+
+        if (txtMessage != null) {
+            txtMessage.setText(buildUnhugDialogMessage(myHugCount));
+        }
+
+        if (btnKeepHug != null) {
+            btnKeepHug.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnConfirmUnhug != null) {
+            btnConfirmUnhug.setOnClickListener(v -> {
+                dialog.dismiss();
+                clearMyHugs(post);
+            });
+        }
+
+        dialog.show();
+    }
+
+    @NonNull
+    private String buildUnhugDialogMessage(int myHugCount) {
+        if (myHugCount <= 1) {
+            return "Bạn muốn rút lại 1 cái ôm đã gửi cho bài chia sẻ này không?";
+        }
+        return "Bạn muốn rút lại " + myHugCount + " cái ôm đã gửi cho bài chia sẻ này không?";
+    }
+
+    private void clearMyHugs(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để huỷ ôm", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingHugPostIds.contains(postId)) {
+            return;
+        }
+
+        processingHugPostIds.add(postId);
+        renderPosts();
+
+        communityRepository.clearMyHugsForPost(postId, new CommunityRepository.ClearMyHugsListener() {
+            @Override
+            public void onSuccess(int removedHugCount) {
+                processingHugPostIds.remove(postId);
+
+                if (removedHugCount > 0) {
+                    myHugCountMap.put(postId, 0);
+                    post.setLike_count(Math.max(0, post.getLike_count() - removedHugCount));
+                    renderPosts();
+
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Đã huỷ " + removedHugCount + " cái ôm bạn đã gửi",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                } else {
+                    renderPosts();
+
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Bạn chưa gửi ôm nào để huỷ",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                processingHugPostIds.remove(postId);
+                renderPosts();
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+    }
+
+    private void submitToggleEmpathy(@NonNull CommunityPostModel post) {
+        String postId = safeText(post.getPost_id(), "");
+
+        if (postId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy bài viết để đồng cảm", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (processingEmpathyPostIds.contains(postId)) {
+            return;
+        }
+
+        processingEmpathyPostIds.add(postId);
+        renderPosts();
+
+        communityRepository.toggleEmpathyForPost(postId, new CommunityRepository.ToggleEmpathyListener() {
+            @Override
+            public void onSuccess(boolean nowHasEmpathy) {
+                processingEmpathyPostIds.remove(postId);
+
+                myEmpathyStateMap.put(postId, nowHasEmpathy);
+
+                if (nowHasEmpathy) {
+                    post.setEmpathy_count(post.getEmpathy_count() + 1);
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Bạn đã gửi một sự đồng cảm 🌿",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                } else {
+                    post.setEmpathy_count(Math.max(0, post.getEmpathy_count() - 1));
+                    Toast.makeText(
+                            CommunityActivity.this,
+                            "Bạn đã bỏ đồng cảm",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+
+                renderPosts();
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                processingEmpathyPostIds.remove(postId);
+                renderPosts();
+
+                Toast.makeText(
+                        CommunityActivity.this,
+                        errorMessage,
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+    }
+
+    @NonNull
+    private String buildHugLabel(int totalHugCount, int myHugCount) {
+        if (myHugCount > 0) {
+            return "Ôm " + totalHugCount + " · Bạn " + myHugCount;
+        }
+        return "Ôm " + totalHugCount;
+    }
+
+    @NonNull
+    private String buildEmpathyLabel(int totalEmpathyCount, boolean hasEmpathy) {
+        if (hasEmpathy) {
+            return "Đã đồng cảm · " + totalEmpathyCount;
+        }
+        return "Đồng cảm " + totalEmpathyCount;
+    }
+
+    private TextView createInfoTextView(String message) {
+        TextView textView = new TextView(this);
+        textView.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+        textView.setPadding(dp(18), dp(18), dp(18), dp(18));
+        textView.setText(message);
+        textView.setTextSize(14f);
+        textView.setTextColor(0xFF8E7AA7);
+        return textView;
+    }
+
+    private void updatePostsCount(int count) {
+        if (txtPostsCount == null) return;
+
+        if (count <= 0) {
+            txtPostsCount.setText("0 chia sẻ");
+        } else if (count == 1) {
+            txtPostsCount.setText("1 chia sẻ");
+        } else {
+            txtPostsCount.setText(String.format(Locale.getDefault(), "%d chia sẻ", count));
+        }
+    }
+
+    private String getEmptyMessageByFilter() {
+        switch (currentFilter) {
+            case "happy":
+                return "Chưa có chia sẻ nào ở mood vui vẻ.";
+            case "sad":
+                return "Chưa có chia sẻ nào ở mood buồn.";
+            case "stress":
+                return "Chưa có chia sẻ nào ở mood căng thẳng.";
+            case "fear":
+                return "Chưa có chia sẻ nào ở mood sợ hãi.";
+            case "disgust":
+                return "Chưa có chia sẻ nào ở mood ghê tởm.";
+            case "angry":
+                return "Chưa có chia sẻ nào ở mood tức giận.";
+            default:
+                return "Chưa có bài chia sẻ nào trong cộng đồng.";
+        }
     }
 
     private void applyPostMoodStyle(String mood, View accent, TextView avatarEmoji, View avatarStatus) {
         if (accent == null || avatarEmoji == null || avatarStatus == null) return;
-
-        if (mood == null) mood = "stress";
 
         switch (mood) {
             case "happy":
@@ -292,30 +844,7 @@ public class CommunityActivity extends AppCompatActivity {
         }
     }
 
-    private String getAnonymousNameByMood(String mood) {
-        if (mood == null) return "Người bạn ẩn danh";
-
-        switch (mood) {
-            case "happy":
-                return "Hoa nắng nhỏ";
-            case "sad":
-                return "Mây chiều xanh";
-            case "stress":
-                return "Lá dương xỉ";
-            case "fear":
-                return "Sương đêm mỏng";
-            case "disgust":
-                return "Chiếc lá lặng";
-            case "angry":
-                return "Đốm lửa nhỏ";
-            default:
-                return "Người bạn ẩn danh";
-        }
-    }
-
     private String getMoodLabel(String mood) {
-        if (mood == null) return "Cảm xúc";
-
         switch (mood) {
             case "happy":
                 return "Đang vui";
@@ -335,8 +864,6 @@ public class CommunityActivity extends AppCompatActivity {
     }
 
     private int getMoodTagBackground(String mood) {
-        if (mood == null) return R.drawable.bg_mood_tag_stress;
-
         switch (mood) {
             case "happy":
                 return R.drawable.bg_mood_tag_happy;
@@ -356,8 +883,6 @@ public class CommunityActivity extends AppCompatActivity {
     }
 
     private int getMoodTextColor(String mood) {
-        if (mood == null) return 0xFFB06ED8;
-
         switch (mood) {
             case "happy":
                 return 0xFFF5A623;
@@ -376,81 +901,95 @@ public class CommunityActivity extends AppCompatActivity {
         }
     }
 
+    private String formatRelativeTime(Timestamp timestamp) {
+        if (timestamp == null) return "Vừa xong";
+
+        long now = System.currentTimeMillis();
+        long time = timestamp.toDate().getTime();
+        long diff = Math.max(0L, now - time);
+
+        long minute = 60_000L;
+        long hour = 60 * minute;
+        long day = 24 * hour;
+
+        if (diff < minute) return "Vừa xong";
+        if (diff < hour) return (diff / minute) + " phút trước";
+        if (diff < day) return (diff / hour) + " giờ trước";
+        return (diff / day) + " ngày trước";
+    }
+
+    @NonNull
+    private String safeText(String value, String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim();
+    }
+
     private void startCommunityAnimations() {
         startBlobFloat(findViewById(R.id.blobRoseTop), -10f, 8f, 1.04f, 8000, 0);
-        startBlobFloat(findViewById(R.id.blobVioletMid), 8f, -10f, 1.05f, 9000, 400);
-        startBlobFloat(findViewById(R.id.blobCyanMid), -8f, 10f, 1.05f, 8600, 700);
+        startBlobFloat(findViewById(R.id.blobVioletMid), 8f, -10f, 1.05f, 8800, 700);
+        startBlobFloat(findViewById(R.id.blobCyanMid), -8f, 8f, 1.03f, 8400, 1200);
 
-        startPulseFadeExpand(findViewById(R.id.viewShuffleRingOuter), 0.82f, 1.32f, 0.22f, 0f, 1800, 0);
-        startPulseFadeExpand(findViewById(R.id.viewShuffleRingInner), 0.90f, 1.22f, 0.30f, 0f, 1350, 120);
+        startPulseDot(findViewById(R.id.viewOnlineDot), 1.0f, 1.25f, 1900);
 
-        startFloatRotateScale(findViewById(R.id.layoutShuffleIconBox), 3f, 3f, 1.05f, 1900, 0);
-        startPulseDot(findViewById(R.id.viewMoodActiveDot), 0.92f, 1.25f, 1150);
+        startSubtleFloat(findViewById(R.id.layoutOnlineBadge), 4f, 3600, 0);
+        startSubtleFloat(findViewById(R.id.btnCommunityChat), 4f, 3600, 500);
+        startSubtleFloat(findViewById(R.id.layoutSafetyNotice), 3f, 4200, 900);
 
-        startSparkle(findViewById(R.id.imgSparkle1), 1.7f, 0);
-        startSparkle(findViewById(R.id.imgSparkle2), 1.7f, 200);
-        startSparkle(findViewById(R.id.imgSparkle3), 1.7f, 450);
-        startSparkle(findViewById(R.id.imgSparkle4), 1.7f, 700);
+        startPulseFadeExpand(findViewById(R.id.viewMoodHeroRingOuter), 0.82f, 1.18f, 0.20f, 0f, 1800, 0);
+        startPulseFadeExpand(findViewById(R.id.viewMoodHeroRingInner), 0.90f, 1.12f, 0.28f, 0f, 1350, 120);
 
-        startStatBreath(findViewById(R.id.statChip1), 4400, 0);
-        startStatBreath(findViewById(R.id.statChip2), 4400, 350);
-        startStatBreath(findViewById(R.id.statChip3), 4400, 700);
+        startFloatRotateScale(findViewById(R.id.imgSparkle1), 3f, 8f, 1.08f, 2800, 0);
+        startFloatRotateScale(findViewById(R.id.imgSparkle2), 4f, -10f, 1.10f, 3000, 250);
+        startFloatRotateScale(findViewById(R.id.imgSparkle3), 5f, 12f, 1.12f, 3200, 500);
+
+        startSubtleFloat(findViewById(R.id.btnShareYourFeeling), 3f, 3600, 300);
     }
 
     private void startBlobFloat(View view, float dxDp, float dyDp, float scaleTo, long duration, long delay) {
         if (view == null) return;
 
-        ObjectAnimator moveX = ObjectAnimator.ofFloat(
-                view,
-                View.TRANSLATION_X,
-                view.getTranslationX(),
-                view.getTranslationX() + dp(dxDp),
-                view.getTranslationX()
-        );
-        ObjectAnimator moveY = ObjectAnimator.ofFloat(
-                view,
-                View.TRANSLATION_Y,
-                view.getTranslationY(),
-                view.getTranslationY() + dp(dyDp),
-                view.getTranslationY()
-        );
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, 1f, scaleTo, 1f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, 1f, scaleTo, 1f);
+        ObjectAnimator x = ObjectAnimator.ofFloat(view, View.TRANSLATION_X, 0f, dp(dxDp), 0f);
+        ObjectAnimator y = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0f, dp(dyDp), 0f);
+        ObjectAnimator sx = ObjectAnimator.ofFloat(view, View.SCALE_X, 1f, scaleTo, 1f);
+        ObjectAnimator sy = ObjectAnimator.ofFloat(view, View.SCALE_Y, 1f, scaleTo, 1f);
 
-        moveX.setDuration(duration);
-        moveY.setDuration(duration);
-        scaleX.setDuration(duration);
-        scaleY.setDuration(duration);
+        x.setDuration(duration);
+        y.setDuration(duration);
+        sx.setDuration(duration);
+        sy.setDuration(duration);
 
-        moveX.setStartDelay(delay);
-        moveY.setStartDelay(delay);
-        scaleX.setStartDelay(delay);
-        scaleY.setStartDelay(delay);
+        x.setStartDelay(delay);
+        y.setStartDelay(delay);
+        sx.setStartDelay(delay);
+        sy.setStartDelay(delay);
 
-        moveX.setRepeatCount(ValueAnimator.INFINITE);
-        moveY.setRepeatCount(ValueAnimator.INFINITE);
-        scaleX.setRepeatCount(ValueAnimator.INFINITE);
-        scaleY.setRepeatCount(ValueAnimator.INFINITE);
+        x.setRepeatCount(ValueAnimator.INFINITE);
+        y.setRepeatCount(ValueAnimator.INFINITE);
+        sx.setRepeatCount(ValueAnimator.INFINITE);
+        sy.setRepeatCount(ValueAnimator.INFINITE);
 
-        moveX.setInterpolator(new AccelerateDecelerateInterpolator());
-        moveY.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleX.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleY.setInterpolator(new AccelerateDecelerateInterpolator());
+        AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
+        x.setInterpolator(interpolator);
+        y.setInterpolator(interpolator);
+        sx.setInterpolator(interpolator);
+        sy.setInterpolator(interpolator);
 
         AnimatorSet set = new AnimatorSet();
-        set.playTogether(moveX, moveY, scaleX, scaleY);
+        set.playTogether(x, y, sx, sy);
         set.start();
     }
 
     private void startSubtleFloat(View view, float distanceDp, long duration, long delay) {
         if (view == null) return;
 
-        ObjectAnimator moveY = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0f, -dp(distanceDp), 0f);
-        moveY.setDuration(duration);
-        moveY.setStartDelay(delay);
-        moveY.setRepeatCount(ValueAnimator.INFINITE);
-        moveY.setInterpolator(new AccelerateDecelerateInterpolator());
-        moveY.start();
+        ObjectAnimator y = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0f, -dp(distanceDp), 0f);
+        y.setDuration(duration);
+        y.setStartDelay(delay);
+        y.setRepeatCount(ValueAnimator.INFINITE);
+        y.setInterpolator(new AccelerateDecelerateInterpolator());
+        y.start();
     }
 
     private void startPulseDot(View view, float fromScale, float toScale, long duration) {
@@ -458,7 +997,7 @@ public class CommunityActivity extends AppCompatActivity {
 
         ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, fromScale, toScale, fromScale);
         ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, fromScale, toScale, fromScale);
-        ObjectAnimator alpha = ObjectAnimator.ofFloat(view, View.ALPHA, 0.55f, 1f, 0.55f);
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(view, View.ALPHA, 1f, 0.65f, 1f);
 
         scaleX.setDuration(duration);
         scaleY.setDuration(duration);
@@ -468,9 +1007,10 @@ public class CommunityActivity extends AppCompatActivity {
         scaleY.setRepeatCount(ValueAnimator.INFINITE);
         alpha.setRepeatCount(ValueAnimator.INFINITE);
 
-        scaleX.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleY.setInterpolator(new AccelerateDecelerateInterpolator());
-        alpha.setInterpolator(new AccelerateDecelerateInterpolator());
+        AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
+        scaleX.setInterpolator(interpolator);
+        scaleY.setInterpolator(interpolator);
+        alpha.setInterpolator(interpolator);
 
         AnimatorSet set = new AnimatorSet();
         set.playTogether(scaleX, scaleY, alpha);
@@ -488,9 +1028,9 @@ public class CommunityActivity extends AppCompatActivity {
     ) {
         if (view == null) return;
 
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, startScale, 1.08f, endScale);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, startScale, 1.08f, endScale);
-        ObjectAnimator alpha = ObjectAnimator.ofFloat(view, View.ALPHA, startAlpha, 0.58f, endAlpha);
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, startScale, 1.06f, endScale);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, startScale, 1.06f, endScale);
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(view, View.ALPHA, startAlpha, 0.55f, endAlpha);
 
         scaleX.setDuration(duration);
         scaleY.setDuration(duration);
@@ -504,9 +1044,10 @@ public class CommunityActivity extends AppCompatActivity {
         scaleY.setRepeatCount(ValueAnimator.INFINITE);
         alpha.setRepeatCount(ValueAnimator.INFINITE);
 
-        scaleX.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleY.setInterpolator(new AccelerateDecelerateInterpolator());
-        alpha.setInterpolator(new AccelerateDecelerateInterpolator());
+        AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
+        scaleX.setInterpolator(interpolator);
+        scaleY.setInterpolator(interpolator);
+        alpha.setInterpolator(interpolator);
 
         AnimatorSet set = new AnimatorSet();
         set.playTogether(scaleX, scaleY, alpha);
@@ -516,236 +1057,42 @@ public class CommunityActivity extends AppCompatActivity {
     private void startFloatRotateScale(View view, float floatDp, float rotateDeg, float scaleTo, long duration, long delay) {
         if (view == null) return;
 
-        ObjectAnimator moveY = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0f, -dp(floatDp), 0f);
-        ObjectAnimator rotate = ObjectAnimator.ofFloat(view, View.ROTATION, 0f, rotateDeg, 0f);
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, 1f, scaleTo, 1f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, 1f, scaleTo, 1f);
+        ObjectAnimator y = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0f, -dp(floatDp), 0f);
+        ObjectAnimator r = ObjectAnimator.ofFloat(view, View.ROTATION, 0f, rotateDeg, 0f);
+        ObjectAnimator sx = ObjectAnimator.ofFloat(view, View.SCALE_X, 1f, scaleTo, 1f);
+        ObjectAnimator sy = ObjectAnimator.ofFloat(view, View.SCALE_Y, 1f, scaleTo, 1f);
 
-        moveY.setDuration(duration);
-        rotate.setDuration(duration);
-        scaleX.setDuration(duration);
-        scaleY.setDuration(duration);
+        y.setDuration(duration);
+        r.setDuration(duration);
+        sx.setDuration(duration);
+        sy.setDuration(duration);
 
-        moveY.setStartDelay(delay);
-        rotate.setStartDelay(delay);
-        scaleX.setStartDelay(delay);
-        scaleY.setStartDelay(delay);
+        y.setStartDelay(delay);
+        r.setStartDelay(delay);
+        sx.setStartDelay(delay);
+        sy.setStartDelay(delay);
 
-        moveY.setRepeatCount(ValueAnimator.INFINITE);
-        rotate.setRepeatCount(ValueAnimator.INFINITE);
-        scaleX.setRepeatCount(ValueAnimator.INFINITE);
-        scaleY.setRepeatCount(ValueAnimator.INFINITE);
+        y.setRepeatCount(ValueAnimator.INFINITE);
+        r.setRepeatCount(ValueAnimator.INFINITE);
+        sx.setRepeatCount(ValueAnimator.INFINITE);
+        sy.setRepeatCount(ValueAnimator.INFINITE);
 
-        moveY.setInterpolator(new AccelerateDecelerateInterpolator());
-        rotate.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleX.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleY.setInterpolator(new AccelerateDecelerateInterpolator());
-
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(moveY, rotate, scaleX, scaleY);
-        set.start();
-    }
-
-    private void startSparkle(View view, float durationSeconds, long delay) {
-        if (view == null) return;
-
-        long duration = (long) (durationSeconds * 1000);
-
-        ObjectAnimator alpha = ObjectAnimator.ofFloat(view, View.ALPHA, 0.15f, 0.55f, 1f, 0.45f, 0.15f);
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, View.SCALE_X, 0.72f, 0.90f, 1.08f, 0.85f, 0.72f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, View.SCALE_Y, 0.72f, 0.90f, 1.08f, 0.85f, 0.72f);
-        ObjectAnimator rotate = ObjectAnimator.ofFloat(view, View.ROTATION, 0f, 8f, 18f, 6f, 0f);
-
-        alpha.setDuration(duration);
-        scaleX.setDuration(duration);
-        scaleY.setDuration(duration);
-        rotate.setDuration(duration);
-
-        alpha.setStartDelay(delay);
-        scaleX.setStartDelay(delay);
-        scaleY.setStartDelay(delay);
-        rotate.setStartDelay(delay);
-
-        alpha.setRepeatCount(ValueAnimator.INFINITE);
-        scaleX.setRepeatCount(ValueAnimator.INFINITE);
-        scaleY.setRepeatCount(ValueAnimator.INFINITE);
-        rotate.setRepeatCount(ValueAnimator.INFINITE);
-
-        alpha.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleX.setInterpolator(new AccelerateDecelerateInterpolator());
-        scaleY.setInterpolator(new AccelerateDecelerateInterpolator());
-        rotate.setInterpolator(new AccelerateDecelerateInterpolator());
+        AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
+        y.setInterpolator(interpolator);
+        r.setInterpolator(interpolator);
+        sx.setInterpolator(interpolator);
+        sy.setInterpolator(interpolator);
 
         AnimatorSet set = new AnimatorSet();
-        set.playTogether(alpha, scaleX, scaleY, rotate);
+        set.playTogether(y, r, sx, sy);
         set.start();
-    }
-
-    private void startStatBreath(View view, long duration, long delay) {
-        if (view == null) return;
-
-        ObjectAnimator moveY = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0f, -dp(1f), 0f);
-        moveY.setDuration(duration);
-        moveY.setStartDelay(delay);
-        moveY.setRepeatCount(ValueAnimator.INFINITE);
-        moveY.setInterpolator(new AccelerateDecelerateInterpolator());
-        moveY.start();
     }
 
     private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
+        return Math.round(getResources().getDisplayMetrics().density * value);
     }
 
     private float dp(float value) {
-        return value * getResources().getDisplayMetrics().density;
-    }
-
-    private void setupHugActions() {
-        if (btnHugPost1 != null) {
-            btnHugPost1.setOnClickListener(v -> toggleHugPost1());
-        }
-
-        refreshHugPost1UI();
-    }
-
-    private void toggleHugPost1() {
-        if (isHuggedPost1) {
-            hugCountPost1--;
-            isHuggedPost1 = false;
-        } else {
-            hugCountPost1++;
-            isHuggedPost1 = true;
-        }
-
-        refreshHugPost1UI();
-
-        if (isHuggedPost1 && btnHugPost1 != null) {
-            btnHugPost1.animate()
-                    .scaleX(1.06f)
-                    .scaleY(1.06f)
-                    .setDuration(120)
-                    .withEndAction(() -> btnHugPost1.animate()
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(120)
-                            .start())
-                    .start();
-        }
-    }
-
-    private void refreshHugPost1UI() {
-        if (txtHugCountPost1 != null) {
-            txtHugCountPost1.setText("Ôm " + hugCountPost1);
-        }
-
-        if (btnHugPost1 != null) {
-            if (isHuggedPost1) {
-                btnHugPost1.setBackgroundResource(R.drawable.bg_action_btn_active);
-            } else {
-                btnHugPost1.setBackgroundResource(R.drawable.bg_action_btn);
-            }
-        }
-    }
-
-    private void setupCommentActions() {
-        if (btnCommentPost1 != null) {
-            btnCommentPost1.setOnClickListener(v -> openPost1Comments());
-        }
-    }
-
-    private void openPost1Comments() {
-        Intent intent = new Intent(CommunityActivity.this, PostCommentActivity.class);
-        startActivity(intent);
-        overridePendingTransition(0, 0);
-    }
-
-    private void setupEmpathyActions() {
-        if (btnEmpathyPost1 != null) {
-            btnEmpathyPost1.setOnClickListener(v -> toggleEmpathyPost1());
-        }
-
-        refreshEmpathyPost1UI();
-    }
-
-    private void toggleEmpathyPost1() {
-        isEmpathyPost1Active = !isEmpathyPost1Active;
-        refreshEmpathyPost1UI();
-
-        if (isEmpathyPost1Active && btnEmpathyPost1 != null) {
-            btnEmpathyPost1.animate()
-                    .scaleX(1.06f)
-                    .scaleY(1.06f)
-                    .setDuration(120)
-                    .withEndAction(() -> btnEmpathyPost1.animate()
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(120)
-                            .start())
-                    .start();
-        }
-    }
-
-    private void refreshEmpathyPost1UI() {
-        if (btnEmpathyPost1 == null) return;
-
-        if (isEmpathyPost1Active) {
-            btnEmpathyPost1.setBackgroundResource(R.drawable.bg_empathy_btn_active);
-            btnEmpathyPost1.setAlpha(1f);
-        } else {
-            btnEmpathyPost1.setBackgroundResource(R.drawable.bg_empathy_btn);
-            btnEmpathyPost1.setAlpha(1f);
-        }
-    }
-
-    private void setupReportActions() {
-        if (btnReportPost1 != null) {
-            btnReportPost1.setOnClickListener(v -> showReportDialog());
-        }
-    }
-
-    private void showReportDialog() {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_post_report, null, false);
-
-        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
-                .setView(dialogView)
-                .create();
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        View btnCancel = dialogView.findViewById(R.id.btnCancelReport);
-        View btnSubmit = dialogView.findViewById(R.id.btnSubmitReport);
-        android.widget.RadioGroup radioGroup = dialogView.findViewById(R.id.radioGroupReportReason);
-
-        if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> dialog.dismiss());
-        }
-
-        if (btnSubmit != null) {
-            btnSubmit.setOnClickListener(v -> {
-                int checkedId = radioGroup != null ? radioGroup.getCheckedRadioButtonId() : -1;
-
-                if (checkedId == -1) {
-                    android.widget.Toast.makeText(
-                            CommunityActivity.this,
-                            "Bạn hãy chọn lý do báo cáo nhé",
-                            android.widget.Toast.LENGTH_SHORT
-                    ).show();
-                    return;
-                }
-
-                android.widget.Toast.makeText(
-                        CommunityActivity.this,
-                        "Đã gửi báo cáo. Cảm ơn bạn đã giúp giữ cộng đồng an toàn.",
-                        android.widget.Toast.LENGTH_SHORT
-                ).show();
-
-                dialog.dismiss();
-            });
-        }
-
-        dialog.setCancelable(true);
-        dialog.show();
+        return getResources().getDisplayMetrics().density * value;
     }
 }

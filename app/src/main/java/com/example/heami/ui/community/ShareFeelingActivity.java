@@ -1,18 +1,20 @@
 package com.example.heami.ui.community;
 
-import android.os.Bundle;
+import androidx.annotation.NonNull;
 import android.content.Intent;
-import android.view.View;
+import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.widget.Toast;
-import android.widget.EditText;
+import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.data.repositories.CommunityRepository;
 
 public class ShareFeelingActivity extends AppCompatActivity {
 
@@ -34,7 +36,12 @@ public class ShareFeelingActivity extends AppCompatActivity {
     private TextView txtMoodAngry;
 
     private EditText edtShareFeeling;
+
+    private CommunityRepository communityRepository;
+
     private String selectedMood = "happy";
+    private boolean isSubmitting = false;
+    private String defaultSubmitText = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +49,7 @@ public class ShareFeelingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_share_feeling);
 
         bindViews();
+        initData();
         prepareSheetIntro();
         setupActions();
         setupMoodSelection();
@@ -71,6 +79,14 @@ public class ShareFeelingActivity extends AppCompatActivity {
         edtShareFeeling = findViewById(R.id.edtShareFeeling);
     }
 
+    private void initData() {
+        communityRepository = new CommunityRepository();
+
+        if (btnSubmitAnonymous != null) {
+            defaultSubmitText = btnSubmitAnonymous.getText().toString();
+        }
+    }
+
     private void prepareSheetIntro() {
         if (layoutShareFeelingSheet != null) {
             layoutShareFeelingSheet.setTranslationY(1400f);
@@ -89,12 +105,18 @@ public class ShareFeelingActivity extends AppCompatActivity {
 
     private void setupActions() {
         if (btnSubmitAnonymous != null) {
-            btnSubmitAnonymous.setOnClickListener(v -> submitAnonymousPost());
+            btnSubmitAnonymous.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                submitAnonymousPost();
+            });
         }
 
         View root = findViewById(R.id.shareFeelingRoot);
         if (root != null) {
-            root.setOnClickListener(v -> finish());
+            root.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                finish();
+            });
         }
 
         if (layoutShareFeelingSheet != null) {
@@ -106,22 +128,40 @@ public class ShareFeelingActivity extends AppCompatActivity {
 
     private void setupMoodSelection() {
         if (cardMoodHappy != null) {
-            cardMoodHappy.setOnClickListener(v -> setActiveMood("happy"));
+            cardMoodHappy.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                setActiveMood("happy");
+            });
         }
         if (cardMoodSad != null) {
-            cardMoodSad.setOnClickListener(v -> setActiveMood("sad"));
+            cardMoodSad.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                setActiveMood("sad");
+            });
         }
         if (cardMoodStress != null) {
-            cardMoodStress.setOnClickListener(v -> setActiveMood("stress"));
+            cardMoodStress.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                setActiveMood("stress");
+            });
         }
         if (cardMoodFear != null) {
-            cardMoodFear.setOnClickListener(v -> setActiveMood("fear"));
+            cardMoodFear.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                setActiveMood("fear");
+            });
         }
         if (cardMoodDisgust != null) {
-            cardMoodDisgust.setOnClickListener(v -> setActiveMood("disgust"));
+            cardMoodDisgust.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                setActiveMood("disgust");
+            });
         }
         if (cardMoodAngry != null) {
-            cardMoodAngry.setOnClickListener(v -> setActiveMood("angry"));
+            cardMoodAngry.setOnClickListener(v -> {
+                if (isSubmitting) return;
+                setActiveMood("angry");
+            });
         }
 
         setActiveMood("happy");
@@ -151,6 +191,7 @@ public class ShareFeelingActivity extends AppCompatActivity {
                 setMoodActive(cardMoodAngry, txtMoodAngry, R.drawable.bg_share_mood_angry_active, 0xFFE49797);
                 break;
         }
+
         updateSubmitButtonState();
     }
 
@@ -203,6 +244,13 @@ public class ShareFeelingActivity extends AppCompatActivity {
     private void updateSubmitButtonState() {
         if (btnSubmitAnonymous == null) return;
 
+        if (isSubmitting) {
+            btnSubmitAnonymous.setEnabled(false);
+            btnSubmitAnonymous.setAlpha(1f);
+            btnSubmitAnonymous.setText("Đang đăng...");
+            return;
+        }
+
         boolean hasMood = selectedMood != null && !selectedMood.isEmpty();
         boolean hasContent = edtShareFeeling != null
                 && edtShareFeeling.getText() != null
@@ -211,6 +259,7 @@ public class ShareFeelingActivity extends AppCompatActivity {
         boolean isEnabled = hasMood && hasContent;
 
         btnSubmitAnonymous.setEnabled(isEnabled);
+        btnSubmitAnonymous.setText(defaultSubmitText);
 
         if (isEnabled) {
             btnSubmitAnonymous.setBackgroundResource(R.drawable.bg_share_feeling_submit_active);
@@ -223,6 +272,20 @@ public class ShareFeelingActivity extends AppCompatActivity {
         }
     }
 
+    private void setSubmittingState(boolean submitting) {
+        isSubmitting = submitting;
+
+        if (edtShareFeeling != null) {
+            edtShareFeeling.setEnabled(!submitting);
+        }
+
+        if (btnSubmitAnonymous != null) {
+            btnSubmitAnonymous.setEnabled(!submitting);
+        }
+
+        updateSubmitButtonState();
+    }
+
     private void submitAnonymousPost() {
         if (edtShareFeeling == null) return;
 
@@ -232,13 +295,68 @@ public class ShareFeelingActivity extends AppCompatActivity {
             return;
         }
 
-        Intent intent = new Intent(ShareFeelingActivity.this, CommunityActivity.class);
-        intent.putExtra("new_post_content", content);
-        intent.putExtra("new_post_mood", selectedMood);
-        intent.putExtra("from_share_feeling", true);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intent);
-        overridePendingTransition(0, 0);
-        finish();
+        if (selectedMood == null || selectedMood.trim().isEmpty()) {
+            Toast.makeText(this, "Hãy chọn cảm xúc trước khi đăng", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        setSubmittingState(true);
+
+        communityRepository.createCommunityPost(
+                content,
+                selectedMood,
+                getMoodEmoji(selectedMood),
+                true,
+                new CommunityRepository.CreatePostListener() {
+                    @Override
+                    public void onSuccess(@NonNull String postId) {
+                        setSubmittingState(false);
+
+                        Toast.makeText(
+                                ShareFeelingActivity.this,
+                                "Đăng chia sẻ thành công",
+                                Toast.LENGTH_SHORT
+                        ).show();
+
+                        Intent intent = new Intent(ShareFeelingActivity.this, CommunityActivity.class);
+                        intent.putExtra("refresh_community_feed", true);
+                        intent.putExtra("created_post_id", postId);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                        overridePendingTransition(0, 0);
+                        finish();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        setSubmittingState(false);
+
+                        Toast.makeText(
+                                ShareFeelingActivity.this,
+                                errorMessage,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
+        );
+    }
+
+    private String getMoodEmoji(String moodTag) {
+        switch (moodTag) {
+            case "happy":
+                return "😊";
+            case "sad":
+                return "🥲";
+            case "stress":
+                return "😮‍💨";
+            case "fear":
+                return "😟";
+            case "disgust":
+                return "😣";
+            case "angry":
+                return "😤";
+            default:
+                return "😌";
+        }
     }
 }

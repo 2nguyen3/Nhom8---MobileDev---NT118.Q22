@@ -5,7 +5,9 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
     android:background="@drawable/bg_post_card_white"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:clickable="true"
+    android:focusable="true">
 
     <View
         android:id="@+id/viewPostAccent"
@@ -16,6 +18,7 @@
         android:background="@drawable/bg_post_accent_purple" />
 
     <LinearLayout
+        android:id="@+id/layoutPostCardContent"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -100,6 +103,7 @@
             </LinearLayout>
 
             <ImageButton
+                android:id="@+id/btnPostReport"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:background="@drawable/bg_report_btn"
@@ -127,6 +131,7 @@
             android:background="@drawable/bg_post_divider" />
 
         <LinearLayout
+            android:id="@+id/layoutPostActions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="11dp"
@@ -134,9 +139,12 @@
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/btnPostHugAction"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_action_btn"
+                android:clickable="true"
+                android:focusable="true"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="14dp"
@@ -162,10 +170,13 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/btnPostCommentAction"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/bg_action_btn"
+                android:clickable="true"
+                android:focusable="true"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="14dp"
@@ -191,10 +202,13 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/btnPostEmpathyAction"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/bg_empathy_btn"
+                android:clickable="true"
+                android:focusable="true"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="12dp"
@@ -209,10 +223,11 @@
                     android:src="@drawable/ic_empathy_star" />
 
                 <TextView
+                    android:id="@+id/txtPostEmpathyLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
-                    android:text="Đồng cảm"
+                    android:text="Đồng cảm 0"
                     android:textColor="#4BBDAD"
                     android:textSize="11sp"
                     android:textStyle="bold" />
