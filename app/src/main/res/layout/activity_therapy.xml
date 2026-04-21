@@ -250,7 +250,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Nhạc trị liệu · 5–30 phút"
+                                    android:text="Nhạc thư giãn - giải trí · 5–30 phút"
                                     android:textColor="#D85A8F"
                                     android:textSize="11sp" />
 
