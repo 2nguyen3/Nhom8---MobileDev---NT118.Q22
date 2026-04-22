@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="20dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header: Luôn hiển thị -->
+        <RelativeLayout
+            android:id="@+id/layoutHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgDoctorAvatar"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_avatar_placeholder"
+                app:shapeAppearanceOverlay="@style/CircleAppearance" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="12dp"
+                android:layout_toEndOf="@id/imgDoctorAvatar"
+                android:layout_toStartOf="@+id/layoutPriceStatus"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtDoctorName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="TS. Nguyễn Minh Anh"
+                    android:textColor="#2D1B47"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="#8E8E93" />
+
+                    <TextView
+                        android:id="@+id/txtBookingDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="Thứ 6, 07/03/2026"
+                        android:textColor="#8E8E93"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutPriceStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:gravity="end"
+                android:orientation="vertical"
+                android:layout_marginEnd="24dp">
+
+                <TextView
+                    android:id="@+id/txtPriceHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="350.000đ"
+                    android:textColor="#2D1B47"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtStatusBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_tag_teal"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="Trạng thái"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/imgChevron"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_chevron_down"
+                app:tint="#D1D1D6" />
+        </RelativeLayout>
+
+        <!-- Expandable Detail Section: Mặc định ẩn -->
+        <LinearLayout
+            android:id="@+id/layoutDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="16dp"
+                android:background="#F2F2F7" />
+
+            <!-- Thông tin chi tiết -->
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
+                <ImageView android:id="@+id/icTrans" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_copy" app:tint="#A294F9" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icTrans" android:text="Mã hóa đơn" android:textColor="#8E8E93" android:textSize="12sp" />
+                <TextView android:id="@+id/txtTransactionId" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="INV-0000" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            </RelativeLayout>
+
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
+                <ImageView android:id="@+id/icTime" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_timer" app:tint="#6EDCD9" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icTime" android:text="Thời lượng" android:textColor="#8E8E93" android:textSize="12sp" />
+                <TextView android:id="@+id/txtDuration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="30 phút" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            </RelativeLayout>
+
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
+                <ImageView android:id="@+id/icType" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_phone" app:tint="#FF8B94" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icType" android:text="Hình thức" android:textColor="#8E8E93" android:textSize="12sp" />
+                <TextView android:id="@+id/txtFormat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Gọi Video" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            </RelativeLayout>
+
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
+                <ImageView android:id="@+id/icMethod" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_wallet" app:tint="#6EDCD9" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icMethod" android:text="Thanh toán" android:textColor="#8E8E93" android:textSize="12sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Cổng thanh toán VNPAY" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            </RelativeLayout>
+
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
+                <ImageView android:id="@+id/icTotal" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_wallet" app:tint="#8E8E93" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icTotal" android:text="Tổng tiền" android:textColor="#8E8E93" android:textSize="12sp" />
+                <TextView android:id="@+id/txtTotalPrice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="0đ" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            </RelativeLayout>
+
+            <!-- Khối Đánh giá / Phản hồi -->
+            <LinearLayout
+                android:id="@+id/layoutFeedbackContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtUserComment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="&quot;Nhận xét của bạn.&quot;"
+                    android:textColor="#2D1B47"
+                    android:textSize="13sp"
+                    android:textStyle="italic" />
+
+                <RatingBar
+                    android:id="@+id/ratingBar"
+                    style="@style/Widget.AppCompat.RatingBar.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:numStars="5"
+                    android:progressTint="#FBCB0A"
+                    android:rating="5" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnReviewChat"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_button_white"
+                    android:paddingHorizontal="16dp"
+                    android:text="Xem lại cuộc trò chuyện"
+                    android:textAllCaps="false"
+                    android:textColor="#2D1B47"
+                    android:textSize="13sp"
+                    app:drawableEndCompat="@drawable/ic_external_link" />
+            </LinearLayout>
+
+            <!-- Thông báo Hủy -->
+            <TextView
+                android:id="@+id/txtCancelMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&quot;Bạn đã hủy phiên này.&quot;"
+                android:textColor="#8E8E93"
+                android:textSize="13sp"
+                android:textStyle="italic"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
