@@ -40,14 +40,10 @@ public class BookingStep3Fragment extends Fragment {
             BookingModel booking = activity.getBookingModel();
             
             if (booking != null) {
-                // Lấy sessionId thực tế được trả về từ Firestore sau khi lưu thành công
-                String sessionId = activity.getLastSessionId();
-                if (sessionId != null && !sessionId.isEmpty()) {
-                    // Lấy 8 ký tự cuối của Document ID và viết hoa để tạo mã giao dịch đẹp
-                    String displayId = sessionId.length() > 8 
-                        ? sessionId.substring(sessionId.length() - 8).toUpperCase() 
-                        : sessionId.toUpperCase();
-                    txtTransactionId.setText("#HEAMI-" + displayId);
+                // Lấy Transaction ID thực tế được trả về từ cổng thanh toán và lưu trong Firestore
+                String transactionId = activity.getLastTransactionId();
+                if (transactionId != null && !transactionId.isEmpty()) {
+                    txtTransactionId.setText(transactionId);
                 } else {
                     txtTransactionId.setText("#HEAMI-SUCCESS");
                 }

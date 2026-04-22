@@ -28,7 +28,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class BookingFlowActivity extends AppCompatActivity {
 
@@ -40,6 +42,7 @@ public class BookingFlowActivity extends AppCompatActivity {
     private BookingModel bookingModel;
     private FirebaseFirestore db;
     private String lastSessionId; // ID này sẽ được dùng để hiển thị ở Step 3
+    private String lastTransactionId; // ID giao dịch để hiển thị ở Step 3
     private String vnp_TransactionNo = "";
 
     // Stepper Views
@@ -68,6 +71,10 @@ public class BookingFlowActivity extends AppCompatActivity {
 
     public String getLastSessionId() {
         return lastSessionId;
+    }
+
+    public String getLastTransactionId() {
+        return lastTransactionId;
     }
 
     private void initViews() {
@@ -192,7 +199,11 @@ public class BookingFlowActivity extends AppCompatActivity {
         consultation.setStatus("BOOKED");
         consultation.setBookedAt(Timestamp.now());
         consultation.setNote(bookingModel.getNote());
-        consultation.setTransactionId(vnp_TransactionNo != null ? vnp_TransactionNo : "VNP_" + System.currentTimeMillis());
+        
+        final String gatewayId = vnp_TransactionNo != null && !vnp_TransactionNo.isEmpty() 
+                ? vnp_TransactionNo 
+                : "VNP_" + System.currentTimeMillis();
+        consultation.setTransactionId(gatewayId);
 
         try {
             String priceStr = bookingModel.getPrice().replaceAll("[^\\d]", "");
@@ -225,7 +236,25 @@ public class BookingFlowActivity extends AppCompatActivity {
                     String docId = documentReference.getId();
                     lastSessionId = docId; // Gán ID thực tế từ DB
                     db.collection("consultations").document(docId).update("sessionId", docId);
-                    updateStepUI(3);
+                    
+                    // Lưu Transaction
+                    lastTransactionId = gatewayId;
+                    Map<String, Object> transactionData = new HashMap<>();
+                    transactionData.put("session_id", docId);
+                    transactionData.put("amount", consultation.getPrice());
+                    transactionData.put("status", "SUCCESS");
+                    transactionData.put("user_id", userId);
+                    transactionData.put("doctor_id", consultation.getDoctorId());
+                    transactionData.put("created_at", Timestamp.now());
+                    transactionData.put("gateway_transaction_id", gatewayId);
+                    
+                    db.collection("transactions").document(gatewayId).set(transactionData)
+                        .addOnSuccessListener(aVoid -> {
+                            updateStepUI(3);
+                        })
+                        .addOnFailureListener(e -> {
+                            updateStepUI(3);
+                        });
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Lỗi khi lưu lịch hẹn: " + e.getMessage(), Toast.LENGTH_SHORT).show();

@@ -27,6 +27,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.heami.R;
 import com.example.heami.data.models.UserSettingsModel;
 import com.example.heami.ui.auth.LoginActivity;
+import com.example.heami.ui.consultation.ConsultationsActivity;
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
@@ -427,7 +428,7 @@ public class ProfileActivity extends AppCompatActivity {
             findViewById(R.id.btnViewAnalysis).setOnClickListener(v -> startActivity(new Intent(this, StatsActivity.class)));
 
         if (findViewById(R.id.btnViewHistory) != null)
-            findViewById(R.id.btnViewHistory).setOnClickListener(v -> Toast.makeText(this, "Lịch sử đang được xử lý", Toast.LENGTH_SHORT).show());
+            findViewById(R.id.btnViewHistory).setOnClickListener(v -> startActivity(new Intent(this, ConsultationsActivity.class)));
 
         if (findViewById(R.id.layoutPrivacy2) != null)
             findViewById(R.id.layoutPrivacy2).setOnClickListener(v -> Toast.makeText(this, "Xem chính sách bảo mật", Toast.LENGTH_SHORT).show());
