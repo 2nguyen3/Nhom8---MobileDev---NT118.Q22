@@ -51,7 +51,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CÁ NHÂN • TƯ VẤN"
+                android:text="TƯ VẤN • HÓA ĐƠN"
                 android:textColor="#E8507A"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -61,7 +61,7 @@
                 android:id="@+id/txtTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Lịch sử tư vấn"
+                android:text="Nhật kí tư vấn"
                 android:textColor="#2D1B47"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -114,46 +114,15 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textColor="#2D1B47"
-                            android:textSize="22sp"
+                            android:textSize="20sp"
                             android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end"
                             android:layout_marginTop="6dp" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Đã xong"
-                            android:textColor="#8E8E93"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="40dp"
-                        android:background="#F0F0F0" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:orientation="vertical">
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/ic_calendar"
-                            app:tint="#6C63FF" />
-                        <TextView
-                            android:id="@+id/txtStatUpcoming"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#2D1B47"
-                            android:textSize="22sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="6dp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sắp tới"
                             android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -178,10 +147,12 @@
                             android:id="@+id/txtStatSpent"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0k"
+                            android:text="0đ"
                             android:textColor="#2D1B47"
-                            android:textSize="22sp"
+                            android:textSize="20sp"
                             android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end"
                             android:layout_marginTop="6dp" />
                         <TextView
                             android:layout_width="wrap_content"
@@ -210,7 +181,6 @@
                     android:padding="4dp"
                     android:background="#FFFFFF">
 
-                    <!-- ACTIVE TAB: Lịch hẹn sắp tới -->
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/tabUpcoming"
                         android:layout_width="0dp"
@@ -246,14 +216,13 @@
                                 android:background="@drawable/bg_tag_pink"
                                 android:backgroundTint="#E8507A"
                                 android:gravity="center"
-                                android:text="2"
+                                android:text="0"
                                 android:textColor="#FFFFFF"
                                 android:textSize="10sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
-                    <!-- INACTIVE TAB: Lịch sử hóa đơn -->
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/tabHistory"
                         android:layout_width="0dp"
@@ -270,16 +239,14 @@
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintEnd_toEndOf="parent">
-
                             <TextView
                                 android:id="@+id/txtTabHistoryLabel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Lịch sử hóa đơn"
+                                android:text="Lịch sử"
                                 android:textColor="#8E8E93"
                                 android:textSize="13sp"
                                 android:textStyle="bold" />
-
                             <TextView
                                 android:id="@+id/txtTabHistoryCount"
                                 android:layout_width="22dp"
@@ -288,13 +255,12 @@
                                 android:background="@drawable/bg_light_gray_circle"
                                 android:backgroundTint="#F5F5F5"
                                 android:gravity="center"
-                                android:text="4"
+                                android:text="0"
                                 android:textColor="#8E8E93"
                                 android:textSize="10sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </androidx.constraintlayout.widget.ConstraintLayout>
-
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 

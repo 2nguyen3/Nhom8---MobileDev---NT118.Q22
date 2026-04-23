@@ -14,7 +14,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header: Luôn hiển thị -->
+        <!-- ── HEADER (luôn hiển thị) ── -->
         <RelativeLayout
             android:id="@+id/layoutHeader"
             android:layout_width="match_parent"
@@ -30,6 +30,7 @@
                 android:src="@drawable/ic_avatar_placeholder"
                 app:shapeAppearanceOverlay="@style/CircleAppearance" />
 
+            <!-- Tên bác sĩ + ngày -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -45,7 +46,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="TS. Nguyễn Minh Anh"
+                    android:text="Bác sĩ"
                     android:textColor="#2D1B47"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -56,39 +57,38 @@
                     android:layout_marginTop="2dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
-
                     <ImageView
                         android:layout_width="12dp"
                         android:layout_height="12dp"
-                        android:src="@drawable/ic_calendar"
-                        app:tint="#8E8E93" />
-
+                        android:src="@drawable/ic_calendar" />
                     <TextView
                         android:id="@+id/txtBookingDate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:text="Thứ 6, 07/03/2026"
+                        android:text="—"
                         android:textColor="#8E8E93"
                         android:textSize="11sp" />
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Giá + Badge trạng thái (bên phải, nhường chỗ cho chevron) -->
             <LinearLayout
                 android:id="@+id/layoutPriceStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:layout_marginEnd="28dp"
                 android:gravity="end"
-                android:orientation="vertical"
-                android:layout_marginEnd="24dp">
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/txtPriceHeader"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="350.000đ"
+                    android:maxLines="1"
+                    android:text="0đ"
                     android:textColor="#2D1B47"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -106,108 +106,275 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Mũi tên expand/collapse -->
             <ImageView
                 android:id="@+id/imgChevron"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:src="@drawable/ic_chevron_down"
-                app:tint="#D1D1D6" />
+                android:src="@drawable/ic_chevron_down" />
         </RelativeLayout>
 
-        <!-- Expandable Detail Section: Mặc định ẩn -->
+        <!-- ── CHI TIẾT (mở rộng khi nhấn vào) ── -->
         <LinearLayout
             android:id="@+id/layoutDetail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="14dp"
             android:orientation="vertical"
             android:visibility="gone">
 
+            <!-- Đường kẻ phân cách -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="14dp"
                 android:background="#F2F2F7" />
 
-            <!-- Thông tin chi tiết -->
-            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
-                <ImageView android:id="@+id/icTrans" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_copy" app:tint="#A294F9" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icTrans" android:text="Mã hóa đơn" android:textColor="#8E8E93" android:textSize="12sp" />
-                <TextView android:id="@+id/txtTransactionId" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="INV-0000" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            <!-- Mã hóa đơn -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/icTrans"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_copy"
+                    app:tint="#A294F9" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="8dp"
+                    android:layout_toEndOf="@id/icTrans"
+                    android:text="Mã hóa đơn"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtTransactionId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="—"
+                    android:textColor="#2D1B47"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </RelativeLayout>
 
-            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
-                <ImageView android:id="@+id/icTime" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_timer" app:tint="#6EDCD9" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icTime" android:text="Thời lượng" android:textColor="#8E8E93" android:textSize="12sp" />
-                <TextView android:id="@+id/txtDuration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="30 phút" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            <!-- Thời lượng -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/icTime"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_timer"
+                    app:tint="#A294F9" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="8dp"
+                    android:layout_toEndOf="@id/icTime"
+                    android:text="Thời lượng"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="—"
+                    android:textColor="#2D1B47"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </RelativeLayout>
 
-            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
-                <ImageView android:id="@+id/icType" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_phone" app:tint="#FF8B94" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icType" android:text="Hình thức" android:textColor="#8E8E93" android:textSize="12sp" />
-                <TextView android:id="@+id/txtFormat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Gọi Video" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            <!-- Hình thức -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/icType"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_phone"
+                    app:tint="#A294F9" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="8dp"
+                    android:layout_toEndOf="@id/icType"
+                    android:text="Hình thức"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtFormat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="—"
+                    android:textColor="#2D1B47"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </RelativeLayout>
 
-            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp">
-                <ImageView android:id="@+id/icMethod" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_wallet" app:tint="#6EDCD9" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icMethod" android:text="Thanh toán" android:textColor="#8E8E93" android:textSize="12sp" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Cổng thanh toán VNPAY" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            <!-- Thanh toán -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/icMethod"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_wallet"
+                    app:tint="#A294F9" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="8dp"
+                    android:layout_toEndOf="@id/icMethod"
+                    android:text="Thanh toán"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+                <!-- ID mới để adapter set giá trị động -->
+                <TextView
+                    android:id="@+id/txtPaymentMethod"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="VNPAY"
+                    android:textColor="#2D1B47"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </RelativeLayout>
 
-            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
-                <ImageView android:id="@+id/icTotal" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_wallet" app:tint="#8E8E93" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_toEndOf="@id/icTotal" android:text="Tổng tiền" android:textColor="#8E8E93" android:textSize="12sp" />
-                <TextView android:id="@+id/txtTotalPrice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="0đ" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+            <!-- Tổng tiền -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/icTotal"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_wallet"
+                    app:tint="#00BFA5" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="8dp"
+                    android:layout_toEndOf="@id/icTotal"
+                    android:text="Tổng tiền"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtTotalPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="0đ"
+                    android:textColor="#00BFA5"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- Khối Đánh giá / Phản hồi -->
+            <!-- Package Badge (✦ Tên gói · Hình thức) -->
+            <TextView
+                android:id="@+id/txtPackageBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_light_teal_circle"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="8dp"
+                android:text="✦ Gói tư vấn"
+                android:textColor="#4A9292"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- ── NỘI DUNG FEEDBACK (chỉ hiện khi COMPLETED) ── -->
             <LinearLayout
                 android:id="@+id/layoutFeedbackContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
+                <!-- Bình luận của user -->
                 <TextView
                     android:id="@+id/txtUserComment"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="&quot;Nhận xét của bạn.&quot;"
+                    android:layout_marginBottom="8dp"
                     android:textColor="#2D1B47"
                     android:textSize="13sp"
                     android:textStyle="italic" />
 
-                <RatingBar
-                    android:id="@+id/ratingBar"
-                    style="@style/Widget.AppCompat.RatingBar.Small"
-                    android:layout_width="wrap_content"
+                <!-- Rating -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:numStars="5"
-                    android:progressTint="#FBCB0A"
-                    android:rating="5" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <androidx.appcompat.widget.AppCompatRatingBar
+                        android:id="@+id/ratingBar"
+                        style="?android:attr/ratingBarStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:numStars="5"
+                        android:rating="5" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Đánh giá của bạn"
+                        android:textColor="#8E8E93"
+                        android:textSize="11sp" />
+                </LinearLayout>
 
+                <!-- Xem lại cuộc trò chuyện -->
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnReviewChat"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_button_white"
-                    android:paddingHorizontal="16dp"
-                    android:text="Xem lại cuộc trò chuyện"
+                    android:text="📄  Xem lại cuộc trò chuyện  ↗"
                     android:textAllCaps="false"
                     android:textColor="#2D1B47"
-                    android:textSize="13sp"
-                    app:drawableEndCompat="@drawable/ic_external_link" />
+                    android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- Thông báo Hủy -->
+            <!-- Lý do hủy (chỉ hiện khi CANCELED) -->
             <TextView
                 android:id="@+id/txtCancelMessage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&quot;Bạn đã hủy phiên này.&quot;"
+                android:layout_marginTop="4dp"
                 android:textColor="#8E8E93"
                 android:textSize="13sp"
                 android:textStyle="italic"

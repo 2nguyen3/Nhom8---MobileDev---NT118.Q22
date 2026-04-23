@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="20dp"
@@ -14,7 +15,6 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- Header: Avatar + Info + Badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -42,32 +42,49 @@
                     android:id="@+id/txtDoctorName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="ThS. Trần Thị Lan"
                     android:textColor="#2D1B47"
                     android:textSize="17sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    tools:text="Tên bác sĩ" />
 
                 <TextView
                     android:id="@+id/txtDoctorTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Chuyên gia Trị liệu Nhận thức"
                     android:textColor="#8E8E93"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    tools:text="Chuyên gia tư vấn" />
 
-                <TextView
-                    android:id="@+id/txtStatusBadge"
+                <LinearLayout
+                    android:id="@+id/badgeDoctorOnline"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_tag_pink"
-                    android:backgroundTint="#FFF0F5"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="4dp"
-                    android:text="● Sắp diễn ra"
-                    android:textColor="#E8507A"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+                    android:background="@drawable/bg_doctor_available_badge"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="4dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <View
+                        android:layout_width="6dp"
+                        android:layout_height="6dp"
+                        android:background="@drawable/bg_doctor_available_dot" />
+
+                    <TextView
+                        android:id="@+id/txtDoctorOnlineStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="Đang Online"
+                        android:textColor="#4CAF50"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
@@ -85,12 +102,12 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_vertical">
-                    <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_calendar" app:tint="#A294F9" />
-                    <TextView android:id="@+id/txtDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="Thứ 2, 10/03/2026" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+                    <androidx.appcompat.widget.AppCompatImageView android:layout_width="14dp" android:layout_height="14dp" app:srcCompat="@drawable/ic_calendar" app:tint="#A294F9" />
+                    <TextView android:id="@+id/txtDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" tools:text="Thứ 2, 10/03" />
                 </LinearLayout>
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_vertical">
-                    <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_clock" app:tint="#A294F9" />
-                    <TextView android:id="@+id/txtTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="15:00 - 7 ngày" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" />
+                    <androidx.appcompat.widget.AppCompatImageView android:layout_width="14dp" android:layout_height="14dp" app:srcCompat="@drawable/ic_timer" app:tint="#A294F9" />
+                    <TextView android:id="@+id/txtTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#2D1B47" android:textSize="12sp" android:textStyle="bold" tools:text="15:00 - 30p" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -100,12 +117,12 @@
                 android:layout_marginTop="10dp"
                 android:orientation="horizontal">
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_vertical">
-                    <ImageView android:id="@+id/imgFormatIcon" android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_doctor_chat" app:tint="#6EDCD9" />
-                    <TextView android:id="@+id/txtFormat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="Chat" android:textColor="#6EDCD9" android:textSize="12sp" android:textStyle="bold" />
+                    <androidx.appcompat.widget.AppCompatImageView android:id="@+id/imgFormatIcon" android:layout_width="14dp" android:layout_height="14dp" app:srcCompat="@drawable/ic_doctor_chat" app:tint="#6EDCD9" />
+                    <TextView android:id="@+id/txtFormat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#6EDCD9" android:textSize="12sp" android:textStyle="bold" tools:text="Chat" />
                 </LinearLayout>
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_vertical">
-                    <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/ic_sparkle" app:tint="#FBCB0A" />
-                    <TextView android:id="@+id/txtPackage" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="Gói 7 ngày" android:textColor="#FBCB0A" android:textSize="12sp" android:textStyle="bold" />
+                    <androidx.appcompat.widget.AppCompatImageView android:layout_width="14dp" android:layout_height="14dp" app:srcCompat="@drawable/ic_sparkle" app:tint="#FBCB0A" />
+                    <TextView android:id="@+id/txtPackage" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textColor="#FBCB0A" android:textSize="12sp" android:textStyle="bold" tools:text="Gói tiêu chuẩn" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -116,10 +133,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:gravity="center"
-            android:text="&quot;Phiên tư vấn sẽ bắt đầu lúc 15:00 hôm nay.&quot;"
             android:textColor="#8E8E93"
             android:textSize="12sp"
-            android:textStyle="italic" />
+            android:textStyle="italic"
+            tools:text="&quot;Phiên tư vấn sẽ bắt đầu đúng giờ.&quot;" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnJoin"
@@ -131,8 +148,7 @@
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
-            android:textStyle="bold"
-            app:cornerRadius="26dp" />
+            android:textStyle="bold" />
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -40,8 +40,11 @@ public class ConsultationModel implements Serializable {
     private Map<String, Object> userFeedback;
     @PropertyName("canceled_by")
     private String canceledBy;
+    @PropertyName("is_online")
+    private boolean isOnline;
     
     private boolean isExpanded;
+    private boolean doctorOnline;
 
     public ConsultationModel() { }
 
@@ -130,6 +133,14 @@ public class ConsultationModel implements Serializable {
     @PropertyName("canceled_by")
     public void setCanceledBy(String canceledBy) { this.canceledBy = canceledBy; }
 
+    @PropertyName("is_online")
+    public boolean isOnline() { return isOnline; }
+    @PropertyName("is_online")
+    public void setOnline(boolean online) { isOnline = online; }
+
     public boolean isExpanded() { return isExpanded; }
     public void setExpanded(boolean expanded) { isExpanded = expanded; }
+
+    public boolean isDoctorOnline() { return doctorOnline; }
+    public void setDoctorOnline(boolean doctorOnline) { this.doctorOnline = doctorOnline; }
 }

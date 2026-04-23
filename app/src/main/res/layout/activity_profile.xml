@@ -329,7 +329,7 @@
                         android:layout_height="56dp"
                         android:layout_marginTop="12dp"
                         android:fontFamily="@font/quicksand_bold"
-                        android:text="Lịch sử tư vấn &amp; giao dịch  ›"
+                        android:text="Nhật kí tư vấn &amp; giao dịch  ›"
                         android:textAllCaps="false"
                         android:textColor="#E86FA0"
                         app:backgroundTint="#FEE4F0"
