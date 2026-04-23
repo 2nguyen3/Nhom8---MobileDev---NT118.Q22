@@ -14,7 +14,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- ── HEADER (luôn hiển thị) ── -->
         <RelativeLayout
             android:id="@+id/layoutHeader"
             android:layout_width="match_parent"
@@ -30,14 +29,14 @@
                 android:src="@drawable/ic_avatar_placeholder"
                 app:shapeAppearanceOverlay="@style/CircleAppearance" />
 
-            <!-- Tên bác sĩ + ngày -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:id="@+id/layoutTextContainer"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_marginStart="12dp"
                 android:layout_toEndOf="@id/imgDoctorAvatar"
-                android:layout_toStartOf="@+id/layoutPriceStatus"
+                android:layout_toStartOf="@id/imgChevron"
                 android:orientation="vertical">
 
                 <TextView
@@ -70,34 +69,12 @@
                         android:textColor="#8E8E93"
                         android:textSize="11sp" />
                 </LinearLayout>
-            </LinearLayout>
-
-            <!-- Giá + Badge trạng thái (bên phải, nhường chỗ cho chevron) -->
-            <LinearLayout
-                android:id="@+id/layoutPriceStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="28dp"
-                android:gravity="end"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/txtPriceHeader"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxLines="1"
-                    android:text="0đ"
-                    android:textColor="#2D1B47"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/txtStatusBadge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:background="@drawable/bg_tag_teal"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="2dp"
@@ -106,17 +83,16 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Mũi tên expand/collapse -->
             <ImageView
                 android:id="@+id/imgChevron"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:src="@drawable/ic_chevron_down" />
+                android:src="@drawable/ic_chevron_down"
+                app:tint="#2D1B47" />
         </RelativeLayout>
 
-        <!-- ── CHI TIẾT (mở rộng khi nhấn vào) ── -->
         <LinearLayout
             android:id="@+id/layoutDetail"
             android:layout_width="match_parent"
@@ -125,14 +101,12 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- Đường kẻ phân cách -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginBottom="14dp"
                 android:background="#F2F2F7" />
 
-            <!-- Mã hóa đơn -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -167,7 +141,6 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- Thời lượng -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -200,7 +173,6 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- Hình thức -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -233,7 +205,6 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- Thanh toán -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -254,7 +225,6 @@
                     android:text="Thanh toán"
                     android:textColor="#8E8E93"
                     android:textSize="12sp" />
-                <!-- ID mới để adapter set giá trị động -->
                 <TextView
                     android:id="@+id/txtPaymentMethod"
                     android:layout_width="wrap_content"
@@ -267,7 +237,6 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- Tổng tiền -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -300,7 +269,6 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- Package Badge (✦ Tên gói · Hình thức) -->
             <TextView
                 android:id="@+id/txtPackageBadge"
                 android:layout_width="wrap_content"
@@ -315,7 +283,6 @@
                 android:textStyle="bold"
                 android:visibility="gone" />
 
-            <!-- ── NỘI DUNG FEEDBACK (chỉ hiện khi COMPLETED) ── -->
             <LinearLayout
                 android:id="@+id/layoutFeedbackContent"
                 android:layout_width="match_parent"
@@ -323,7 +290,6 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- Bình luận của user -->
                 <TextView
                     android:id="@+id/txtUserComment"
                     android:layout_width="match_parent"
@@ -333,7 +299,6 @@
                     android:textSize="13sp"
                     android:textStyle="italic" />
 
-                <!-- Rating -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -356,7 +321,6 @@
                         android:textSize="11sp" />
                 </LinearLayout>
 
-                <!-- Xem lại cuộc trò chuyện -->
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnReviewChat"
                     android:layout_width="match_parent"
@@ -369,7 +333,6 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- Lý do hủy (chỉ hiện khi CANCELED) -->
             <TextView
                 android:id="@+id/txtCancelMessage"
                 android:layout_width="match_parent"

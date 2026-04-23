@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.content.Intent;
 import android.view.View;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -108,7 +109,12 @@ public class BookingFlowActivity extends AppCompatActivity {
         }
 
         if (btnComplete != null) {
-            btnComplete.setOnClickListener(v -> finish());
+            btnComplete.setOnClickListener(v -> {
+                Intent intent = new Intent(this, ConsultationsActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                finish();
+            });
         }
     }
 

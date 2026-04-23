@@ -431,13 +431,38 @@ public class ProfileActivity extends AppCompatActivity {
             findViewById(R.id.btnViewHistory).setOnClickListener(v -> startActivity(new Intent(this, ConsultationsActivity.class)));
 
         if (findViewById(R.id.layoutPrivacy2) != null)
-            findViewById(R.id.layoutPrivacy2).setOnClickListener(v -> Toast.makeText(this, "Xem chính sách bảo mật", Toast.LENGTH_SHORT).show());
+            findViewById(R.id.layoutPrivacy2).setOnClickListener(v -> showPrivacyPolicyDialog());
 
         if (findViewById(R.id.cardSOS) != null)
             findViewById(R.id.cardSOS).setOnClickListener(v -> startActivity(new Intent(this, SosActivity.class)));
 
         if (findViewById(R.id.layoutLogout) != null)
             findViewById(R.id.layoutLogout).setOnClickListener(v -> showLogoutDialog());
+    }
+
+    private void showPrivacyPolicyDialog() {
+        android.app.Dialog dialog = new android.app.Dialog(this, R.style.HeamiDialogTheme);
+        dialog.setContentView(R.layout.dialog_privacy_policy);
+
+        if (dialog.getWindow() != null) {
+            android.view.WindowManager.LayoutParams lp = new android.view.WindowManager.LayoutParams();
+            lp.copyFrom(dialog.getWindow().getAttributes());
+            lp.width = android.view.WindowManager.LayoutParams.MATCH_PARENT;
+            lp.height = android.view.WindowManager.LayoutParams.WRAP_CONTENT;
+            lp.gravity = android.view.Gravity.CENTER;
+            dialog.getWindow().setAttributes(lp);
+        }
+
+        com.google.android.material.button.MaterialButton btnOkay = dialog.findViewById(R.id.btnOkayPrivacy);
+
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+        if (btnOkay != null) {
+            btnOkay.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
     }
 
     private void showEditProfileDialog() {

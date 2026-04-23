@@ -8,6 +8,9 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
+import android.transition.TransitionSet;
+import android.transition.Fade;
+import android.transition.ChangeBounds;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -115,8 +118,6 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 .error(R.drawable.ic_avatar_placeholder)
                 .into(holder.imgDoctorAvatar);
 
-        // ── Giá tiền trên header (dạng gọn) ──
-        holder.txtPriceHeader.setText(formatMoney(model.getPrice()));
 
         // ── Ngày đặt lịch ──
         if (model.getStartTime() != null) {
@@ -226,13 +227,19 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         holder.imgChevron.setRotation(expanded ? 180f : 0f);
 
         holder.itemView.setOnClickListener(v -> {
-            model.setExpanded(!model.isExpanded());
+            boolean nextExpanded = !model.isExpanded();
+            model.setExpanded(nextExpanded);
             if (holder.itemView.getParent() instanceof ViewGroup) {
-                TransitionManager.beginDelayedTransition(
-                        (ViewGroup) holder.itemView.getParent(), new AutoTransition());
+                TransitionSet set = new TransitionSet()
+                        .setOrdering(TransitionSet.ORDERING_TOGETHER)
+                        .addTransition(new Fade(Fade.OUT))
+                        .addTransition(new ChangeBounds())
+                        .addTransition(new Fade(Fade.IN))
+                        .setDuration(250);
+                TransitionManager.beginDelayedTransition((ViewGroup) holder.itemView.getParent(), set);
             }
-            int pos = holder.getBindingAdapterPosition();
-            if (pos != RecyclerView.NO_ID) notifyItemChanged(pos);
+            holder.layoutDetail.setVisibility(nextExpanded ? View.VISIBLE : View.GONE);
+            holder.imgChevron.animate().rotation(nextExpanded ? 180f : 0f).setDuration(250).start();
         });
 
         Glide.with(context)
@@ -396,7 +403,7 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public static class HistoryViewHolder extends RecyclerView.ViewHolder {
         ShapeableImageView imgDoctorAvatar;
         ImageView imgChevron;
-        TextView txtDoctorName, txtPriceHeader, txtBookingDate, txtStatusBadge;
+        TextView txtDoctorName, txtBookingDate, txtStatusBadge;
         TextView txtTransactionId, txtDuration, txtFormat, txtPaymentMethod;
         TextView txtTotalPrice, txtUserComment, txtCancelMessage, txtPackageBadge;
         LinearLayout layoutDetail, layoutFeedbackContent;
@@ -407,7 +414,6 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             imgDoctorAvatar       = v.findViewById(R.id.imgDoctorAvatar);
             imgChevron            = v.findViewById(R.id.imgChevron);
             txtDoctorName         = v.findViewById(R.id.txtDoctorName);
-            txtPriceHeader        = v.findViewById(R.id.txtPriceHeader);
             txtBookingDate        = v.findViewById(R.id.txtBookingDate);
             txtStatusBadge        = v.findViewById(R.id.txtStatusBadge);
             txtTransactionId      = v.findViewById(R.id.txtTransactionId);

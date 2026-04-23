@@ -230,7 +230,7 @@
             android:background="@drawable/bg_button_confirm_gradient"
             android:elevation="8dp"
             android:stateListAnimator="@null"
-            android:text="Về trang chủ"
+            android:text="Kiểm tra lịch hẹn"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
             android:textSize="16sp"

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="start"
+        android:padding="24dp">
+
+        <!-- Header (Canh trái rõ ràng bằng gravity và layout_gravity) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:layout_gravity="start"
+            android:fontFamily="@font/quicksand_bold"
+            android:text="Quyền riêng tư &amp; Bảo mật"
+            android:textColor="#313866"
+            android:textSize="18sp"
+            android:gravity="start"
+            android:textAlignment="viewStart" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F5F5F5"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Details Scroll -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="350dp"
+            android:overScrollMode="never"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:orientation="vertical">
+
+                <!-- Quyền 1 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_light_purple_circle"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_lock"
+                        app:tint="#9C27B0" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:gravity="start"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/quicksand_bold"
+                            android:text="Mã hóa đầu cuối (E2EE)"
+                            android:textColor="#313866"
+                            android:textSize="14sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/quicksand_medium"
+                            android:text="Toàn bộ nhật ký cảm xúc, tin nhắn cộng đồng ẩn danh và các phiên tư vấn trực tiếp đều được mã hóa đầu cuối, đảm bảo không ai khác (kể cả Heami) có thể đọc được."
+                            android:textColor="#7D8BB7"
+                            android:textSize="12sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Quyền 2 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_light_teal_circle"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_security"
+                        app:tint="#00BFA5" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:gravity="start"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/quicksand_bold"
+                            android:text="Quyền truy cập thiết bị tối thiểu"
+                            android:textColor="#313866"
+                            android:textSize="14sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/quicksand_medium"
+                            android:text="Heami chỉ yêu cầu các quyền truy cập thực sự cần thiết:\n• Quyền Camera: Để thực hiện cuộc gọi video với bác sĩ và check-in AI nhận diện biểu cảm.\n• Quyền Thông báo: Nhắc nhở các lịch trình chăm sóc bản thân hàng ngày."
+                            android:textColor="#7D8BB7"
+                            android:textSize="12sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Quyền 3 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_light_pink_circle"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_heartbeat"
+                        app:tint="#E86FA0" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:gravity="start"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/quicksand_bold"
+                            android:text="Bảo mật dữ liệu đám mây"
+                            android:textColor="#313866"
+                            android:textSize="14sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/quicksand_medium"
+                            android:text="Thông tin tài khoản và cấu hình của bạn được lưu trữ an toàn trên dịch vụ Google Cloud Firebase bảo mật cao, tuân thủ nghiêm ngặt các quy định bảo vệ dữ liệu cá nhân."
+                            android:textColor="#7D8BB7"
+                            android:textSize="12sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Quyền 4 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_light_yellow_circle"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_help"
+                        app:tint="#FFB300" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:gravity="start"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/quicksand_bold"
+                            android:text="Cam kết không chia sẻ bên thứ ba"
+                            android:textColor="#313866"
+                            android:textSize="14sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/quicksand_medium"
+                            android:text="Heami cam kết tuyệt đối không bao giờ chia sẻ hay bán thông tin định danh, lịch sử sức khỏe tâm lý hay thói quen sử dụng ứng dụng của bạn cho bất kỳ đối tác thương mại hay đơn vị quảng cáo nào."
+                            android:textColor="#7D8BB7"
+                            android:textSize="12sp"
+                            android:gravity="start"
+                            android:textAlignment="viewStart" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Nút đóng ở dưới -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOkayPrivacy"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/quicksand_bold"
+            android:text="Đã hiểu"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#00BFA5"
+            app:cornerRadius="24dp"
+            app:elevation="0dp" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
