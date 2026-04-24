@@ -1,5 +1,7 @@
 package com.example.heami.ui.community;
 
+import com.example.heami.ui.checkin.CheckInAiActivity;
+
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -12,11 +14,18 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.data.repositories.MoodMatchRepository;
+import com.google.firebase.Timestamp;
 
 public class MoodMatchActivity extends AppCompatActivity {
+
+    private static final long ANALYZING_DELAY_MS = 2200L;
+    private static final long POLLING_INTERVAL_MS = 1200L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -27,13 +36,46 @@ public class MoodMatchActivity extends AppCompatActivity {
     private View viewMoodHeroRingOuter;
     private View viewMoodHeroRingInner;
 
+    private View progressMoodSearching;
+    private View progressMoodAnalyzing;
+
+    private TextView txtSearchingTitle;
+    private TextView txtSearchingSubtitle;
+    private TextView txtAnalyzingTitle;
+    private TextView txtAnalyzingSubtitle;
+    private TextView txtSuccessTitle;
+
     private Button btnMoodMatchCTA;
     private TextView txtBackToCommunity;
 
     private View moodMatchRoot;
 
+    private MoodMatchRepository moodMatchRepository;
+
+    private String currentMoodTag = "stress";
+    private String currentRequestId = "";
+    private String currentMatchId = "";
+    private String currentRoomId = "";
+    private String matchedUserId = "";
+    private String matchedUserName = "";
+    private String matchedUserAvatar = "";
+
+    private Timestamp currentExpiresAt = null;
+
+    private boolean isSearchingActive = false;
+    private boolean isMatched = false;
+    private boolean isRetryMode = false;
+
+    private boolean isCheckInRequiredMode = false;
+
     private final Runnable showAnalyzingRunnable = this::showAnalyzingStateAnimated;
-    private final Runnable showSuccessRunnable = this::showSuccessStateAnimated;
+
+    private final Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            pollMoodMatchStatus();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,12 +83,18 @@ public class MoodMatchActivity extends AppCompatActivity {
         setContentView(R.layout.activity_mood_match);
 
         bindViews();
+        initData();
         prepareSheetIntro();
         setupActions();
-        showSearchingStateImmediate();
+        setupBackPressHandler();
         startHeroIconPulse();
         startSheetIntroAnimation();
-        startMoodMatchFlow();
+
+        if (currentMoodTag.isEmpty()) {
+            showCheckInRequiredState();
+        } else {
+            startRealMoodMatchFlow();
+        }
     }
 
     private void bindViews() {
@@ -56,9 +104,24 @@ public class MoodMatchActivity extends AppCompatActivity {
         layoutStateSuccess = findViewById(R.id.layoutStateSuccess);
         viewMoodHeroRingOuter = findViewById(R.id.viewMoodHeroRingOuter);
         viewMoodHeroRingInner = findViewById(R.id.viewMoodHeroRingInner);
+
+        progressMoodSearching = findViewById(R.id.progressMoodSearching);
+        progressMoodAnalyzing = findViewById(R.id.progressMoodAnalyzing);
+
+        txtSearchingTitle = findViewById(R.id.txtSearchingTitle);
+        txtSearchingSubtitle = findViewById(R.id.txtSearchingSubtitle);
+        txtAnalyzingTitle = findViewById(R.id.txtAnalyzingTitle);
+        txtAnalyzingSubtitle = findViewById(R.id.txtAnalyzingSubtitle);
+        txtSuccessTitle = findViewById(R.id.txtSuccessTitle);
+
         btnMoodMatchCTA = findViewById(R.id.btnMoodMatchCTA);
         txtBackToCommunity = findViewById(R.id.txtBackToCommunity);
         moodMatchRoot = findViewById(R.id.moodMatchRoot);
+    }
+
+    private void initData() {
+        moodMatchRepository = new MoodMatchRepository();
+        currentMoodTag = resolveMoodTagFromIntent();
     }
 
     private void prepareSheetIntro() {
@@ -84,23 +147,185 @@ public class MoodMatchActivity extends AppCompatActivity {
             btnMoodMatchCTA.setOnClickListener(v -> {
                 if (!btnMoodMatchCTA.isEnabled()) return;
 
-                Intent intent = new Intent(MoodMatchActivity.this, MoodMatchChatActivity.class);
-                startActivity(intent);
+                if (isCheckInRequiredMode) {
+                    Intent intent = new Intent(MoodMatchActivity.this, CheckInAiActivity.class);
+                    startActivity(intent);
+                    return;
+                }
+
+                if (isMatched && !currentRoomId.isEmpty()) {
+                    openMoodMatchChat();
+                    return;
+                }
+
+                if (isRetryMode) {
+                    startRealMoodMatchFlow();
+                }
             });
         }
 
         if (txtBackToCommunity != null) {
-            txtBackToCommunity.setOnClickListener(v -> finish());
+            txtBackToCommunity.setOnClickListener(v -> handleExitRequested());
         }
 
         if (moodMatchRoot != null) {
-            moodMatchRoot.setOnClickListener(v -> finish());
+            moodMatchRoot.setOnClickListener(v -> handleExitRequested());
         }
     }
 
-    private void startMoodMatchFlow() {
-        handler.postDelayed(showAnalyzingRunnable, 2200);
-        handler.postDelayed(showSuccessRunnable, 4300);
+    private void setupBackPressHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                handleExitRequested();
+            }
+        });
+    }
+
+    private void handleExitRequested() {
+        if (isSearchingActive && !currentRequestId.isEmpty()) {
+            moodMatchRepository.cancelSearchingRequest(currentRequestId, new MoodMatchRepository.SimpleActionListener() {
+                @Override
+                public void onSuccess() {
+                    finish();
+                }
+
+                @Override
+                public void onFailure(@NonNull String errorMessage) {
+                    finish();
+                }
+            });
+            return;
+        }
+
+        finish();
+    }
+
+    private void startRealMoodMatchFlow() {
+        clearScheduledTasks();
+
+        isSearchingActive = false;
+        isMatched = false;
+        isRetryMode = false;
+
+        currentRequestId = "";
+        currentMatchId = "";
+        currentRoomId = "";
+        matchedUserId = "";
+        matchedUserName = "";
+        matchedUserAvatar = "";
+        currentExpiresAt = null;
+
+        showSearchingStateImmediate();
+
+        moodMatchRepository.startMoodMatch(currentMoodTag, new MoodMatchRepository.StartMoodMatchListener() {
+            @Override
+            public void onSearching(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
+                currentRequestId = sessionInfo.getRequestId();
+                currentMatchId = sessionInfo.getMatchId();
+                currentRoomId = sessionInfo.getRoomId();
+                currentExpiresAt = sessionInfo.getExpiresAt();
+
+                isSearchingActive = true;
+                isMatched = false;
+                isRetryMode = false;
+
+                showSearchingStateImmediate();
+                scheduleAnalyzingState();
+                scheduleNextPoll();
+            }
+
+            @Override
+            public void onMatched(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
+                handleMatchedSession(sessionInfo);
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                showFailureState(errorMessage);
+            }
+        });
+    }
+
+    private void scheduleAnalyzingState() {
+        handler.removeCallbacks(showAnalyzingRunnable);
+        handler.postDelayed(showAnalyzingRunnable, ANALYZING_DELAY_MS);
+    }
+
+    private void scheduleNextPoll() {
+        handler.removeCallbacks(pollingRunnable);
+        handler.postDelayed(pollingRunnable, POLLING_INTERVAL_MS);
+    }
+
+    private void pollMoodMatchStatus() {
+        if (!isSearchingActive || currentRequestId.isEmpty()) {
+            return;
+        }
+
+        if (isExpired(currentExpiresAt)) {
+            moodMatchRepository.markRequestTimeout(currentRequestId, new MoodMatchRepository.SimpleActionListener() {
+                @Override
+                public void onSuccess() {
+                    showTimeoutState();
+                }
+
+                @Override
+                public void onFailure(@NonNull String errorMessage) {
+                    showTimeoutState();
+                }
+            });
+            return;
+        }
+
+        moodMatchRepository.checkExistingMatchedRequest(
+                currentRequestId,
+                new MoodMatchRepository.CheckMatchStatusListener() {
+                    @Override
+                    public void onSearching(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
+                        currentExpiresAt = sessionInfo.getExpiresAt();
+                        scheduleNextPoll();
+                    }
+
+                    @Override
+                    public void onMatched(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
+                        handleMatchedSession(sessionInfo);
+                    }
+
+                    @Override
+                    public void onTimeout() {
+                        showTimeoutState();
+                    }
+
+                    @Override
+                    public void onCancelled() {
+                        showFailureState("Phiên tìm kiếm đã được hủy");
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        showFailureState(errorMessage);
+                    }
+                }
+        );
+    }
+
+    private void handleMatchedSession(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
+        clearScheduledTasks();
+
+        isSearchingActive = false;
+        isMatched = true;
+        isRetryMode = false;
+
+        currentRequestId = sessionInfo.getRequestId();
+        currentMatchId = sessionInfo.getMatchId();
+        currentRoomId = sessionInfo.getRoomId();
+        currentExpiresAt = sessionInfo.getExpiresAt();
+
+        matchedUserId = sessionInfo.getMatchedUserId();
+        matchedUserName = sessionInfo.getMatchedUserName();
+        matchedUserAvatar = sessionInfo.getMatchedUserAvatar();
+
+        showSuccessStateAnimated(sessionInfo);
     }
 
     private void showSearchingStateImmediate() {
@@ -121,13 +346,40 @@ public class MoodMatchActivity extends AppCompatActivity {
             layoutStateSuccess.setAlpha(0f);
         }
 
+        if (progressMoodSearching != null) {
+            progressMoodSearching.setVisibility(View.VISIBLE);
+        }
+
+        if (txtSearchingTitle != null) {
+            txtSearchingTitle.setText("Đang tìm người cùng tần số...");
+        }
+
+        if (txtSearchingSubtitle != null) {
+            txtSearchingSubtitle.setText("Heami đang tìm một người phù hợp\nđể trò chuyện cùng bạn");
+        }
+
         if (btnMoodMatchCTA != null) {
+            btnMoodMatchCTA.setText("Vào phòng trò chuyện");
             btnMoodMatchCTA.setEnabled(false);
             btnMoodMatchCTA.setAlpha(0.6f);
         }
     }
 
     private void showAnalyzingStateAnimated() {
+        if (!isSearchingActive || isMatched) return;
+
+        if (txtAnalyzingTitle != null) {
+            txtAnalyzingTitle.setText("Đang phân tích mood tương thích...");
+        }
+
+        if (txtAnalyzingSubtitle != null) {
+            txtAnalyzingSubtitle.setText("Đảm bảo kết nối nhẹ nhàng, an toàn\nvà phù hợp với cảm xúc hiện tại");
+        }
+
+        if (progressMoodAnalyzing != null) {
+            progressMoodAnalyzing.setVisibility(View.VISIBLE);
+        }
+
         crossfadeState(layoutStateSearching, layoutStateAnalyzing);
 
         if (btnMoodMatchCTA != null) {
@@ -136,8 +388,12 @@ public class MoodMatchActivity extends AppCompatActivity {
         }
     }
 
-    private void showSuccessStateAnimated() {
-        crossfadeState(layoutStateAnalyzing, layoutStateSuccess);
+    private void showSuccessStateAnimated(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
+        crossfadeState(layoutStateAnalyzing != null && layoutStateAnalyzing.getVisibility() == View.VISIBLE
+                        ? layoutStateAnalyzing
+                        : layoutStateSearching,
+                layoutStateSuccess
+        );
 
         if (layoutStateSuccess != null) {
             layoutStateSuccess.setScaleX(0.94f);
@@ -149,13 +405,200 @@ public class MoodMatchActivity extends AppCompatActivity {
                     .start();
         }
 
+        if (txtSuccessTitle != null) {
+            String partnerName = sessionInfo.getMatchedUserName().trim().isEmpty()
+                    ? "Bạn đã được kết nối!"
+                    : "Đã ghép với " + sessionInfo.getMatchedUserName() + "!";
+            txtSuccessTitle.setText(partnerName);
+        }
+
         if (btnMoodMatchCTA != null) {
+            btnMoodMatchCTA.setText("Vào phòng trò chuyện");
+            btnMoodMatchCTA.setEnabled(true);
             btnMoodMatchCTA.animate()
                     .alpha(1f)
                     .setDuration(220)
                     .start();
-            btnMoodMatchCTA.setEnabled(true);
         }
+    }
+
+    private void showTimeoutState() {
+        clearScheduledTasks();
+
+        isSearchingActive = false;
+        isMatched = false;
+        isRetryMode = true;
+
+        if (layoutStateSearching != null) {
+            layoutStateSearching.setVisibility(View.VISIBLE);
+            layoutStateSearching.setAlpha(1f);
+        }
+
+        if (layoutStateAnalyzing != null) {
+            layoutStateAnalyzing.setVisibility(View.GONE);
+            layoutStateAnalyzing.setAlpha(0f);
+        }
+
+        if (layoutStateSuccess != null) {
+            layoutStateSuccess.setVisibility(View.GONE);
+            layoutStateSuccess.setAlpha(0f);
+        }
+
+        if (progressMoodSearching != null) {
+            progressMoodSearching.setVisibility(View.GONE);
+        }
+
+        if (txtSearchingTitle != null) {
+            txtSearchingTitle.setText("Chưa tìm thấy người phù hợp");
+        }
+
+        if (txtSearchingSubtitle != null) {
+            txtSearchingSubtitle.setText("Heami chưa tìm được người phù hợp lúc này.\nBạn có thể thử lại ngay bây giờ.");
+        }
+
+        if (btnMoodMatchCTA != null) {
+            btnMoodMatchCTA.setText("Thử lại");
+            btnMoodMatchCTA.setEnabled(true);
+            btnMoodMatchCTA.setAlpha(1f);
+        }
+    }
+
+    private void showFailureState(@NonNull String errorMessage) {
+        clearScheduledTasks();
+
+        isSearchingActive = false;
+        isMatched = false;
+        isRetryMode = true;
+
+        if (layoutStateSearching != null) {
+            layoutStateSearching.setVisibility(View.VISIBLE);
+            layoutStateSearching.setAlpha(1f);
+        }
+
+        if (layoutStateAnalyzing != null) {
+            layoutStateAnalyzing.setVisibility(View.GONE);
+            layoutStateAnalyzing.setAlpha(0f);
+        }
+
+        if (layoutStateSuccess != null) {
+            layoutStateSuccess.setVisibility(View.GONE);
+            layoutStateSuccess.setAlpha(0f);
+        }
+
+        if (progressMoodSearching != null) {
+            progressMoodSearching.setVisibility(View.GONE);
+        }
+
+        if (txtSearchingTitle != null) {
+            txtSearchingTitle.setText("Mood Match đang gặp trục trặc");
+        }
+
+        if (txtSearchingSubtitle != null) {
+            txtSearchingSubtitle.setText(errorMessage);
+        }
+
+        if (btnMoodMatchCTA != null) {
+            btnMoodMatchCTA.setText("Thử lại");
+            btnMoodMatchCTA.setEnabled(true);
+            btnMoodMatchCTA.setAlpha(1f);
+        }
+    }
+
+    private void openMoodMatchChat() {
+        Intent intent = new Intent(MoodMatchActivity.this, MoodMatchChatActivity.class);
+        intent.putExtra("room_id", currentRoomId);
+        intent.putExtra("match_id", currentMatchId);
+        intent.putExtra("matched_user_id", matchedUserId);
+        intent.putExtra("matched_user_name", matchedUserName);
+        intent.putExtra("matched_user_avatar", matchedUserAvatar);
+        intent.putExtra("mood_tag", currentMoodTag);
+        startActivity(intent);
+    }
+
+    private String resolveMoodTagFromIntent() {
+        Intent intent = getIntent();
+        if (intent != null) {
+            String moodTag = intent.getStringExtra("mood_tag");
+            if (moodTag != null && !moodTag.trim().isEmpty()) {
+                return moodTag.trim().toLowerCase();
+            }
+
+            String rawEmotion = intent.getStringExtra("raw_emotion_label");
+            if (rawEmotion != null && !rawEmotion.trim().isEmpty()) {
+                return rawEmotion.trim().toLowerCase();
+            }
+        }
+
+        android.content.SharedPreferences prefs = getSharedPreferences("heami_prefs", MODE_PRIVATE);
+
+        String savedMoodTag = prefs.getString("latest_mood_tag", "");
+        String savedMoodDate = prefs.getString("latest_mood_date", "");
+
+        String todayKey = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+
+        boolean isTodayMood = todayKey.equals(savedMoodDate);
+
+        if (isTodayMood && savedMoodTag != null && !savedMoodTag.trim().isEmpty()) {
+            return savedMoodTag.trim().toLowerCase();
+        }
+
+        return "";
+    }
+
+    private void showCheckInRequiredState() {
+        clearScheduledTasks();
+
+        isSearchingActive = false;
+        isMatched = false;
+        isRetryMode = false;
+        isCheckInRequiredMode = true;
+
+        if (layoutStateSearching != null) {
+            layoutStateSearching.setVisibility(View.VISIBLE);
+            layoutStateSearching.setAlpha(1f);
+        }
+
+        if (layoutStateAnalyzing != null) {
+            layoutStateAnalyzing.setVisibility(View.GONE);
+            layoutStateAnalyzing.setAlpha(0f);
+        }
+
+        if (layoutStateSuccess != null) {
+            layoutStateSuccess.setVisibility(View.GONE);
+            layoutStateSuccess.setAlpha(0f);
+        }
+
+        if (progressMoodSearching != null) {
+            progressMoodSearching.setVisibility(View.GONE);
+        }
+
+        if (txtSearchingTitle != null) {
+            txtSearchingTitle.setText("Bạn cần check-in cảm xúc hôm nay");
+        }
+
+        if (txtSearchingSubtitle != null) {
+            txtSearchingSubtitle.setText(
+                    "Heami cần cảm xúc đã xác nhận trong hôm nay,\n" +
+                            "để kết nối bạn với một người phù hợp hơn."
+            );
+        }
+
+        if (btnMoodMatchCTA != null) {
+            btnMoodMatchCTA.setText("Check-in ngay");
+            btnMoodMatchCTA.setEnabled(true);
+            btnMoodMatchCTA.setAlpha(1f);
+        }
+    }
+
+    private boolean isExpired(Timestamp expiresAt) {
+        if (expiresAt == null) return false;
+        return expiresAt.toDate().getTime() <= System.currentTimeMillis();
+    }
+
+    private void clearScheduledTasks() {
+        handler.removeCallbacks(showAnalyzingRunnable);
+        handler.removeCallbacks(pollingRunnable);
     }
 
     private void crossfadeState(View from, View to) {
@@ -222,7 +665,6 @@ public class MoodMatchActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(showAnalyzingRunnable);
-        handler.removeCallbacks(showSuccessRunnable);
+        clearScheduledTasks();
     }
 }

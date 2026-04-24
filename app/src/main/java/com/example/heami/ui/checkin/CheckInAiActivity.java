@@ -18,10 +18,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+import android.graphics.ImageFormat;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -42,16 +42,15 @@ import com.google.mediapipe.tasks.components.containers.Category;
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark;
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
 
 public class CheckInAiActivity extends AppCompatActivity
         implements HeamiFaceLandmarkerHelper.LandmarkerListener {
-
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
 
     private static final int REQUIRED_QUALITY_FRAMES = 3;
@@ -95,6 +94,10 @@ public class CheckInAiActivity extends AppCompatActivity
     private final List<HeamiEmotionRuleEngine.EmotionDecision> emotionSamples = new ArrayList<>();
     private long lastEmotionSampleTime = 0L;
     private boolean isNavigatingResult = false;
+
+    private ProcessCameraProvider cameraProvider;
+    private Preview previewUseCase;
+    private ImageAnalysis imageAnalysisUseCase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -227,28 +230,8 @@ public class CheckInAiActivity extends AppCompatActivity
 
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-
-                Preview preview = new Preview.Builder().build();
-                preview.setSurfaceProvider(previewCheckInCamera.getSurfaceProvider());
-
-                ImageAnalysis imageAnalysis =
-                        new ImageAnalysis.Builder()
-                                .setTargetResolution(new Size(640, 480))
-                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                                .build();
-
-                imageAnalysis.setAnalyzer(cameraExecutor, this::analyzeImage);
-
-                CameraSelector cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA;
-
-                cameraProvider.unbindAll();
-                cameraProvider.bindToLifecycle(
-                        this,
-                        cameraSelector,
-                        preview,
-                        imageAnalysis
-                );
+                cameraProvider = cameraProviderFuture.get();
+                bindCameraUseCases();
 
             } catch (Exception e) {
                 Toast.makeText(
@@ -258,6 +241,29 @@ public class CheckInAiActivity extends AppCompatActivity
                 ).show();
             }
         }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void bindCameraUseCases() {
+        if (cameraProvider == null || previewCheckInCamera == null) return;
+
+        previewUseCase = new Preview.Builder().build();
+        previewUseCase.setSurfaceProvider(previewCheckInCamera.getSurfaceProvider());
+
+        imageAnalysisUseCase =
+                new ImageAnalysis.Builder()
+                        .setTargetResolution(new Size(640, 480))
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build();
+
+        imageAnalysisUseCase.setAnalyzer(cameraExecutor, this::analyzeImage);
+
+        cameraProvider.unbindAll();
+        cameraProvider.bindToLifecycle(
+                this,
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                previewUseCase,
+                imageAnalysisUseCase
+        );
     }
 
     private void analyzeImage(@NonNull ImageProxy imageProxy) {
@@ -966,6 +972,10 @@ public class CheckInAiActivity extends AppCompatActivity
     protected void onDestroy() {
         super.onDestroy();
 
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
+
         if (faceLandmarkerHelper != null) {
             faceLandmarkerHelper.clear();
         }
@@ -975,4 +985,3 @@ public class CheckInAiActivity extends AppCompatActivity
         }
     }
 }
-

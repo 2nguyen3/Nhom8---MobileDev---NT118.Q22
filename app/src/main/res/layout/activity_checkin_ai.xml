@@ -8,15 +8,14 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
-    <!-- Background glow -->
     <View
         android:id="@+id/glowCheckInTopLeft"
         android:layout_width="280dp"
         android:layout_height="280dp"
         android:layout_marginStart="-40dp"
         android:layout_marginTop="-60dp"
-        android:background="@drawable/bg_checkin_glow_pink"
         android:alpha="0.7"
+        android:background="@drawable/bg_checkin_glow_pink"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -26,12 +25,11 @@
         android:layout_height="240dp"
         android:layout_marginEnd="-50dp"
         android:layout_marginBottom="120dp"
-        android:background="@drawable/bg_checkin_glow_mint"
         android:alpha="0.65"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:background="@drawable/bg_checkin_glow_mint"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Decor icons -->
     <ImageView
         android:id="@+id/decorCheckInFlowerTopLeft"
         android:layout_width="15dp"
@@ -89,8 +87,8 @@
         android:alpha="0.8"
         android:contentDescription="decor"
         android:src="@drawable/ic_flower_mint"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <ScrollView
         android:id="@+id/scrollCheckInAi"
@@ -100,10 +98,10 @@
         android:fillViewport="true"
         android:overScrollMode="never"
         android:scrollbars="none"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:id="@+id/layoutCheckInAiContent"
@@ -113,7 +111,6 @@
             android:orientation="vertical"
             android:paddingBottom="48dp">
 
-            <!-- Header -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/layoutCheckInHeader"
                 android:layout_width="match_parent"
@@ -142,8 +139,8 @@
                     android:layout_marginEnd="50dp"
                     android:gravity="center"
                     android:orientation="vertical"
-                    app:layout_constraintStart_toEndOf="@id/btnBackCheckInAi"
                     app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/btnBackCheckInAi"
                     app:layout_constraintTop_toTopOf="parent">
 
                     <TextView
@@ -170,7 +167,6 @@
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Heami message -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/layoutCheckInMessage"
                 android:layout_width="match_parent"
@@ -186,8 +182,8 @@
                     android:adjustViewBounds="true"
                     android:contentDescription="Heami"
                     android:src="@drawable/ic_cloud_happy"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
 
                 <LinearLayout
                     android:id="@+id/cardCheckInBubble"
@@ -201,9 +197,9 @@
                     android:paddingTop="12dp"
                     android:paddingEnd="16dp"
                     android:paddingBottom="13dp"
-                    app:layout_constraintStart_toEndOf="@id/imgCheckInHeami"
+                    app:layout_constraintBottom_toBottomOf="@id/imgCheckInHeami"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintBottom_toBottomOf="@id/imgCheckInHeami">
+                    app:layout_constraintStart_toEndOf="@id/imgCheckInHeami">
 
                     <TextView
                         android:id="@+id/txtCheckInBubble"
@@ -217,16 +213,15 @@
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Camera preview -->
             <FrameLayout
                 android:id="@+id/layoutCameraPreviewWrap"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:paddingStart="28dp"
-                android:paddingEnd="28dp"
                 android:clipChildren="false"
-                android:clipToPadding="false">
+                android:clipToPadding="false"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp">
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardCameraPreview"
@@ -234,9 +229,9 @@
                     android:layout_height="300dp"
                     android:layout_gravity="center_horizontal"
                     android:elevation="2dp"
+                    app:cardBackgroundColor="@android:color/transparent"
                     app:cardCornerRadius="34dp"
                     app:cardElevation="2dp"
-                    app:cardBackgroundColor="@android:color/transparent"
                     app:strokeWidth="0dp">
 
                     <FrameLayout
@@ -287,12 +282,10 @@
                             android:layout_gravity="center"
                             android:alpha="0.85"
                             android:background="@drawable/bg_checkin_scan_line" />
-
                     </FrameLayout>
                 </com.google.android.material.card.MaterialCardView>
             </FrameLayout>
 
-            <!-- Instruction -->
             <TextView
                 android:id="@+id/txtCheckInInstruction"
                 android:layout_width="match_parent"
@@ -311,7 +304,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp" />
 
-            <!-- Manual mood button -->
             <LinearLayout
                 android:id="@+id/btnManualMood"
                 android:layout_width="match_parent"
@@ -357,5 +349,4 @@
 
         </LinearLayout>
     </ScrollView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

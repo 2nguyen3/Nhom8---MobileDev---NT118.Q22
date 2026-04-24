@@ -11,6 +11,10 @@ public class MoodMatchModel {
     private String status;
     private String room_id;
 
+    private Timestamp ended_at;
+    private String ended_by;
+    private String end_reason;
+
     public MoodMatchModel() {}
 
     public MoodMatchModel(
@@ -27,6 +31,10 @@ public class MoodMatchModel {
         this.created_at = created_at;
         this.status = "ACTIVE";
         this.room_id = "";
+
+        this.ended_at = null;
+        this.ended_by = "";
+        this.end_reason = "";
     }
 
     public String getMatch_id() {
@@ -83,5 +91,29 @@ public class MoodMatchModel {
 
     public void setRoom_id(String room_id) {
         this.room_id = room_id;
+    }
+
+    public Timestamp getEnded_at() {
+        return ended_at;
+    }
+
+    public void setEnded_at(Timestamp ended_at) {
+        this.ended_at = ended_at;
+    }
+
+    public String getEnded_by() {
+        return ended_by;
+    }
+
+    public void setEnded_by(String ended_by) {
+        this.ended_by = ended_by;
+    }
+
+    public String getEnd_reason() {
+        return end_reason;
+    }
+
+    public void setEnd_reason(String end_reason) {
+        this.end_reason = end_reason;
     }
 }

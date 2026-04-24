@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
 
 import com.example.heami.R;
 import com.example.heami.data.models.MoodHistoryModel;
@@ -92,6 +93,7 @@ public class CheckInResultActivity extends AppCompatActivity {
 
         bindViews();
         bindResultData();
+        saveTodayConfirmedMoodLocally();
         bindTherapySuggestions();
         setupActions();
         setupCauseChipActions();
@@ -273,6 +275,28 @@ public class CheckInResultActivity extends AppCompatActivity {
             default:
                 return "neutral";
         }
+    }
+
+    private void saveTodayConfirmedMoodLocally() {
+        String normalizedMoodTag = normalizeMoodTag(moodName, rawEmotionLabel);
+
+        if (normalizedMoodTag.trim().isEmpty()) {
+            return;
+        }
+
+        String todayKey = getTodayKey();
+
+        getSharedPreferences("heami_prefs", MODE_PRIVATE)
+                .edit()
+                .putString("latest_mood_tag", normalizedMoodTag)
+                .putString("latest_mood_date", todayKey)
+                .apply();
+    }
+
+    @NonNull
+    private String getTodayKey() {
+        return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
     }
 
     private String normalizeSource(String src) {
