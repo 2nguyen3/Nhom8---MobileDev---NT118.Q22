@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.example.heami.utils.ExitDialogHelper;
+
 public class DoctorActivity extends AppCompatActivity {
 
     private RecyclerView rvDoctors;
@@ -65,6 +67,8 @@ public class DoctorActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doctor);
+
+        ExitDialogHelper.registerExitHandler(this);
 
         db = FirebaseFirestore.getInstance();
         BottomNavManager.setup(this, BottomNavManager.TAB_DOCTOR);

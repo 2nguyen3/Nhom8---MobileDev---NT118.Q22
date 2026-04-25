@@ -19,6 +19,8 @@ import com.example.heami.ui.main.BottomNavManager;
 import com.example.heami.ui.main.HomeActivity;
 
 
+import com.example.heami.utils.ExitDialogHelper;
+
 public class TherapyActivity extends AppCompatActivity {
 
     private TextView btnTatCa, btnAmThanh, btnHitTho, btnNhatKy, btnKeHoach;
@@ -42,6 +44,8 @@ public class TherapyActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_therapy);
+
+        ExitDialogHelper.registerExitHandler(this);
 
         initViews();
         setupFilterListeners();
