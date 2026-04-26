@@ -91,6 +91,10 @@
             <activity
                 android:name=".ui.therapy.BinauralPlayerActivity"
                 android:exported="false" />
+            <activity
+            android:name=".ui.therapy.DiaryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
 
 
         <activity

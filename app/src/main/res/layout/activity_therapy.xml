@@ -925,6 +925,7 @@
                                 android:textColor="#E86FA0"
                                 android:textSize="10sp" />
                             <ImageButton
+                                android:id="@+id/btnOpenDiary"
                                 android:layout_width="36dp"
                                 android:layout_height="36dp"
                                 android:layout_alignParentEnd="true"
