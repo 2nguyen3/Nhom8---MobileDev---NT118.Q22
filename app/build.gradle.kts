@@ -72,4 +72,5 @@ dependencies {
 
     // MediaPipe Face Landmarker
     implementation("com.google.mediapipe:tasks-vision:latest.release")
+    implementation("androidx.media:media:1.7.0")
 }

@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <queries>
         <package android:name="com.google.android.gms" />
@@ -28,6 +30,11 @@
         android:theme="@style/Theme.Heami"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="33">
+
+        <service
+            android:name=".ui.therapy.MusicService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
 
         <activity
             android:name=".ui.auth.LoginActivity"
@@ -78,6 +85,7 @@
             android:exported="false" />
             <activity
                 android:name=".ui.therapy.MusicPlayerActivity"
+                android:launchMode="singleTop"
                 android:exported="false" />
             <activity
                 android:name=".ui.therapy.NatureSoundActivity"
