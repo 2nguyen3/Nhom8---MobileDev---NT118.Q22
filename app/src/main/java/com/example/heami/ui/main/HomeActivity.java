@@ -19,6 +19,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import com.example.heami.utils.ExitDialogHelper;
+import com.example.heami.utils.NotificationScheduler;
 
 import java.util.Calendar;
 
@@ -32,6 +33,7 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         ExitDialogHelper.registerExitHandler(this);
+        NotificationScheduler.scheduleDailyCheckIn(this);
 
         initViews();
         BottomNavManager.setup(this, BottomNavManager.TAB_HOME);

@@ -28,6 +28,7 @@ import com.example.heami.R;
 import com.example.heami.data.models.UserSettingsModel;
 import com.example.heami.ui.auth.LoginActivity;
 import com.example.heami.ui.consultation.ConsultationsActivity;
+import com.example.heami.utils.NotificationScheduler;
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
@@ -59,7 +60,7 @@ public class ProfileActivity extends AppCompatActivity {
     private String currentAvatarEmoji = "🌸";
     private String currentUserEmail = "";
     private UserSettingsModel userSettings;
-    private boolean isUpdatingUI = false; // Cờ ngăn chặn trigger ngược khi đang đồng bộ dữ liệu từ DB
+    private boolean isUpdatingUI = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -193,10 +194,22 @@ public class ProfileActivity extends AppCompatActivity {
                 userSettings = doc.toObject(UserSettingsModel.class);
                 syncSettingsToUI();
             } else {
-                userSettings = new UserSettingsModel("LIGHT", true);
+                userSettings = new UserSettingsModel("LIGHT", true, true, true, true, false);
                 settingsRef.set(userSettings);
                 syncSettingsToUI();
             }
+
+            if (userSettings != null) {
+                // Đồng bộ cấu hình checkin với SharedPreferences và báo cho scheduler
+                SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("notif_checkin", userSettings.isNotif_checkin()).apply();
+                if (userSettings.isNotif_checkin()) {
+                    NotificationScheduler.scheduleDailyCheckIn(this);
+                } else {
+                    NotificationScheduler.cancelDailyCheckIn(this);
+                }
+            }
+
             isUpdatingUI = false;
         });
     }
@@ -210,24 +223,18 @@ public class ProfileActivity extends AppCompatActivity {
             updateDarkModeStatusUI(swDarkMode.isChecked());
         }
 
-        Map<String, Boolean> config = userSettings.getNotif_config();
-        if (config != null) {
-            setSwitchChecked(R.id.switchNotiCheckin, config.getOrDefault("checkin", true));
-            setSwitchChecked(R.id.switchNotiPlan, config.getOrDefault("plan", true));
-            setSwitchChecked(R.id.switchNotiDr, config.getOrDefault("appointment", true));
-            setSwitchChecked(R.id.switchNotiChat, config.getOrDefault("chat", true));
-            
-            updateNotiTextColors();
+        setSwitchChecked(R.id.switchNotiCheckin, userSettings.isNotif_checkin());
+        setSwitchChecked(R.id.switchNotiPlan, userSettings.isNotif_plan());
+        setSwitchChecked(R.id.switchNotiDr, userSettings.isNotif_appoint());
+        setSwitchChecked(R.id.switchNotiChat, userSettings.isNotif_chat());
+        
+        SwitchMaterial swPrivacy = findViewById(R.id.switchPrivacy);
+        if (swPrivacy != null) {
+            swPrivacy.setChecked(userSettings.isIs_protected_mode());
+            updatePrivacyStatusUI(userSettings.isIs_protected_mode());
         }
-
-        // Đồng bộ thời gian nhắc nhở từ database
-        Map<String, String> reminders = userSettings.getReminders();
-        if (reminders != null && reminders.containsKey("checkin")) {
-            TextView tvCheckinTime = findViewById(R.id.tvNotiCheckinSub);
-            if (tvCheckinTime != null) {
-                tvCheckinTime.setText(reminders.get("checkin") + " mỗi sáng");
-            }
-        }
+        
+        updateNotiTextColors();
     }
 
     private void setSwitchChecked(int id, boolean checked) {
@@ -266,11 +273,23 @@ public class ProfileActivity extends AppCompatActivity {
         if (userSettings != null) {
             if ("theme_mode".equals(key)) {
                 userSettings.setTheme_mode((String) value);
-            } else if (key.startsWith("notif_config.")) {
-                String configKey = key.substring("notif_config.".length());
-                if (userSettings.getNotif_config() != null) {
-                    userSettings.getNotif_config().put(configKey, (Boolean) value);
+            } else if ("notif_checkin".equals(key)) {
+                userSettings.setNotif_checkin((Boolean) value);
+                SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("notif_checkin", (Boolean) value).apply();
+                if ((Boolean) value) {
+                    NotificationScheduler.scheduleDailyCheckIn(this);
+                } else {
+                    NotificationScheduler.cancelDailyCheckIn(this);
                 }
+            } else if ("notif_plan".equals(key)) {
+                userSettings.setNotif_plan((Boolean) value);
+            } else if ("notif_appoint".equals(key)) {
+                userSettings.setNotif_appoint((Boolean) value);
+            } else if ("notif_chat".equals(key)) {
+                userSettings.setNotif_chat((Boolean) value);
+            } else if ("is_protected_mode".equals(key)) {
+                userSettings.setIs_protected_mode((Boolean) value);
             }
         }
     }
@@ -356,6 +375,7 @@ public class ProfileActivity extends AppCompatActivity {
                 if (user != null) {
                     FirebaseFirestore.getInstance().collection("users").document(user.getUid())
                             .update("is_protected_mode", isChecked);
+                    saveSettingUpdate("is_protected_mode", isChecked);
                 }
             });
         }
@@ -370,10 +390,10 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupNotifications() {
-        setupSingleNotiLogic(R.id.switchNotiCheckin, R.id.tvNotiCheckinSub, "checkin");
-        setupSingleNotiLogic(R.id.switchNotiPlan, R.id.tvNotiPlanSub, "plan");
-        setupSingleNotiLogic(R.id.switchNotiDr, R.id.tvNotiDrSub, "appointment");
-        setupSingleNotiLogic(R.id.switchNotiChat, R.id.tvNotiChatSub, "chat");
+        setupSingleNotiLogic(R.id.switchNotiCheckin, R.id.tvNotiCheckinSub, "notif_checkin");
+        setupSingleNotiLogic(R.id.switchNotiPlan, R.id.tvNotiPlanSub, "notif_plan");
+        setupSingleNotiLogic(R.id.switchNotiDr, R.id.tvNotiDrSub, "notif_appoint");
+        setupSingleNotiLogic(R.id.switchNotiChat, R.id.tvNotiChatSub, "notif_chat");
     }
 
     private void setupSingleNotiLogic(int swId, int tvId, String configKey) {
@@ -384,7 +404,7 @@ public class ProfileActivity extends AppCompatActivity {
             sw.setOnCheckedChangeListener((btn, isChecked) -> {
                 if (isUpdatingUI) return;
                 tv.setTextColor(isChecked ? colorActive : colorTextOff);
-                saveSettingUpdate("notif_config." + configKey, isChecked);
+                saveSettingUpdate(configKey, isChecked);
             });
         }
     }
