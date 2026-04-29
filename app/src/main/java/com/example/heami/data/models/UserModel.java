@@ -15,8 +15,6 @@ public class UserModel {
     private int current_streak;
     private int longest_streak;
     private Timestamp last_activity_date;
-    private boolean is_online;
-    private Timestamp last_seen_at;
 
     public UserModel() {}
 
@@ -31,8 +29,6 @@ public class UserModel {
         this.current_streak = 0;
         this.longest_streak = 0;
         this.last_activity_date = Timestamp.now();
-        this.is_online = false;
-        this.last_seen_at = Timestamp.now();
     }
 
     public String getUser_id() { return user_id; }
@@ -64,11 +60,4 @@ public class UserModel {
 
     public Timestamp getLast_activity_date() { return last_activity_date; }
     public void setLast_activity_date(Timestamp last_activity_date) { this.last_activity_date = last_activity_date; }
-    public boolean isIs_online() { return is_online; }
-
-    public void setIs_online(boolean is_online) { this.is_online = is_online; }
-
-    public Timestamp getLast_seen_at() { return last_seen_at; }
-
-    public void setLast_seen_at(Timestamp last_seen_at) { this.last_seen_at = last_seen_at; }
 }

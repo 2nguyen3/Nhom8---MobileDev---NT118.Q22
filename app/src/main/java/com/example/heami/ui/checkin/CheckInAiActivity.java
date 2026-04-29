@@ -871,7 +871,7 @@ public class CheckInAiActivity extends AppCompatActivity
 
     private Bitmap imageProxyToBitmap(@NonNull ImageProxy imageProxy) {
         try {
-            byte[] nv21 = yuv420ToNv21(imageProxy);
+            byte[] nv21 = yuv420888ToNv21(imageProxy);
 
             YuvImage yuvImage = new YuvImage(
                     nv21,
@@ -882,26 +882,101 @@ public class CheckInAiActivity extends AppCompatActivity
             );
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
             yuvImage.compressToJpeg(
                     new Rect(0, 0, imageProxy.getWidth(), imageProxy.getHeight()),
-                    90,
+                    95,
                     outputStream
             );
 
             byte[] jpegBytes = outputStream.toByteArray();
-
-            Bitmap bitmap = BitmapFactory.decodeByteArray(
-                    jpegBytes,
-                    0,
-                    jpegBytes.length
-            );
+            Bitmap bitmap = BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.length);
 
             int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
             return rotateBitmap(bitmap, rotationDegrees);
 
         } catch (Exception e) {
+            Log.e("HeamiCamera", "imageProxyToBitmap failed", e);
             return null;
+        }
+    }
+
+    private byte[] yuv420888ToNv21(@NonNull ImageProxy imageProxy) {
+        int width = imageProxy.getWidth();
+        int height = imageProxy.getHeight();
+
+        byte[] out = new byte[width * height * 3 / 2];
+        ImageProxy.PlaneProxy[] planes = imageProxy.getPlanes();
+
+        // Y
+        unpackPlane(
+                planes[0],
+                width,
+                height,
+                out,
+                0,
+                1
+        );
+
+        // V
+        unpackPlane(
+                planes[2],
+                width / 2,
+                height / 2,
+                out,
+                width * height,
+                2
+        );
+
+        // U
+        unpackPlane(
+                planes[1],
+                width / 2,
+                height / 2,
+                out,
+                width * height + 1,
+                2
+        );
+
+        return out;
+    }
+
+    private void unpackPlane(
+            @NonNull ImageProxy.PlaneProxy plane,
+            int width,
+            int height,
+            @NonNull byte[] out,
+            int offset,
+            int outputStride
+    ) {
+        ByteBuffer buffer = plane.getBuffer();
+        buffer.rewind();
+
+        int rowStride = plane.getRowStride();
+        int pixelStride = plane.getPixelStride();
+
+        byte[] rowData = new byte[rowStride];
+        int outputOffset = offset;
+
+        for (int row = 0; row < height; row++) {
+            int length;
+
+            if (pixelStride == 1 && outputStride == 1) {
+                length = width;
+                buffer.get(out, outputOffset, length);
+                outputOffset += length;
+            } else {
+                length = (width - 1) * pixelStride + 1;
+                buffer.get(rowData, 0, length);
+
+                for (int col = 0; col < width; col++) {
+                    out[outputOffset] = rowData[col * pixelStride];
+                    outputOffset += outputStride;
+                }
+            }
+
+            if (row < height - 1) {
+                buffer.position(buffer.position() + rowStride - length);
+            }
         }
     }
 

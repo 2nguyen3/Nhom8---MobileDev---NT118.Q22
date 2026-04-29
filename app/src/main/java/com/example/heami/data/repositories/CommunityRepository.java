@@ -1160,23 +1160,17 @@ public class CommunityRepository {
                 .whereGreaterThanOrEqualTo("created_at", startOfToday)
                 .get();
 
-        Task<QuerySnapshot> onlineUsersTask = firestore.collection("users")
-                .whereEqualTo("is_online", true)
-                .get();
-
         Tasks.whenAllSuccess(
                         searchingTask,
                         activeRoomsTask,
                         myRoomsTask,
-                        todayRequestsTask,
-                        onlineUsersTask
+                        todayRequestsTask
                 )
                 .addOnSuccessListener(results -> {
                     QuerySnapshot searchingSnap = (QuerySnapshot) results.get(0);
                     QuerySnapshot activeRoomsSnap = (QuerySnapshot) results.get(1);
                     QuerySnapshot myRoomsSnap = (QuerySnapshot) results.get(2);
                     QuerySnapshot todayRequestsSnap = (QuerySnapshot) results.get(3);
-                    QuerySnapshot onlineUsersSnap = (QuerySnapshot) results.get(4);
 
                     int searchingCount = 0;
                     if (searchingSnap != null) {
@@ -1213,8 +1207,6 @@ public class CommunityRepository {
                         }
                     }
 
-                    int onlineUserCount = onlineUsersSnap != null ? onlineUsersSnap.size() : 0;
-
                     Map<String, Timestamp> matchedRequestCreatedAtMap = new HashMap<>();
                     if (todayRequestsSnap != null) {
                         for (DocumentSnapshot doc : todayRequestsSnap.getDocuments()) {
@@ -1233,7 +1225,7 @@ public class CommunityRepository {
 
                     if (matchedRequestCreatedAtMap.isEmpty()) {
                         listener.onSuccess(new CommunityDashboardStats(
-                                onlineUserCount,
+                                0,
                                 unreadChatRoomCount,
                                 searchingCount,
                                 activeMoodRoomCount,
@@ -1242,7 +1234,6 @@ public class CommunityRepository {
                         return;
                     }
 
-                    final int finalOnlineUserCount = onlineUserCount;
                     final int finalUnreadChatRoomCount = unreadChatRoomCount;
                     final int finalSearchingCount = searchingCount;
                     final int finalActiveMoodRoomCount = activeMoodRoomCount;
@@ -1292,7 +1283,7 @@ public class CommunityRepository {
                                         : 0;
 
                                 listener.onSuccess(new CommunityDashboardStats(
-                                        finalOnlineUserCount,
+                                        0,
                                         finalUnreadChatRoomCount,
                                         finalSearchingCount,
                                         finalActiveMoodRoomCount,

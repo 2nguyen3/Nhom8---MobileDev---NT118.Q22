@@ -21,14 +21,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.heami.R;
 import com.example.heami.data.models.ChatMessageModel;
 import com.example.heami.data.repositories.MoodMatchRepository;
-import com.google.firebase.Timestamp;
-import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 public class MoodMatchChatActivity extends AppCompatActivity {
@@ -55,7 +58,12 @@ public class MoodMatchChatActivity extends AppCompatActivity {
 
     private RecyclerView rvMoodChatMessages;
 
+    private View layoutMoodChatEmptyState;
+    private View progressMoodChatLoading;
+
     private boolean isSendActive = false;
+    private boolean isSendingMessage = false;
+    private boolean isEndingChat = false;
 
     private String roomId = "";
     private String matchId = "";
@@ -70,15 +78,9 @@ public class MoodMatchChatActivity extends AppCompatActivity {
     private MoodMatchRepository moodMatchRepository;
 
     private ListenerRegistration messageListener;
-    private MoodMatchMessageAdapter messageAdapter;
-
-    private View layoutMoodChatEmptyState;
-    private View progressMoodChatLoading;
-
-    private boolean isSendingMessage = false;
-    private boolean isEndingChat = false;
-
     private ListenerRegistration roomStatusListener;
+
+    private MoodMatchMessageAdapter messageAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,7 +129,6 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         txtSystemCard = findViewById(R.id.txtSystemCard);
 
         rvMoodChatMessages = findViewById(R.id.rvMoodChatMessages);
-
         layoutMoodChatEmptyState = findViewById(R.id.layoutMoodChatEmptyState);
         progressMoodChatLoading = findViewById(R.id.progressMoodChatLoading);
     }
@@ -292,11 +293,16 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                         }
                     }
 
+                    sortMessagesByTime(messages);
                     updateMessageUiState(false, messages.size());
                     messageAdapter.submitList(messages);
 
+                    resetMyUnreadCount();
+
                     if (!messages.isEmpty()) {
-                        rvMoodChatMessages.scrollToPosition(messages.size() - 1);
+                        rvMoodChatMessages.post(() ->
+                                rvMoodChatMessages.scrollToPosition(messages.size() - 1)
+                        );
                     }
                 });
     }
@@ -322,29 +328,30 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                 .document()
                 .getId();
 
-        Timestamp createdAt = Timestamp.now();
+        long clientCreatedAtMs = System.currentTimeMillis();
 
-        ChatMessageModel messageModel = new ChatMessageModel(
-                messageId,
-                currentUserId,
-                content,
-                createdAt
-        );
+        HashMap<String, Object> messageData = new HashMap<>();
+        messageData.put("message_id", messageId);
+        messageData.put("sender_id", currentUserId);
+        messageData.put("text", content);
+        messageData.put("created_at", FieldValue.serverTimestamp());
+        messageData.put("client_created_at_ms", clientCreatedAtMs);
+        messageData.put("message_type", "TEXT");
+        messageData.put("status", "ACTIVE");
 
-        com.google.firebase.firestore.DocumentReference roomRef =
-                firestore.collection("chat_rooms").document(roomId);
+        DocumentReference roomRef = firestore.collection("chat_rooms").document(roomId);
 
-        java.util.Map<String, Object> roomUpdates = new java.util.HashMap<>();
+        HashMap<String, Object> roomUpdates = new HashMap<>();
         roomUpdates.put("last_message", content);
-        roomUpdates.put("last_message_at", createdAt);
+        roomUpdates.put("last_message_at", FieldValue.serverTimestamp());
         roomUpdates.put("last_sender_id", currentUserId);
         roomUpdates.put("unread_count_map." + currentUserId, 0L);
 
         roomRef.get().addOnSuccessListener(roomSnapshot -> {
             Object rawMemberIds = roomSnapshot.get("member_ids");
 
-            if (rawMemberIds instanceof java.util.List<?>) {
-                for (Object item : (java.util.List<?>) rawMemberIds) {
+            if (rawMemberIds instanceof List<?>) {
+                for (Object item : (List<?>) rawMemberIds) {
                     if (!(item instanceof String)) continue;
 
                     String memberId = safeText((String) item, "");
@@ -352,8 +359,10 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                         continue;
                     }
 
-                    roomUpdates.put("unread_count_map." + memberId,
-                            com.google.firebase.firestore.FieldValue.increment(1));
+                    roomUpdates.put(
+                            "unread_count_map." + memberId,
+                            FieldValue.increment(1)
+                    );
                 }
             }
 
@@ -364,7 +373,7 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                             .document(roomId)
                             .collection("messages")
                             .document(messageId),
-                    messageModel
+                    messageData
             );
 
             batch.update(roomRef, roomUpdates);
@@ -538,6 +547,34 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         if (rvMoodChatMessages != null) {
             rvMoodChatMessages.setVisibility(isLoading ? View.INVISIBLE : View.VISIBLE);
         }
+    }
+
+    private void sortMessagesByTime(@NonNull List<ChatMessageModel> messages) {
+        Collections.sort(messages, (left, right) -> {
+            long leftTime = resolveMessageSortTime(left);
+            long rightTime = resolveMessageSortTime(right);
+
+            int compareTime = Long.compare(leftTime, rightTime);
+            if (compareTime != 0) {
+                return compareTime;
+            }
+
+            String leftId = safeText(left.getMessage_id(), "");
+            String rightId = safeText(right.getMessage_id(), "");
+            return leftId.compareTo(rightId);
+        });
+    }
+
+    private long resolveMessageSortTime(@NonNull ChatMessageModel message) {
+        if (message.getCreated_at() != null) {
+            return message.getCreated_at().toDate().getTime();
+        }
+
+        if (message.getClient_created_at_ms() != null) {
+            return message.getClient_created_at_ms();
+        }
+
+        return 0L;
     }
 
     @NonNull

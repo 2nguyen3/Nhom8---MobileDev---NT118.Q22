@@ -78,12 +78,36 @@ public class CommunityActivity extends AppCompatActivity {
     private TextView txtStatValue2;
     private TextView txtStatValue3;
 
+    private com.google.firebase.firestore.FirebaseFirestore firestore;
+    private com.google.firebase.auth.FirebaseAuth auth;
+
+    private com.google.firebase.firestore.ListenerRegistration myRoomsListener;
+    private com.google.firebase.firestore.ListenerRegistration searchingRequestsListener;
+    private com.google.firebase.firestore.ListenerRegistration activeRoomsListener;
+
+    private final android.os.Handler dashboardStatsHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private final Runnable dashboardStatsRunnable = this::loadCommunityDashboardStats;
+
+    private com.google.firebase.database.FirebaseDatabase realtimeDb;
+    private com.google.firebase.database.DatabaseReference statusRootRef;
+    private com.google.firebase.database.ValueEventListener onlineCountListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_community);
 
         BottomNavManager.setup(this, BottomNavManager.TAB_COMMUNITY);
+
+        firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        auth = com.google.firebase.auth.FirebaseAuth.getInstance();
+
+        realtimeDb = com.google.firebase.database.FirebaseDatabase.getInstance(
+                "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app"
+        );
+        statusRootRef = realtimeDb.getReference("status");
 
         bindViews();
         initData();
@@ -1746,9 +1770,6 @@ public class CommunityActivity extends AppCompatActivity {
         communityRepository.loadCommunityDashboardStats(new CommunityRepository.LoadCommunityDashboardStatsListener() {
             @Override
             public void onSuccess(@NonNull CommunityRepository.CommunityDashboardStats stats) {
-                if (txtOnlineCount != null) {
-                    txtOnlineCount.setText(String.valueOf(stats.getActiveTodayUserCount()));
-                }
 
                 if (badgeCommunityChat != null) {
                     int unreadLikeCount = stats.getUnreadChatRoomCount();
@@ -1775,10 +1796,6 @@ public class CommunityActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(@NonNull String errorMessage) {
-                if (txtOnlineCount != null) {
-                    txtOnlineCount.setText("--");
-                }
-
                 if (badgeCommunityChat != null) {
                     badgeCommunityChat.setVisibility(View.GONE);
                 }
@@ -1815,6 +1832,98 @@ public class CommunityActivity extends AppCompatActivity {
 
         int hours = minutes / 60;
         return hours + "h";
+    }
+
+    private void startDashboardRealtimeListeners() {
+        stopDashboardRealtimeListeners();
+
+        String currentUserId = "";
+        if (auth.getCurrentUser() != null) {
+            currentUserId = auth.getCurrentUser().getUid();
+        }
+
+        searchingRequestsListener = firestore.collection("mood_match_requests")
+                .whereEqualTo("status", "SEARCHING")
+                .addSnapshotListener((value, error) -> queueDashboardStatsRefresh());
+
+        activeRoomsListener = firestore.collection("chat_rooms")
+                .whereEqualTo("status", "ACTIVE")
+                .addSnapshotListener((value, error) -> queueDashboardStatsRefresh());
+
+        if (!currentUserId.isEmpty()) {
+            myRoomsListener = firestore.collection("chat_rooms")
+                    .whereArrayContains("member_ids", currentUserId)
+                    .addSnapshotListener((value, error) -> queueDashboardStatsRefresh());
+        }
+    }
+
+    private void queueDashboardStatsRefresh() {
+        dashboardStatsHandler.removeCallbacks(dashboardStatsRunnable);
+        dashboardStatsHandler.postDelayed(dashboardStatsRunnable, 250);
+    }
+
+    private void stopDashboardRealtimeListeners() {
+        dashboardStatsHandler.removeCallbacks(dashboardStatsRunnable);
+
+        if (myRoomsListener != null) {
+            myRoomsListener.remove();
+            myRoomsListener = null;
+        }
+
+        if (searchingRequestsListener != null) {
+            searchingRequestsListener.remove();
+            searchingRequestsListener = null;
+        }
+
+        if (activeRoomsListener != null) {
+            activeRoomsListener.remove();
+            activeRoomsListener = null;
+        }
+    }
+
+    private void startOnlineCountListener() {
+        stopOnlineCountListener();
+
+        onlineCountListener = new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                int onlineCount = 0;
+
+                for (com.google.firebase.database.DataSnapshot userSnapshot : snapshot.getChildren()) {
+                    com.google.firebase.database.DataSnapshot connectionsSnapshot =
+                            userSnapshot.child("connections");
+
+                    Boolean isForeground = userSnapshot.child("isForeground").getValue(Boolean.class);
+
+                    boolean hasConnections =
+                            connectionsSnapshot.exists() && connectionsSnapshot.getChildrenCount() > 0;
+
+                    if (hasConnections && Boolean.TRUE.equals(isForeground)) {
+                        onlineCount++;
+                    }
+                }
+
+                if (txtOnlineCount != null) {
+                    txtOnlineCount.setText(String.valueOf(onlineCount));
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                if (txtOnlineCount != null) {
+                    txtOnlineCount.setText("--");
+                }
+            }
+        };
+
+        statusRootRef.addValueEventListener(onlineCountListener);
+    }
+
+    private void stopOnlineCountListener() {
+        if (statusRootRef != null && onlineCountListener != null) {
+            statusRootRef.removeEventListener(onlineCountListener);
+            onlineCountListener = null;
+        }
     }
 
     @NonNull
@@ -1993,5 +2102,20 @@ public class CommunityActivity extends AppCompatActivity {
 
     private float dp(float value) {
         return getResources().getDisplayMetrics().density * value;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startOnlineCountListener();
+        startDashboardRealtimeListeners();
+        loadCommunityDashboardStats();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopOnlineCountListener();
+        stopDashboardRealtimeListeners();
     }
 }

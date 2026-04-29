@@ -75,4 +75,7 @@ dependencies {
 
     // Lifecycle Process
     implementation("androidx.lifecycle:lifecycle-process:2.8.4")
+
+    // Realtime Database
+    implementation("com.google.firebase:firebase-database")
 }

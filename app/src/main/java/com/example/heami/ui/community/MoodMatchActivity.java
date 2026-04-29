@@ -515,20 +515,8 @@ public class MoodMatchActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    @NonNull
     private String resolveMoodTagFromIntent() {
-        Intent intent = getIntent();
-        if (intent != null) {
-            String moodTag = intent.getStringExtra("mood_tag");
-            if (moodTag != null && !moodTag.trim().isEmpty()) {
-                return moodTag.trim().toLowerCase();
-            }
-
-            String rawEmotion = intent.getStringExtra("raw_emotion_label");
-            if (rawEmotion != null && !rawEmotion.trim().isEmpty()) {
-                return rawEmotion.trim().toLowerCase();
-            }
-        }
-
         android.content.SharedPreferences prefs = getSharedPreferences("heami_prefs", MODE_PRIVATE);
 
         String savedMoodTag = prefs.getString("latest_mood_tag", "");

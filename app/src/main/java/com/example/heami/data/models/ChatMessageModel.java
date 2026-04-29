@@ -9,6 +9,7 @@ public class ChatMessageModel {
     private Timestamp created_at;
     private String message_type;
     private String status;
+    private Long client_created_at_ms;
 
     public ChatMessageModel() {}
 
@@ -24,6 +25,7 @@ public class ChatMessageModel {
         this.created_at = created_at;
         this.message_type = "TEXT";
         this.status = "ACTIVE";
+        this.client_created_at_ms = System.currentTimeMillis();
     }
 
     public String getMessage_id() {
@@ -73,4 +75,8 @@ public class ChatMessageModel {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public Long getClient_created_at_ms() { return client_created_at_ms; }
+
+    public void setClient_created_at_ms(Long client_created_at_ms) { this.client_created_at_ms = client_created_at_ms; }
 }

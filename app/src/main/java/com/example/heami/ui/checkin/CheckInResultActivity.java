@@ -93,7 +93,6 @@ public class CheckInResultActivity extends AppCompatActivity {
 
         bindViews();
         bindResultData();
-        saveTodayConfirmedMoodLocally();
         bindTherapySuggestions();
         setupActions();
         setupCauseChipActions();
@@ -651,6 +650,8 @@ public class CheckInResultActivity extends AppCompatActivity {
                 .document(recordId)
                 .set(moodHistory)
                 .addOnSuccessListener(unused -> {
+                    saveTodayConfirmedMoodLocally();
+
                     Toast.makeText(
                             CheckInResultActivity.this,
                             "Heami đã lưu một check-in mới 💗",
