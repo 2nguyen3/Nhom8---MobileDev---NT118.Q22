@@ -16,7 +16,12 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.Calendar;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -111,6 +116,53 @@ public class CommunityRepository {
     public interface DeletePostListener {
         void onSuccess();
         void onFailure(@NonNull String errorMessage);
+    }
+
+    public interface LoadCommunityDashboardStatsListener {
+        void onSuccess(@NonNull CommunityDashboardStats stats);
+        void onFailure(@NonNull String errorMessage);
+    }
+
+    public static class CommunityDashboardStats {
+        private final int activeTodayUserCount;
+        private final int unreadChatRoomCount;
+        private final int searchingCount;
+        private final int activeMoodRoomCount;
+        private final int averageMatchSeconds;
+
+        public CommunityDashboardStats(
+                int activeTodayUserCount,
+                int unreadChatRoomCount,
+                int searchingCount,
+                int activeMoodRoomCount,
+                int averageMatchSeconds
+        ) {
+            this.activeTodayUserCount = activeTodayUserCount;
+            this.unreadChatRoomCount = unreadChatRoomCount;
+            this.searchingCount = searchingCount;
+            this.activeMoodRoomCount = activeMoodRoomCount;
+            this.averageMatchSeconds = averageMatchSeconds;
+        }
+
+        public int getActiveTodayUserCount() {
+            return activeTodayUserCount;
+        }
+
+        public int getUnreadChatRoomCount() {
+            return unreadChatRoomCount;
+        }
+
+        public int getSearchingCount() {
+            return searchingCount;
+        }
+
+        public int getActiveMoodRoomCount() {
+            return activeMoodRoomCount;
+        }
+
+        public int getAverageMatchSeconds() {
+            return averageMatchSeconds;
+        }
     }
 
     private final FirebaseAuth auth;
@@ -1077,6 +1129,206 @@ public class CommunityRepository {
                             : "Không thể đọc thông tin bài viết";
                     listener.onFailure(message);
                 });
+    }
+
+    public void loadCommunityDashboardStats(
+            @NonNull LoadCommunityDashboardStatsListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+        Timestamp startOfToday = getStartOfTodayTimestamp();
+
+        Task<QuerySnapshot> searchingTask = firestore.collection("mood_match_requests")
+                .whereEqualTo("status", "SEARCHING")
+                .get();
+
+        Task<QuerySnapshot> activeRoomsTask = firestore.collection("chat_rooms")
+                .whereEqualTo("status", "ACTIVE")
+                .get();
+
+        Task<QuerySnapshot> myRoomsTask = firestore.collection("chat_rooms")
+                .whereArrayContains("member_ids", uid)
+                .get();
+
+        Task<QuerySnapshot> todayRequestsTask = firestore.collection("mood_match_requests")
+                .whereGreaterThanOrEqualTo("created_at", startOfToday)
+                .get();
+
+        Task<QuerySnapshot> onlineUsersTask = firestore.collection("users")
+                .whereEqualTo("is_online", true)
+                .get();
+
+        Tasks.whenAllSuccess(
+                        searchingTask,
+                        activeRoomsTask,
+                        myRoomsTask,
+                        todayRequestsTask,
+                        onlineUsersTask
+                )
+                .addOnSuccessListener(results -> {
+                    QuerySnapshot searchingSnap = (QuerySnapshot) results.get(0);
+                    QuerySnapshot activeRoomsSnap = (QuerySnapshot) results.get(1);
+                    QuerySnapshot myRoomsSnap = (QuerySnapshot) results.get(2);
+                    QuerySnapshot todayRequestsSnap = (QuerySnapshot) results.get(3);
+                    QuerySnapshot onlineUsersSnap = (QuerySnapshot) results.get(4);
+
+                    int searchingCount = 0;
+                    if (searchingSnap != null) {
+                        for (DocumentSnapshot doc : searchingSnap.getDocuments()) {
+                            Timestamp expiresAt = doc.getTimestamp("expires_at");
+                            if (!isExpired(expiresAt)) {
+                                searchingCount++;
+                            }
+                        }
+                    }
+
+                    int activeMoodRoomCount = 0;
+                    if (activeRoomsSnap != null) {
+                        for (DocumentSnapshot doc : activeRoomsSnap.getDocuments()) {
+                            String type = safeText(doc.getString("type"), "");
+                            String status = safeText(doc.getString("status"), "");
+
+                            if ("ACTIVE".equals(status) && "MOOD_MATCH".equals(type)) {
+                                activeMoodRoomCount++;
+                            }
+                        }
+                    }
+
+                    int unreadChatRoomCount = 0;
+                    if (myRoomsSnap != null) {
+                        for (DocumentSnapshot doc : myRoomsSnap.getDocuments()) {
+                            String status = safeText(doc.getString("status"), "");
+                            if (!"ACTIVE".equals(status)) {
+                                continue;
+                            }
+
+                            Object unreadRaw = doc.get("unread_count_map." + uid);
+                            unreadChatRoomCount += safeInt(unreadRaw);
+                        }
+                    }
+
+                    int onlineUserCount = onlineUsersSnap != null ? onlineUsersSnap.size() : 0;
+
+                    Map<String, Timestamp> matchedRequestCreatedAtMap = new HashMap<>();
+                    if (todayRequestsSnap != null) {
+                        for (DocumentSnapshot doc : todayRequestsSnap.getDocuments()) {
+                            String status = safeText(doc.getString("status"), "");
+                            String matchId = safeText(doc.getString("match_id"), "");
+                            Timestamp createdAt = doc.getTimestamp("created_at");
+
+                            if ("MATCHED".equals(status)
+                                    && !matchId.isEmpty()
+                                    && createdAt != null
+                                    && !matchedRequestCreatedAtMap.containsKey(matchId)) {
+                                matchedRequestCreatedAtMap.put(matchId, createdAt);
+                            }
+                        }
+                    }
+
+                    if (matchedRequestCreatedAtMap.isEmpty()) {
+                        listener.onSuccess(new CommunityDashboardStats(
+                                onlineUserCount,
+                                unreadChatRoomCount,
+                                searchingCount,
+                                activeMoodRoomCount,
+                                0
+                        ));
+                        return;
+                    }
+
+                    final int finalOnlineUserCount = onlineUserCount;
+                    final int finalUnreadChatRoomCount = unreadChatRoomCount;
+                    final int finalSearchingCount = searchingCount;
+                    final int finalActiveMoodRoomCount = activeMoodRoomCount;
+
+                    List<Task<DocumentSnapshot>> matchTasks = new ArrayList<>();
+                    for (String matchId : matchedRequestCreatedAtMap.keySet()) {
+                        matchTasks.add(
+                                firestore.collection("mood_matches")
+                                        .document(matchId)
+                                        .get()
+                        );
+                    }
+
+                    Tasks.whenAllSuccess(matchTasks)
+                            .addOnSuccessListener(matchResults -> {
+                                long totalSeconds = 0L;
+                                int sampleCount = 0;
+
+                                for (Object result : matchResults) {
+                                    if (!(result instanceof DocumentSnapshot)) {
+                                        continue;
+                                    }
+
+                                    DocumentSnapshot matchDoc = (DocumentSnapshot) result;
+                                    if (!matchDoc.exists()) {
+                                        continue;
+                                    }
+
+                                    Timestamp matchCreatedAt = matchDoc.getTimestamp("created_at");
+                                    Timestamp requestCreatedAt = matchedRequestCreatedAtMap.get(matchDoc.getId());
+
+                                    if (matchCreatedAt == null || requestCreatedAt == null) {
+                                        continue;
+                                    }
+
+                                    long diffMs = matchCreatedAt.toDate().getTime() - requestCreatedAt.toDate().getTime();
+                                    if (diffMs < 0) {
+                                        diffMs = 0;
+                                    }
+
+                                    totalSeconds += (diffMs / 1000L);
+                                    sampleCount++;
+                                }
+
+                                int averageMatchSeconds = sampleCount > 0
+                                        ? (int) Math.round((double) totalSeconds / sampleCount)
+                                        : 0;
+
+                                listener.onSuccess(new CommunityDashboardStats(
+                                        finalOnlineUserCount,
+                                        finalUnreadChatRoomCount,
+                                        finalSearchingCount,
+                                        finalActiveMoodRoomCount,
+                                        averageMatchSeconds
+                                ));
+                            })
+                            .addOnFailureListener(e -> {
+                                String message = e.getMessage() != null
+                                        ? e.getMessage()
+                                        : "Không thể tính thời gian ghép trung bình";
+                                listener.onFailure(message);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể tải thống kê cộng đồng";
+                    listener.onFailure(message);
+                });
+    }
+
+    @NonNull
+    private Timestamp getStartOfTodayTimestamp() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return new Timestamp(calendar.getTime());
+    }
+
+    private boolean isExpired(Timestamp expiresAt) {
+        if (expiresAt == null) {
+            return false;
+        }
+        return expiresAt.toDate().getTime() <= System.currentTimeMillis();
     }
 
     @NonNull

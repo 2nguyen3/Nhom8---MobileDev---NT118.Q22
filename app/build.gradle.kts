@@ -72,4 +72,7 @@ dependencies {
 
     // MediaPipe Face Landmarker
     implementation("com.google.mediapipe:tasks-vision:latest.release")
+
+    // Lifecycle Process
+    implementation("androidx.lifecycle:lifecycle-process:2.8.4")
 }

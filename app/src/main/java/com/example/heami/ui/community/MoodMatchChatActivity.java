@@ -5,19 +5,31 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
-import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.heami.R;
+import com.example.heami.data.models.ChatMessageModel;
+import com.example.heami.data.repositories.MoodMatchRepository;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.WriteBatch;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MoodMatchChatActivity extends AppCompatActivity {
 
@@ -41,6 +53,8 @@ public class MoodMatchChatActivity extends AppCompatActivity {
     private TextView txtSafetyBanner;
     private TextView txtSystemCard;
 
+    private RecyclerView rvMoodChatMessages;
+
     private boolean isSendActive = false;
 
     private String roomId = "";
@@ -49,18 +63,46 @@ public class MoodMatchChatActivity extends AppCompatActivity {
     private String matchedUserName = "";
     private String matchedUserAvatar = "";
     private String moodTag = "stress";
+    private String currentUserId = "";
+
+    private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
+    private MoodMatchRepository moodMatchRepository;
+
+    private ListenerRegistration messageListener;
+    private MoodMatchMessageAdapter messageAdapter;
+
+    private View layoutMoodChatEmptyState;
+    private View progressMoodChatLoading;
+
+    private boolean isSendingMessage = false;
+    private boolean isEndingChat = false;
+
+    private ListenerRegistration roomStatusListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mood_match_chat);
 
+        auth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
+        moodMatchRepository = new MoodMatchRepository();
+
+        if (auth.getCurrentUser() != null) {
+            currentUserId = safeText(auth.getCurrentUser().getUid(), "");
+        }
+
         bindViews();
         readIntentData();
         bindMatchUi();
+        setupRecyclerView();
         setupActions();
         setupTypingEffect();
         updateSendButtonState(false);
+        startRoomStatusListener();
+        startMessageListener();
+        resetMyUnreadCount();
     }
 
     private void bindViews() {
@@ -83,6 +125,11 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         txtChatMood = findViewById(R.id.txtChatMood);
         txtSafetyBanner = findViewById(R.id.txtSafetyBanner);
         txtSystemCard = findViewById(R.id.txtSystemCard);
+
+        rvMoodChatMessages = findViewById(R.id.rvMoodChatMessages);
+
+        layoutMoodChatEmptyState = findViewById(R.id.layoutMoodChatEmptyState);
+        progressMoodChatLoading = findViewById(R.id.progressMoodChatLoading);
     }
 
     private void readIntentData() {
@@ -126,41 +173,38 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         }
     }
 
+    private void setupRecyclerView() {
+        messageAdapter = new MoodMatchMessageAdapter(
+                currentUserId,
+                resolveAvatarEmoji(moodTag)
+        );
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setStackFromEnd(true);
+
+        rvMoodChatMessages.setLayoutManager(layoutManager);
+        rvMoodChatMessages.setAdapter(messageAdapter);
+    }
+
     private void setupActions() {
         if (btnBackMoodChat != null) {
             btnBackMoodChat.setOnClickListener(v -> openCommunityChatList());
         }
 
         if (btnEndMoodChat != null) {
-            btnEndMoodChat.setOnClickListener(v -> openCommunityChatList());
+            btnEndMoodChat.setOnClickListener(v -> endCurrentMoodMatch());
         }
 
         if (btnMoreMoodChat != null) {
             btnMoreMoodChat.setOnClickListener(v -> Toast.makeText(
                     MoodMatchChatActivity.this,
-                    "Tùy chọn chat sẽ hoàn thiện ở bước 14 nhé",
+                    "Tùy chọn chat sẽ hoàn thiện thêm sau nhé",
                     Toast.LENGTH_SHORT
             ).show());
         }
 
         if (btnSendMoodChat != null) {
-            btnSendMoodChat.setOnClickListener(v -> {
-                if (!isSendActive || edtMoodChatInput == null) return;
-
-                String content = edtMoodChatInput.getText() != null
-                        ? edtMoodChatInput.getText().toString().trim()
-                        : "";
-
-                if (content.isEmpty()) return;
-
-                Toast.makeText(
-                        MoodMatchChatActivity.this,
-                        "Gửi tin nhắn thật sẽ nối backend ở bước 14",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                edtMoodChatInput.setText("");
-            });
+            btnSendMoodChat.setOnClickListener(v -> sendMessage());
         }
 
         if (btnReactionHug != null) {
@@ -168,7 +212,7 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         }
 
         if (btnReactionHeart != null) {
-            btnReactionHeart.setOnClickListener(v -> appendReaction("💖 "));
+            btnReactionHeart.setOnClickListener(v -> appendReaction("💙 "));
         }
 
         if (btnReactionFlower != null) {
@@ -200,6 +244,187 @@ public class MoodMatchChatActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
+            }
+        });
+    }
+
+    private void startMessageListener() {
+        if (roomId.isEmpty()) {
+            Toast.makeText(this, "Thiếu room_id để mở cuộc trò chuyện", Toast.LENGTH_SHORT).show();
+            updateMessageUiState(false, 0);
+            return;
+        }
+
+        updateMessageUiState(true, 0);
+
+        messageListener = firestore.collection("chat_rooms")
+                .document(roomId)
+                .collection("messages")
+                .orderBy("created_at")
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        updateMessageUiState(false, 0);
+                        Toast.makeText(
+                                MoodMatchChatActivity.this,
+                                "Không thể tải tin nhắn lúc này",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        return;
+                    }
+
+                    List<ChatMessageModel> messages = new ArrayList<>();
+
+                    if (value != null) {
+                        for (DocumentSnapshot document : value.getDocuments()) {
+                            ChatMessageModel message = document.toObject(ChatMessageModel.class);
+                            if (message == null) continue;
+
+                            if (message.getMessage_id() == null || message.getMessage_id().trim().isEmpty()) {
+                                message.setMessage_id(document.getId());
+                            }
+
+                            String status = safeText(message.getStatus(), "ACTIVE");
+                            if (!"ACTIVE".equals(status)) {
+                                continue;
+                            }
+
+                            messages.add(message);
+                        }
+                    }
+
+                    updateMessageUiState(false, messages.size());
+                    messageAdapter.submitList(messages);
+
+                    if (!messages.isEmpty()) {
+                        rvMoodChatMessages.scrollToPosition(messages.size() - 1);
+                    }
+                });
+    }
+
+    private void sendMessage() {
+        if (!isSendActive || edtMoodChatInput == null) return;
+        if (roomId.isEmpty()) return;
+        if (currentUserId.isEmpty()) return;
+        if (isSendingMessage) return;
+
+        String content = edtMoodChatInput.getText() != null
+                ? edtMoodChatInput.getText().toString().trim()
+                : "";
+
+        if (content.isEmpty()) return;
+
+        isSendingMessage = true;
+        btnSendMoodChat.setEnabled(false);
+
+        String messageId = firestore.collection("chat_rooms")
+                .document(roomId)
+                .collection("messages")
+                .document()
+                .getId();
+
+        Timestamp createdAt = Timestamp.now();
+
+        ChatMessageModel messageModel = new ChatMessageModel(
+                messageId,
+                currentUserId,
+                content,
+                createdAt
+        );
+
+        com.google.firebase.firestore.DocumentReference roomRef =
+                firestore.collection("chat_rooms").document(roomId);
+
+        java.util.Map<String, Object> roomUpdates = new java.util.HashMap<>();
+        roomUpdates.put("last_message", content);
+        roomUpdates.put("last_message_at", createdAt);
+        roomUpdates.put("last_sender_id", currentUserId);
+        roomUpdates.put("unread_count_map." + currentUserId, 0L);
+
+        roomRef.get().addOnSuccessListener(roomSnapshot -> {
+            Object rawMemberIds = roomSnapshot.get("member_ids");
+
+            if (rawMemberIds instanceof java.util.List<?>) {
+                for (Object item : (java.util.List<?>) rawMemberIds) {
+                    if (!(item instanceof String)) continue;
+
+                    String memberId = safeText((String) item, "");
+                    if (memberId.isEmpty() || memberId.equals(currentUserId)) {
+                        continue;
+                    }
+
+                    roomUpdates.put("unread_count_map." + memberId,
+                            com.google.firebase.firestore.FieldValue.increment(1));
+                }
+            }
+
+            WriteBatch batch = firestore.batch();
+
+            batch.set(
+                    firestore.collection("chat_rooms")
+                            .document(roomId)
+                            .collection("messages")
+                            .document(messageId),
+                    messageModel
+            );
+
+            batch.update(roomRef, roomUpdates);
+
+            batch.commit()
+                    .addOnSuccessListener(unused -> {
+                        edtMoodChatInput.setText("");
+                        isSendingMessage = false;
+                        btnSendMoodChat.setEnabled(true);
+                    })
+                    .addOnFailureListener(e -> {
+                        isSendingMessage = false;
+                        btnSendMoodChat.setEnabled(true);
+
+                        Toast.makeText(
+                                MoodMatchChatActivity.this,
+                                "Gửi tin nhắn chưa thành công, thử lại nhé",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    });
+        }).addOnFailureListener(e -> {
+            isSendingMessage = false;
+            btnSendMoodChat.setEnabled(true);
+
+            Toast.makeText(
+                    MoodMatchChatActivity.this,
+                    "Không thể đọc thông tin phòng chat",
+                    Toast.LENGTH_SHORT
+            ).show();
+        });
+    }
+
+    private void endCurrentMoodMatch() {
+        if (isEndingChat) return;
+        isEndingChat = true;
+
+        if (matchId.isEmpty() || roomId.isEmpty()) {
+            openCommunityChatList();
+            return;
+        }
+
+        moodMatchRepository.endMoodMatch(matchId, roomId, "USER_ENDED", new MoodMatchRepository.SimpleActionListener() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(
+                        MoodMatchChatActivity.this,
+                        "Đã kết thúc cuộc trò chuyện",
+                        Toast.LENGTH_SHORT
+                ).show();
+                openCommunityChatList();
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                isEndingChat = false;
+                Toast.makeText(
+                        MoodMatchChatActivity.this,
+                        "Chưa thể kết thúc cuộc trò chuyện lúc này",
+                        Toast.LENGTH_SHORT
+                ).show();
             }
         });
     }
@@ -274,12 +499,63 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         finish();
     }
 
+    private void startRoomStatusListener() {
+        if (roomId.isEmpty()) {
+            return;
+        }
+
+        roomStatusListener = firestore.collection("chat_rooms")
+                .document(roomId)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null || snapshot == null || !snapshot.exists()) {
+                        return;
+                    }
+
+                    String status = safeText(snapshot.getString("status"), "ACTIVE");
+
+                    if (!"ACTIVE".equals(status) && !isEndingChat) {
+                        Toast.makeText(
+                                MoodMatchChatActivity.this,
+                                "Cuộc trò chuyện này đã kết thúc",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        openCommunityChatList();
+                    }
+                });
+    }
+
+    private void updateMessageUiState(boolean isLoading, int messageCount) {
+        if (progressMoodChatLoading != null) {
+            progressMoodChatLoading.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        }
+
+        boolean isEmpty = !isLoading && messageCount == 0;
+
+        if (layoutMoodChatEmptyState != null) {
+            layoutMoodChatEmptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        }
+
+        if (rvMoodChatMessages != null) {
+            rvMoodChatMessages.setVisibility(isLoading ? View.INVISIBLE : View.VISIBLE);
+        }
+    }
+
     @NonNull
     private String resolveDisplayName() {
         if (!TextUtils.isEmpty(matchedUserName)) {
             return matchedUserName;
         }
         return "Người bạn ẩn danh";
+    }
+
+    private void resetMyUnreadCount() {
+        if (roomId.isEmpty() || currentUserId.isEmpty()) {
+            return;
+        }
+
+        firestore.collection("chat_rooms")
+                .document(roomId)
+                .update("unread_count_map." + currentUserId, 0L);
     }
 
     @NonNull
@@ -324,5 +600,20 @@ public class MoodMatchChatActivity extends AppCompatActivity {
             return fallback;
         }
         return value.trim();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (messageListener != null) {
+            messageListener.remove();
+            messageListener = null;
+        }
+
+        if (roomStatusListener != null) {
+            roomStatusListener.remove();
+            roomStatusListener = null;
+        }
     }
 }

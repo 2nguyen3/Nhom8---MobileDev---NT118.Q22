@@ -4,6 +4,8 @@ import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ChatRoomModel {
     private String room_id;
@@ -18,11 +20,13 @@ public class ChatRoomModel {
     private Timestamp last_message_at;
     private String last_sender_id;
     private String status;
+    private Map<String, Long> unread_count_map;
 
     public ChatRoomModel() {
         this.member_ids = new ArrayList<>();
         this.member_names = new ArrayList<>();
         this.member_avatars = new ArrayList<>();
+        this.unread_count_map = new HashMap<>();
     }
 
     public ChatRoomModel(
@@ -47,6 +51,7 @@ public class ChatRoomModel {
         this.last_message_at = created_at;
         this.last_sender_id = "";
         this.status = "ACTIVE";
+        this.unread_count_map = new HashMap<>();
     }
 
     public String getRoom_id() {
@@ -144,4 +149,8 @@ public class ChatRoomModel {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public Map<String, Long> getUnread_count_map() { return unread_count_map; }
+
+    public void setUnread_count_map(Map<String, Long> unread_count_map) { this.unread_count_map = unread_count_map;}
 }

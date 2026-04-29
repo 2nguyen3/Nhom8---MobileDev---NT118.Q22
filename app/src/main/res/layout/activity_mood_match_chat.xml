@@ -6,109 +6,109 @@
     android:layout_height="match_parent"
     android:background="#F8F5FF">
 
-    <!-- TOP AREA -->
     <LinearLayout
         android:id="@+id/layoutTopArea"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="#EBFFFFFF"
         android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingTop="52dp"
         android:paddingEnd="16dp"
         android:paddingBottom="12dp"
-        android:background="#EBFFFFFF"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Top row -->
         <LinearLayout
             android:id="@+id/layoutTopRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <ImageButton
-                android:id="@+id/btnBackMoodChat"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_back_btn_community"
-                android:contentDescription="Quay lại"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_back" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <FrameLayout
-                android:id="@+id/layoutAvatarWrap"
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-                android:layout_marginStart="10dp"
-                android:background="@drawable/bg_mood_chat_avatar_stub">
+                android:id="@+id/btnBackMoodChat"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_mood_chat_more_stub">
 
-                <TextView
-                    android:id="@+id/txtAvatarEmoji"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
                     android:layout_gravity="center"
-                    android:text="🦊"
-                    android:textSize="22sp" />
-
-                <View
-                    android:id="@+id/viewOnlineDot"
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_gravity="bottom|end"
-                    android:background="@drawable/bg_dot_green" />
+                    android:contentDescription="back"
+                    android:src="@drawable/ic_back"
+                    app:tint="#9EAFC2" />
             </FrameLayout>
 
             <LinearLayout
-                android:id="@+id/layoutProfileMeta"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="10dp"
-                android:orientation="vertical">
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/txtChatName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cáo nhỏ hồng"
-                    android:textColor="#2D3A5E"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                <FrameLayout
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_mood_chat_avatar_stub">
+
+                    <TextView
+                        android:id="@+id/txtAvatarEmoji"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="🦊"
+                        android:textSize="24sp" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:layout_marginStart="10dp"
+                    android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/txtChatName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="💙"
-                        android:textSize="11sp" />
+                        android:text="Cáo nhỏ hồng"
+                        android:textColor="#2D3A5E"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/txtChatMood"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="Đang buồn"
-                        android:textColor="#6B9EE8"
-                        android:textSize="11sp" />
+                        android:layout_marginTop="2dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="· Ẩn danh"
-                        android:textColor="#C0BACA"
-                        android:textSize="10sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="💙"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/txtChatMood"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="Đang buồn"
+                            android:textColor="#6B9EE8"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="· Ẩn danh"
+                            android:textColor="#C0BACA"
+                            android:textSize="10sp" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
 
@@ -129,19 +129,18 @@
             </FrameLayout>
         </LinearLayout>
 
-        <!-- Safety banner -->
         <LinearLayout
             android:id="@+id/layoutSafetyBanner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
+            android:background="@drawable/bg_mood_chat_safe_banner_stub"
+            android:gravity="center"
+            android:orientation="horizontal"
             android:paddingStart="12dp"
             android:paddingTop="5dp"
             android:paddingEnd="12dp"
-            android:paddingBottom="5dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:background="@drawable/bg_mood_chat_safe_banner_stub">
+            android:paddingBottom="5dp">
 
             <ImageView
                 android:layout_width="8dp"
@@ -162,7 +161,6 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- CENTER CHAT AREA -->
     <LinearLayout
         android:id="@+id/layoutChatArea"
         android:layout_width="0dp"
@@ -172,12 +170,11 @@
         android:paddingTop="16dp"
         android:paddingEnd="16dp"
         android:paddingBottom="16dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutTopArea"
         app:layout_constraintBottom_toTopOf="@id/layoutBottomArea"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/layoutTopArea">
 
-        <!-- System card -->
         <LinearLayout
             android:id="@+id/layoutSystemCardWrap"
             android:layout_width="match_parent"
@@ -185,131 +182,130 @@
             android:paddingStart="8dp"
             android:paddingTop="4dp"
             android:paddingEnd="8dp"
-            android:paddingBottom="4dp">
+            android:paddingBottom="8dp">
 
             <LinearLayout
                 android:id="@+id/layoutSystemCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_mood_chat_system_card_stub"
                 android:orientation="vertical"
                 android:paddingStart="14dp"
                 android:paddingTop="10dp"
                 android:paddingEnd="14dp"
-                android:paddingBottom="10dp"
-                android:background="@drawable/bg_mood_chat_system_card_stub">
+                android:paddingBottom="10dp">
 
                 <TextView
                     android:id="@+id/txtSystemCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Heami đã kết nối bạn với Cáo nhỏ hồng — người đang có cùng tâm trạng với bạn hôm nay. Cuộc trò chuyện này hoàn toàn ẩn danh 🛡️"
+                    android:text="Heami đã kết nối bạn với một người có cùng nhịp cảm xúc hôm nay."
                     android:textColor="#5A8A8A"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Incoming message -->
-        <LinearLayout
-            android:id="@+id/layoutIncomingRow"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal"
-            android:gravity="bottom">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-            <FrameLayout
-                android:id="@+id/layoutIncomingAvatar"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:background="@drawable/bg_mood_chat_avatar_stub">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="🦊"
-                    android:textSize="18sp" />
-            </FrameLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMoodChatMessages"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp" />
 
             <LinearLayout
-                android:id="@+id/layoutIncomingBubble"
-                android:layout_width="258dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:id="@+id/layoutMoodChatEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
                 android:orientation="vertical"
-                android:paddingStart="14dp"
-                android:paddingTop="10dp"
-                android:paddingEnd="18dp"
-                android:paddingBottom="10dp"
-                android:background="@drawable/bg_mood_chat_bubble_stub">
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:visibility="gone">
 
                 <TextView
-                    android:id="@+id/txtIncomingMessage"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Heami nói mình có thể chia sẻ ở đây... Bạn cũng đang không ổn lắm à?"
-                    android:textColor="#3A2A4A"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/txtIncomingTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="10:32"
-                    android:textColor="#C0A8D0"
-                    android:textSize="9sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </LinearLayout>
+                    android:text="💌"
+                    android:textSize="36sp" />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Chưa có tin nhắn nào"
+                    android:textColor="#2D1B47"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="Hãy bắt đầu bằng một lời chào nhẹ nhàng nhé"
+                    android:textColor="#9A8AAA"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressMoodChatLoading"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+        </FrameLayout>
     </LinearLayout>
 
-    <!-- BOTTOM AREA -->
     <LinearLayout
         android:id="@+id/layoutBottomArea"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="#EBFFFFFF"
         android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingTop="12dp"
         android:paddingEnd="16dp"
         android:paddingBottom="36dp"
-        android:background="#EBFFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-        <!-- Composer -->
         <LinearLayout
             android:id="@+id/layoutComposerRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="bottom">
+            android:gravity="bottom"
+            android:orientation="horizontal">
 
             <EditText
                 android:id="@+id/edtMoodChatInput"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:minHeight="44dp"
+                android:background="@drawable/bg_mood_chat_input_stub"
                 android:gravity="center_vertical"
+                android:hint="Chia sẻ nhẹ nhàng..."
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:minHeight="44dp"
                 android:paddingStart="14dp"
                 android:paddingTop="10dp"
                 android:paddingEnd="14dp"
                 android:paddingBottom="10dp"
-                android:background="@drawable/bg_mood_chat_input_stub"
-                android:hint="Chia sẻ với Cáo nhỏ hồng..."
+                android:scrollHorizontally="false"
                 android:textColor="#3A2A4A"
                 android:textColorHint="#803A2949"
-                android:textSize="13sp"
-                android:maxLines="4"
-                android:inputType="textCapSentences|textMultiLine"
-                android:scrollHorizontally="false" />
+                android:textSize="13sp" />
 
             <FrameLayout
                 android:id="@+id/btnSendMoodChat"
@@ -331,73 +327,77 @@
             </FrameLayout>
         </LinearLayout>
 
-        <!-- Reaction row -->
         <LinearLayout
             android:id="@+id/layoutReactionRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/btnReactionHug"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
+                android:background="@drawable/bg_mood_chat_reaction_stub"
                 android:gravity="center"
                 android:text="🤗"
-                android:textSize="18sp"
-                android:background="@drawable/bg_mood_chat_reaction_stub" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/btnReactionHeart"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
                 android:layout_marginStart="8dp"
+                android:background="@drawable/bg_mood_chat_reaction_stub"
                 android:gravity="center"
                 android:text="💙"
-                android:textSize="18sp"
-                android:background="@drawable/bg_mood_chat_reaction_stub" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/btnReactionFlower"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
                 android:layout_marginStart="8dp"
+                android:background="@drawable/bg_mood_chat_reaction_stub"
                 android:gravity="center"
                 android:text="🌸"
-                android:textSize="18sp"
-                android:background="@drawable/bg_mood_chat_reaction_stub" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/btnReactionSparkle"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
                 android:layout_marginStart="8dp"
+                android:background="@drawable/bg_mood_chat_reaction_stub"
                 android:gravity="center"
                 android:text="✨"
-                android:textSize="18sp"
-                android:background="@drawable/bg_mood_chat_reaction_stub" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/btnReactionPray"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
                 android:layout_marginStart="8dp"
+                android:background="@drawable/bg_mood_chat_reaction_stub"
                 android:gravity="center"
                 android:text="🙏"
-                android:textSize="18sp"
-                android:background="@drawable/bg_mood_chat_reaction_stub" />
+                android:textSize="18sp" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnEndMoodChat"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
-                android:layout_marginStart="80dp"
-                android:minWidth="88dp"
-                android:minHeight="38dp"
+                android:layout_marginStart="12dp"
                 android:background="@drawable/bg_mood_chat_end_stub"
                 android:backgroundTint="@null"
+                android:minHeight="38dp"
+                android:minWidth="88dp"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:text="× Kết thúc"
@@ -406,7 +406,6 @@
                 android:textSize="11.5sp"
                 android:textStyle="bold" />
         </LinearLayout>
-
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

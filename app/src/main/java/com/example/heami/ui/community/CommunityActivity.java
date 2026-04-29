@@ -72,6 +72,12 @@ public class CommunityActivity extends AppCompatActivity {
     private static final int COLLAPSED_POST_MAX_LINES = 4;
     private final Set<String> expandedPostIds = new HashSet<>();
 
+    private TextView txtOnlineCount;
+    private TextView badgeCommunityChat;
+    private TextView txtStatValue1;
+    private TextView txtStatValue2;
+    private TextView txtStatValue3;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,6 +93,7 @@ public class CommunityActivity extends AppCompatActivity {
         setupFilters();
         startCommunityAnimations();
         loadCommunityPosts();
+        loadCommunityDashboardStats();
     }
 
     @Override
@@ -96,15 +103,28 @@ public class CommunityActivity extends AppCompatActivity {
 
         if (intent != null && intent.getBooleanExtra("refresh_community_feed", false)) {
             loadCommunityPosts();
+            loadCommunityDashboardStats();
             intent.removeExtra("refresh_community_feed");
             intent.removeExtra("created_post_id");
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadCommunityDashboardStats();
     }
 
     private void bindViews() {
         layoutPostsContainer = findViewById(R.id.layoutPostsContainer);
         txtPostsCount = findViewById(R.id.txtPostsCount);
         btnCommunityChat = findViewById(R.id.btnCommunityChat);
+
+        txtOnlineCount = findViewById(R.id.txtOnlineCount);
+        badgeCommunityChat = findViewById(R.id.badgeCommunityChat);
+        txtStatValue1 = findViewById(R.id.txtStatValue1);
+        txtStatValue2 = findViewById(R.id.txtStatValue2);
+        txtStatValue3 = findViewById(R.id.txtStatValue3);
     }
 
     private void initData() {
@@ -1718,6 +1738,83 @@ public class CommunityActivity extends AppCompatActivity {
         }
 
         txtPostExpandToggle.setVisibility(View.VISIBLE);
+    }
+
+    private void loadCommunityDashboardStats() {
+        if (communityRepository == null) return;
+
+        communityRepository.loadCommunityDashboardStats(new CommunityRepository.LoadCommunityDashboardStatsListener() {
+            @Override
+            public void onSuccess(@NonNull CommunityRepository.CommunityDashboardStats stats) {
+                if (txtOnlineCount != null) {
+                    txtOnlineCount.setText(String.valueOf(stats.getActiveTodayUserCount()));
+                }
+
+                if (badgeCommunityChat != null) {
+                    int unreadLikeCount = stats.getUnreadChatRoomCount();
+                    if (unreadLikeCount > 0) {
+                        badgeCommunityChat.setVisibility(View.VISIBLE);
+                        badgeCommunityChat.setText(unreadLikeCount > 9 ? "9+" : String.valueOf(unreadLikeCount));
+                    } else {
+                        badgeCommunityChat.setVisibility(View.GONE);
+                    }
+                }
+
+                if (txtStatValue1 != null) {
+                    txtStatValue1.setText(String.valueOf(stats.getSearchingCount()));
+                }
+
+                if (txtStatValue2 != null) {
+                    txtStatValue2.setText(String.valueOf(stats.getActiveMoodRoomCount()));
+                }
+
+                if (txtStatValue3 != null) {
+                    txtStatValue3.setText(formatAverageMatchTime(stats.getAverageMatchSeconds()));
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                if (txtOnlineCount != null) {
+                    txtOnlineCount.setText("--");
+                }
+
+                if (badgeCommunityChat != null) {
+                    badgeCommunityChat.setVisibility(View.GONE);
+                }
+
+                if (txtStatValue1 != null) {
+                    txtStatValue1.setText("--");
+                }
+
+                if (txtStatValue2 != null) {
+                    txtStatValue2.setText("--");
+                }
+
+                if (txtStatValue3 != null) {
+                    txtStatValue3.setText("--");
+                }
+            }
+        });
+    }
+
+    @NonNull
+    private String formatAverageMatchTime(int averageMatchSeconds) {
+        if (averageMatchSeconds <= 0) {
+            return "--";
+        }
+
+        if (averageMatchSeconds < 60) {
+            return averageMatchSeconds + "s";
+        }
+
+        int minutes = averageMatchSeconds / 60;
+        if (minutes < 60) {
+            return minutes + "m";
+        }
+
+        int hours = minutes / 60;
+        return hours + "h";
     }
 
     @NonNull
