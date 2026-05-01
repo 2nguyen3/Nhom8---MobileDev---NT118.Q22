@@ -71,4 +71,46 @@ public class NotificationScheduler {
             alarmManager.cancel(pendingIntent);
         }
     }
+
+    @SuppressLint("ScheduleExactAlarm")
+    public static void scheduleAppointmentNotification(Context context, String sessionId, long startTimeMillis, String doctorName) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, AppointmentNotificationReceiver.class);
+        intent.putExtra("session_id", sessionId);
+        intent.putExtra("doctor_name", doctorName);
+        intent.putExtra("start_time", startTimeMillis);
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        int requestCode = sessionId != null ? sessionId.hashCode() : 2001;
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, flags);
+
+        // Calculate trigger time: 1 day (24 hours) before appointment
+        long triggerTime = startTimeMillis - (24L * 60L * 60L * 1000L);
+
+        if (triggerTime > System.currentTimeMillis() && alarmManager != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                );
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                );
+            } else {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                );
+            }
+        }
+    }
 }

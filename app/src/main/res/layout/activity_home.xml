@@ -1007,6 +1007,7 @@
                     android:scrollbars="none">
 
                     <LinearLayout
+                        android:id="@+id/layoutDoctorsContainer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
@@ -1253,6 +1254,72 @@
 
                     </LinearLayout>
                 </HorizontalScrollView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutSectionAppointments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="18dp"
+                android:paddingTop="24dp"
+                android:paddingEnd="18dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/txtAppointmentsLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LỊCH CỦA BẠN"
+                    android:textColor="#C5AFCA"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/txtAppointmentsTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lịch hẹn sắp diễn ra"
+                        android:textColor="#2D3A5E"
+                        android:textSize="17sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="6dp"
+                        android:alpha="0.8"
+                        android:src="@drawable/ic_flower_pink"
+                        android:contentDescription="flower pink"
+                        app:layout_constraintStart_toEndOf="@id/txtAppointmentsTitle"
+                        app:layout_constraintTop_toTopOf="@id/txtAppointmentsTitle"
+                        app:layout_constraintBottom_toBottomOf="@id/txtAppointmentsTitle"/>
+
+                    <TextView
+                        android:id="@+id/txtAppointmentsMore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tất cả ›"
+                        android:textColor="#4DB6AC"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintBaseline_toBaselineOf="@id/txtAppointmentsTitle" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutAppointmentsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical" />
             </LinearLayout>
 
             <LinearLayout

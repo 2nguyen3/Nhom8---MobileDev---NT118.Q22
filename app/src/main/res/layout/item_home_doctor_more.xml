@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="78dp"
+    android:layout_height="214dp"
+    android:layout_marginEnd="12dp"
+    android:background="@drawable/bg_expert_more"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:gravity="center"
+        android:background="@drawable/bg_expert_more_circle"
+        android:text="›"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:text="Xem tất cả"
+        android:textColor="#D48BB0"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+</LinearLayout>

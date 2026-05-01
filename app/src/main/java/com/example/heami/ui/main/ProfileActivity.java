@@ -287,6 +287,8 @@ public class ProfileActivity extends AppCompatActivity {
                 userSettings.setNotif_plan((Boolean) value);
             } else if ("notif_appoint".equals(key)) {
                 userSettings.setNotif_appoint((Boolean) value);
+                SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("notif_appoint", (Boolean) value).apply();
             } else if ("notif_chat".equals(key)) {
                 userSettings.setNotif_chat((Boolean) value);
             } else if ("is_protected_mode".equals(key)) {
