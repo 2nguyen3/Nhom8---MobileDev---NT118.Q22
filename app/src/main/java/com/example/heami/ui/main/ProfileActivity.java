@@ -211,6 +211,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
 
             isUpdatingUI = false;
+            checkAndPromptNotificationPermission();
         });
     }
 
@@ -291,7 +292,111 @@ public class ProfileActivity extends AppCompatActivity {
             } else if ("is_protected_mode".equals(key)) {
                 userSettings.setIs_protected_mode((Boolean) value);
             }
+            
+            // Nếu bật một thông báo bất kỳ thành true, kiểm tra quyền hệ thống
+            if (key.startsWith("notif_") && (Boolean) value) {
+                checkAndPromptNotificationPermission(key);
+            }
         }
+    }
+
+    private void checkAndPromptNotificationPermission() {
+        if (userSettings == null) return;
+        boolean areNotificationsEnabled = androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled();
+        if (!areNotificationsEnabled) {
+            if (userSettings.isNotif_checkin()) {
+                showNotificationPermissionPromptDialog("notif_checkin");
+            } else if (userSettings.isNotif_plan()) {
+                showNotificationPermissionPromptDialog("notif_plan");
+            } else if (userSettings.isNotif_appoint()) {
+                showNotificationPermissionPromptDialog("notif_appoint");
+            } else if (userSettings.isNotif_chat()) {
+                showNotificationPermissionPromptDialog("notif_chat");
+            }
+        }
+    }
+
+    private void checkAndPromptNotificationPermission(String key) {
+        if (userSettings == null) return;
+        boolean areNotificationsEnabled = androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled();
+        if (!areNotificationsEnabled) {
+            showNotificationPermissionPromptDialog(key);
+        }
+    }
+
+    private int getSwitchIdByKey(String key) {
+        if ("notif_checkin".equals(key)) return R.id.switchNotiCheckin;
+        if ("notif_plan".equals(key)) return R.id.switchNotiPlan;
+        if ("notif_appoint".equals(key)) return R.id.switchNotiDr;
+        if ("notif_chat".equals(key)) return R.id.switchNotiChat;
+        return 0;
+    }
+
+    private int getTvIdByKey(String key) {
+        if ("notif_checkin".equals(key)) return R.id.tvNotiCheckinSub;
+        if ("notif_plan".equals(key)) return R.id.tvNotiPlanSub;
+        if ("notif_appoint".equals(key)) return R.id.tvNotiDrSub;
+        if ("notif_chat".equals(key)) return R.id.tvNotiChatSub;
+        return 0;
+    }
+
+    private void showNotificationPermissionPromptDialog(String key) {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_notification_permission_prompt, null);
+        builder.setView(dialogView);
+        
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        com.google.android.material.button.MaterialButton btnGoToSettings = dialogView.findViewById(R.id.btnGoToSettings);
+        TextView btnCancel = dialogView.findViewById(R.id.btnCancelPrompt);
+
+        if (btnGoToSettings != null) {
+            btnGoToSettings.setOnClickListener(v -> {
+                dialog.dismiss();
+                Intent intent = new Intent();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    intent.setAction(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                    intent.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+                } else {
+                    intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                    intent.putExtra("app_package", getPackageName());
+                    intent.putExtra("app_uid", getApplicationInfo().uid);
+                }
+                startActivity(intent);
+            });
+        }
+
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> {
+                dialog.dismiss();
+                // Tắt công tắc về false
+                isUpdatingUI = true;
+                int swId = getSwitchIdByKey(key);
+                if (swId != 0) {
+                    SwitchMaterial sw = findViewById(swId);
+                    if (sw != null) {
+                        sw.setChecked(false);
+                        int tvId = getTvIdByKey(key);
+                        if (tvId != 0) {
+                            TextView tv = findViewById(tvId);
+                            if (tv != null) {
+                                tv.setTextColor(colorTextOff);
+                            }
+                        }
+                    }
+                }
+                isUpdatingUI = false;
+                saveSettingUpdate(key, false);
+            });
+        }
+
+        dialog.show();
     }
 
     private void updateMoodGoalsUI(LinearLayout container, List<String> mood_goals) {

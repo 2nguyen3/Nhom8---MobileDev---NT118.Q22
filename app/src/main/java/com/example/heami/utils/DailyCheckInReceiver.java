@@ -23,6 +23,9 @@ public class DailyCheckInReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        // Reschedule next exact alarm for tomorrow
+        NotificationScheduler.scheduleDailyCheckIn(context);
+
         // Check if user is logged in
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) return;
@@ -60,14 +63,10 @@ public class DailyCheckInReceiver extends BroadcastReceiver {
         }
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, clickIntent, flags);
 
-        // Large icon using playstore logo
-        Bitmap largeIcon = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher_playstore);
-
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_playstore)
-                .setLargeIcon(largeIcon)
-                .setContentTitle("Heami ơi, hôm nay thế nào?")
-                .setContentText("Dành một phút cùng Heami ghi chép lại tâm trạng và cảm xúc ngày hôm nay nhé! 🌱")
+                .setContentTitle("Heami-er ơi, hôm nay thế nào?")
+                .setContentText("Dành thời gian để ghi chép lại tâm trạng và cảm xúc ngày hôm nay nhé!")
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
