@@ -17,16 +17,26 @@ public class ChatRoomModel {
     private String match_mood_tag;
     private Timestamp created_at;
     private String last_message;
+    private String last_message_id;
     private Timestamp last_message_at;
     private String last_sender_id;
     private String status;
     private Map<String, Long> unread_count_map;
+    private Map<String, Boolean> pinned_by_map;
+    private Map<String, Boolean> muted_by_map;
+    private Map<String, Boolean> archived_by_map;
+    private Timestamp ended_at;
+    private Timestamp purge_at;
 
     public ChatRoomModel() {
         this.member_ids = new ArrayList<>();
         this.member_names = new ArrayList<>();
         this.member_avatars = new ArrayList<>();
         this.unread_count_map = new HashMap<>();
+        this.pinned_by_map = new HashMap<>();
+        this.muted_by_map = new HashMap<>();
+        this.archived_by_map = new HashMap<>();
+        this.last_message_id = "";
     }
 
     public ChatRoomModel(
@@ -153,4 +163,28 @@ public class ChatRoomModel {
     public Map<String, Long> getUnread_count_map() { return unread_count_map; }
 
     public void setUnread_count_map(Map<String, Long> unread_count_map) { this.unread_count_map = unread_count_map;}
+
+    public Timestamp getEnded_at() { return ended_at; }
+
+    public void setEnded_at(Timestamp ended_at) { this.ended_at = ended_at; }
+
+    public Timestamp getPurge_at() { return purge_at; }
+
+    public void setPurge_at(Timestamp purge_at) { this.purge_at = purge_at; }
+
+    public String getLast_message_id() { return last_message_id; }
+
+    public void setLast_message_id(String last_message_id) { this.last_message_id = last_message_id; }
+
+    public Map<String, Boolean> getPinned_by_map() { return pinned_by_map; }
+
+    public void setPinned_by_map(Map<String, Boolean> pinned_by_map) { this.pinned_by_map = pinned_by_map; }
+
+    public Map<String, Boolean> getMuted_by_map() { return muted_by_map; }
+
+    public void setMuted_by_map(Map<String, Boolean> muted_by_map) { this.muted_by_map = muted_by_map; }
+
+    public Map<String, Boolean> getArchived_by_map() { return archived_by_map; }
+
+    public void setArchived_by_map(Map<String, Boolean> archived_by_map) { this.archived_by_map = archived_by_map; }
 }

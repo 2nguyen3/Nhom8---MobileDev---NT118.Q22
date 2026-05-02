@@ -102,12 +102,14 @@
                             android:textSize="11sp" />
 
                         <TextView
+                            android:id="@+id/txtPartnerPresence"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="· Ẩn danh"
-                            android:textColor="#C0BACA"
-                            android:textSize="10sp" />
+                            android:text="Đang offline"
+                            android:textColor="#9A8AAA"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -264,6 +266,16 @@
                 android:layout_gravity="center"
                 android:visibility="gone" />
         </FrameLayout>
+        <TextView
+            android:id="@+id/txtTypingIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Người bạn ẩn danh đang nhập..."
+            android:textColor="#B06AAE"
+            android:textSize="12sp"
+            android:textStyle="italic"
+            android:visibility="gone" />
     </LinearLayout>
 
     <LinearLayout

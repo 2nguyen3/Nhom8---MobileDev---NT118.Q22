@@ -35,12 +35,14 @@
             android:textSize="28sp" />
 
         <View
+            android:id="@+id/viewChatRoomOnlineDot"
             android:layout_width="17dp"
             android:layout_height="17dp"
             android:layout_gravity="bottom|end"
             android:layout_marginEnd="3dp"
             android:layout_marginBottom="3dp"
-            android:background="@drawable/bg_community_chat_online_dot" />
+            android:background="@drawable/bg_community_chat_online_dot"
+            android:visibility="gone" />
     </FrameLayout>
 
     <LinearLayout
@@ -93,6 +95,28 @@
                 android:textColor="#4A3A5A"
                 android:textSize="13.5sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtChatRoomPinBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="📌"
+                android:textColor="#E8507A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/txtChatRoomMuteBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="🔕"
+                android:textColor="#8F7AA8"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/txtChatRoomUnreadBadge"

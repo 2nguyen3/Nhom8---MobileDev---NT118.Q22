@@ -24,13 +24,16 @@ public class MoodMatchMessageAdapter extends RecyclerView.Adapter<RecyclerView.V
 
     private final List<ChatMessageModel> messageList = new ArrayList<>();
     private final String currentUserId;
+    private final String partnerUserId;
     private final String partnerEmoji;
 
     public MoodMatchMessageAdapter(
             @NonNull String currentUserId,
+            @NonNull String partnerUserId,
             @NonNull String partnerEmoji
     ) {
         this.currentUserId = currentUserId;
+        this.partnerUserId = partnerUserId;
         this.partnerEmoji = partnerEmoji;
     }
 
@@ -80,16 +83,19 @@ public class MoodMatchMessageAdapter extends RecyclerView.Adapter<RecyclerView.V
     class SentMessageViewHolder extends RecyclerView.ViewHolder {
         private final TextView txtSentMessage;
         private final TextView txtSentTime;
+        private final TextView txtSentStatus;
 
         SentMessageViewHolder(@NonNull View itemView) {
             super(itemView);
             txtSentMessage = itemView.findViewById(R.id.txtSentMessage);
             txtSentTime = itemView.findViewById(R.id.txtSentTime);
+            txtSentStatus = itemView.findViewById(R.id.txtSentStatus);
         }
 
         void bind(@NonNull ChatMessageModel message) {
             txtSentMessage.setText(safeText(message.getText(), ""));
             txtSentTime.setText(formatTime(message.getCreated_at()));
+            txtSentStatus.setText(resolveSentStatus(message));
         }
     }
 
@@ -119,6 +125,25 @@ public class MoodMatchMessageAdapter extends RecyclerView.Adapter<RecyclerView.V
         }
         return new SimpleDateFormat("HH:mm", Locale.getDefault())
                 .format(timestamp.toDate());
+    }
+
+    @NonNull
+    private String resolveSentStatus(@NonNull ChatMessageModel message) {
+        List<String> seenIds = message.getSeen_user_ids();
+        if (seenIds != null && seenIds.contains(partnerUserId)) {
+            return "Đã xem";
+        }
+
+        List<String> deliveredIds = message.getDelivered_user_ids();
+        if (deliveredIds != null && deliveredIds.contains(partnerUserId)) {
+            return "Đã nhận";
+        }
+
+        if (message.getCreated_at() == null) {
+            return "Đang gửi";
+        }
+
+        return "Đã gửi";
     }
 
     @NonNull

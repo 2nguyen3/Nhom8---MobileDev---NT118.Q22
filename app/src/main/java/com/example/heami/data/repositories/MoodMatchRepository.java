@@ -14,6 +14,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.FieldValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -360,6 +361,12 @@ public class MoodMatchRepository {
 
         Timestamp now = Timestamp.now();
 
+        Timestamp purgeAt = new Timestamp(
+                new java.util.Date(
+                        now.toDate().getTime() + java.util.concurrent.TimeUnit.HOURS.toMillis(1)
+                )
+        );
+
         firestore.collection("mood_matches")
                 .document(matchId)
                 .update(
@@ -370,7 +377,11 @@ public class MoodMatchRepository {
                 )
                 .addOnSuccessListener(unused -> firestore.collection("chat_rooms")
                         .document(roomId)
-                        .update("status", "ENDED")
+                        .update(
+                                "status", "ENDED",
+                                "ended_at", now,
+                                "purge_at", purgeAt
+                        )
                         .addOnSuccessListener(unused2 -> listener.onSuccess())
                         .addOnFailureListener(e -> {
                             String message = e.getMessage() != null
@@ -925,6 +936,58 @@ public class MoodMatchRepository {
     private boolean isExpired(@Nullable Timestamp expiresAt) {
         if (expiresAt == null) return false;
         return expiresAt.toDate().getTime() <= System.currentTimeMillis();
+    }
+
+    public void setRoomPinned(
+            @NonNull String roomId,
+            boolean pinned,
+            @NonNull SimpleActionListener listener
+    ) {
+        updateRoomUserFlag(roomId, "pinned_by_map", pinned, listener);
+    }
+
+    public void setRoomMuted(
+            @NonNull String roomId,
+            boolean muted,
+            @NonNull SimpleActionListener listener
+    ) {
+        updateRoomUserFlag(roomId, "muted_by_map", muted, listener);
+    }
+
+    public void setRoomArchived(
+            @NonNull String roomId,
+            boolean archived,
+            @NonNull SimpleActionListener listener
+    ) {
+        updateRoomUserFlag(roomId, "archived_by_map", archived, listener);
+    }
+
+    private void updateRoomUserFlag(
+            @NonNull String roomId,
+            @NonNull String fieldPrefix,
+            boolean enabled,
+            @NonNull SimpleActionListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+        Object value = enabled ? true : FieldValue.delete();
+
+        firestore.collection("chat_rooms")
+                .document(roomId)
+                .update(fieldPrefix + "." + uid, value)
+                .addOnSuccessListener(unused -> listener.onSuccess())
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể cập nhật trạng thái room";
+                    listener.onFailure(message);
+                });
     }
 
     @NonNull

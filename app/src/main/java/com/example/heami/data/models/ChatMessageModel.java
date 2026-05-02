@@ -1,6 +1,8 @@
 package com.example.heami.data.models;
 
 import com.google.firebase.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatMessageModel {
     private String message_id;
@@ -10,6 +12,8 @@ public class ChatMessageModel {
     private String message_type;
     private String status;
     private Long client_created_at_ms;
+    private List<String> delivered_user_ids;
+    private List<String> seen_user_ids;
 
     public ChatMessageModel() {}
 
@@ -26,6 +30,8 @@ public class ChatMessageModel {
         this.message_type = "TEXT";
         this.status = "ACTIVE";
         this.client_created_at_ms = System.currentTimeMillis();
+        this.delivered_user_ids = new ArrayList<>();
+        this.seen_user_ids = new ArrayList<>();
     }
 
     public String getMessage_id() {
@@ -79,4 +85,12 @@ public class ChatMessageModel {
     public Long getClient_created_at_ms() { return client_created_at_ms; }
 
     public void setClient_created_at_ms(Long client_created_at_ms) { this.client_created_at_ms = client_created_at_ms; }
+
+    public List<String> getDelivered_user_ids() { return delivered_user_ids; }
+
+    public void setDelivered_user_ids(List<String> delivered_user_ids) { this.delivered_user_ids = delivered_user_ids; }
+
+    public List<String> getSeen_user_ids() { return seen_user_ids; }
+
+    public void setSeen_user_ids(List<String> seen_user_ids) { this.seen_user_ids = seen_user_ids; }
 }
