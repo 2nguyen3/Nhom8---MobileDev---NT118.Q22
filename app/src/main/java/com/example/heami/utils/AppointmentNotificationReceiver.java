@@ -30,6 +30,10 @@ public class AppointmentNotificationReceiver extends BroadcastReceiver {
         String sessionId = intent.getStringExtra("session_id");
         String doctorName = intent.getStringExtra("doctor_name");
         long startTimeMillis = intent.getLongExtra("start_time", 0);
+        String reminderType = intent.getStringExtra("reminder_type");
+        if (reminderType == null) {
+            reminderType = "1_day";
+        }
 
         if (doctorName == null) {
             doctorName = "Bác sĩ chuyên gia";
@@ -41,10 +45,10 @@ public class AppointmentNotificationReceiver extends BroadcastReceiver {
             timeStr = timeFormat.format(new Date(startTimeMillis));
         }
 
-        showNotification(context, doctorName, timeStr);
+        showNotification(context, doctorName, timeStr, reminderType);
     }
 
-    private void showNotification(Context context, String doctorName, String timeStr) {
+    private void showNotification(Context context, String doctorName, String timeStr, String reminderType) {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null) return;
 
@@ -68,17 +72,29 @@ public class AppointmentNotificationReceiver extends BroadcastReceiver {
         }
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 2001, clickIntent, flags);
 
-        String message = "Bạn có lịch hẹn tư vấn cùng " + doctorName + " vào ngày mai lúc " + timeStr + ". Hãy nhớ chuẩn bị nhé!";
+        String title;
+        String message;
+        int notificationId;
+
+        if ("15_min".equals(reminderType)) {
+            title = "Lịch hẹn tư vấn sắp bắt đầu! ⏰";
+            message = "Lịch hẹn của bạn cùng " + doctorName + " sẽ bắt đầu sau 15 phút nữa (lúc " + timeStr + "). Hãy chuẩn bị nhé!";
+            notificationId = doctorName.hashCode() + 15;
+        } else {
+            title = "Nhắc nhở lịch hẹn ngày mai 📅";
+            message = "Bạn có lịch hẹn tư vấn cùng " + doctorName + " vào ngày mai lúc " + timeStr + ". Hãy nhớ chuẩn bị nhé!";
+            notificationId = doctorName.hashCode();
+        }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_playstore)
-                .setContentTitle("Nhắc nhở lịch hẹn ngày mai 📅")
+                .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
 
-        notificationManager.notify(doctorName.hashCode(), builder.build());
+        notificationManager.notify(notificationId, builder.build());
     }
 }

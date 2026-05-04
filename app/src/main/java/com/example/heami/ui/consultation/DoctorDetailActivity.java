@@ -300,10 +300,11 @@ public class DoctorDetailActivity extends AppCompatActivity {
         dateContainer.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(this);
         Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1); // Bắt đầu chọn từ NGÀY MAI (ngày hôm nay + 1)
 
         SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE", new Locale("vi", "VN"));
 
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 14; i++) { // Khoảng thời gian tối đa là 14 ngày
             final Calendar itemDate = (Calendar) calendar.clone();
             View dateView = inflater.inflate(R.layout.item_booking_date, dateContainer, false);
 
@@ -312,7 +313,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
             TextView txtMonthYear = dateView.findViewById(R.id.txtMonthYear);
 
             if (i == 0) {
-                txtDayOfWeek.setText("Hôm nay");
+                txtDayOfWeek.setText("Ngày mai");
             } else {
                 txtDayOfWeek.setText(dayFormat.format(itemDate.getTime()));
             }
@@ -326,7 +327,8 @@ public class DoctorDetailActivity extends AppCompatActivity {
             dateView.setTag(itemDate.getTimeInMillis());
             
             boolean isInitiallySelected = tempDate[0] != null && 
-                    itemDate.get(Calendar.DAY_OF_YEAR) == tempDate[0].get(Calendar.DAY_OF_YEAR);
+                    itemDate.get(Calendar.DAY_OF_YEAR) == tempDate[0].get(Calendar.DAY_OF_YEAR) &&
+                    itemDate.get(Calendar.YEAR) == tempDate[0].get(Calendar.YEAR);
             updateDateItemUI(dateView, isInitiallySelected);
 
             dateView.setOnClickListener(v -> {

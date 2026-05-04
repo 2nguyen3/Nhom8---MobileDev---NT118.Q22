@@ -51,6 +51,10 @@ public class BookingFlowActivity extends AppCompatActivity {
     private View step1Divider, step2Divider;
     private TextView step1Label, step2Label, step3Label;
 
+    // Countdown Timer Views
+    private TextView txtBookingTimer;
+    private android.os.CountDownTimer countDownTimer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +68,14 @@ public class BookingFlowActivity extends AppCompatActivity {
         setupBackNavigation();
         
         updateStepUI(1);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+        super.onDestroy();
     }
 
     public BookingModel getBookingModel() {
@@ -91,6 +103,58 @@ public class BookingFlowActivity extends AppCompatActivity {
         step1Label = findViewById(R.id.step1_label);
         step2Label = findViewById(R.id.step2_label);
         step3Label = findViewById(R.id.step3_label);
+
+        // Khởi động đồng hồ đếm ngược 15 phút giữ lịch hẹn
+        txtBookingTimer = findViewById(R.id.txtBookingTimer);
+        startCountdownTimer();
+    }
+
+    private void startCountdownTimer() {
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+        countDownTimer = new android.os.CountDownTimer(15 * 60 * 1000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                long minutes = (millisUntilFinished / 1000) / 60;
+                long seconds = (millisUntilFinished / 1000) % 60;
+                String timeStr = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+                if (txtBookingTimer != null) {
+                    txtBookingTimer.setText("Giữ lịch hẹn trong " + timeStr);
+                }
+            }
+
+            @Override
+            public void onFinish() {
+                if (txtBookingTimer != null) {
+                    txtBookingTimer.setText("Lịch hẹn đã hết hạn giữ!");
+                    txtBookingTimer.setTextColor(Color.parseColor("#E86FA0")); // Đổi sang màu hồng đỏ cảnh báo
+                }
+
+                // Vô hiệu hóa các nút bấm tiếp tục/thanh toán để ngăn người dùng giao dịch tiếp
+                if (btnMainAction != null) {
+                    btnMainAction.setEnabled(false);
+                    btnMainAction.setAlpha(0.5f);
+                }
+                if (layoutBtnPayVnpay != null) {
+                    layoutBtnPayVnpay.setEnabled(false);
+                    layoutBtnPayVnpay.setAlpha(0.5f);
+                }
+
+                // Hiển thị hộp thoại cảnh báo hết hạn, yêu cầu quay lại chọn lịch khác
+                if (!isFinishing() && !isDestroyed()) {
+                    new AlertDialog.Builder(BookingFlowActivity.this)
+                        .setTitle("Hết hạn giữ lịch ⏰")
+                        .setMessage("Đã quá thời gian giữ chỗ ưu tiên. Vui lòng quay lại chọn lịch hẹn khác!")
+                        .setCancelable(false)
+                        .setPositiveButton("Quay lại", (dialogInterface, which) -> {
+                            finish(); // Thoát màn hình và quay về màn hình Chi tiết Bác sĩ
+                        })
+                        .show();
+                }
+            }
+        };
+        countDownTimer.start();
     }
 
     private void setupListeners() {

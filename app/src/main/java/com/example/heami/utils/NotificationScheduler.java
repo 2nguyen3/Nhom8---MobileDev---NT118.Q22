@@ -75,40 +75,75 @@ public class NotificationScheduler {
     @SuppressLint("ScheduleExactAlarm")
     public static void scheduleAppointmentNotification(Context context, String sessionId, long startTimeMillis, String doctorName) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(context, AppointmentNotificationReceiver.class);
-        intent.putExtra("session_id", sessionId);
-        intent.putExtra("doctor_name", doctorName);
-        intent.putExtra("start_time", startTimeMillis);
+        if (alarmManager == null) return;
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             flags |= PendingIntent.FLAG_IMMUTABLE;
         }
 
-        int requestCode = sessionId != null ? sessionId.hashCode() : 2001;
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, flags);
+        int baseRequestCode = sessionId != null ? sessionId.hashCode() : 2001;
 
-        // Calculate trigger time: 1 day (24 hours) before appointment
-        long triggerTime = startTimeMillis - (24L * 60L * 60L * 1000L);
+        // 1. Nhắc nhở trước 1 ngày (24 giờ trước lịch hẹn)
+        Intent intent1Day = new Intent(context, AppointmentNotificationReceiver.class);
+        intent1Day.putExtra("session_id", sessionId);
+        intent1Day.putExtra("doctor_name", doctorName);
+        intent1Day.putExtra("start_time", startTimeMillis);
+        intent1Day.putExtra("reminder_type", "1_day");
 
-        if (triggerTime > System.currentTimeMillis() && alarmManager != null) {
+        PendingIntent pi1Day = PendingIntent.getBroadcast(context, baseRequestCode, intent1Day, flags);
+        long triggerTime1Day = startTimeMillis - (24L * 60L * 60L * 1000L);
+
+        if (triggerTime1Day > System.currentTimeMillis()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
-                    triggerTime,
-                    pendingIntent
+                    triggerTime1Day,
+                    pi1Day
                 );
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 alarmManager.setExact(
                     AlarmManager.RTC_WAKEUP,
-                    triggerTime,
-                    pendingIntent
+                    triggerTime1Day,
+                    pi1Day
                 );
             } else {
                 alarmManager.set(
                     AlarmManager.RTC_WAKEUP,
-                    triggerTime,
-                    pendingIntent
+                    triggerTime1Day,
+                    pi1Day
+                );
+            }
+        }
+
+        // 2. Nhắc nhở trước 15 phút
+        Intent intent15Min = new Intent(context, AppointmentNotificationReceiver.class);
+        intent15Min.putExtra("session_id", sessionId);
+        intent15Min.putExtra("doctor_name", doctorName);
+        intent15Min.putExtra("start_time", startTimeMillis);
+        intent15Min.putExtra("reminder_type", "15_min");
+
+        PendingIntent pi15Min = PendingIntent.getBroadcast(context, baseRequestCode + 9999, intent15Min, flags);
+        long triggerTime15Min = startTimeMillis - (15L * 60L * 1000L); // 15 phút trước lịch hẹn
+
+        if (triggerTime15Min > System.currentTimeMillis()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime15Min,
+                    pi15Min
+                );
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime15Min,
+                    pi15Min
+                );
+            } else {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime15Min,
+                    pi15Min
                 );
             }
         }
