@@ -1,5 +1,7 @@
 package com.example.heami.ui.therapy;
 
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -38,8 +40,8 @@ public class DiaryActivity extends AppCompatActivity {
     private DiaryAdapter diaryAdapter;
 
     private List<String> monthList;
-    private List<DiaryModel> diaryList;        // Danh sách hiển thị sau khi lọc trên màn hình
-    private List<DiaryModel> fullFirebaseList; // 🌟 Tổng kho dữ liệu tải về từ Firebase để lọc offline liên hoàn siêu tốc
+    private List<DiaryModel> diaryList;
+    private List<DiaryModel> fullFirebaseList;
 
     private ImageButton btnBack, btnSearch, btnList;
     private EditText edtSearchHashtag;
@@ -47,10 +49,10 @@ public class DiaryActivity extends AppCompatActivity {
     private TextView tvTotalEntries, tvSubtitleDate, tvAverageScore;
 
     private int currentSelectedMonth;
-    private String currentSearchKeyword = "";          // Lưu từ khóa tìm kiếm hashtag hiện tại
-    private String currentSelectedMoodFilter = "Tất cả"; // Lưu bộ lọc cảm xúc hiện tại
+    private int currentSelectedYear; // 🌟 Biến lưu năm lọc động mới thay vì gán cứng
+    private String currentSearchKeyword = "";
+    private String currentSelectedMoodFilter = "Tất cả";
 
-    // Biến kết nối Firebase Firestore
     private FirebaseFirestore db;
 
     @Override
@@ -60,11 +62,10 @@ public class DiaryActivity extends AppCompatActivity {
 
         Calendar calendar = Calendar.getInstance();
         currentSelectedMonth = calendar.get(Calendar.MONTH) + 1;
+        currentSelectedYear = calendar.get(Calendar.YEAR); // Lấy năm hiện tại trên thiết bị làm mặc định
 
-        // Khởi tạo Firestore
         db = FirebaseFirestore.getInstance();
 
-        // Ánh xạ các View trên layout chính
         rvMonths = findViewById(R.id.rv_months);
         rvDiaries = findViewById(R.id.rv_diaries);
         fabAdd = findViewById(R.id.fab_add);
@@ -80,11 +81,14 @@ public class DiaryActivity extends AppCompatActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
+        // Cập nhật text hiển thị thời gian ban đầu
+        updateSubtitleDateText();
+
+        // 🌟 KÍCH HOẠT SỰ KIỆN: Bấm thẳng vào dòng chữ thời gian để mở hộp chọn Tháng / Năm
         if (tvSubtitleDate != null) {
-            tvSubtitleDate.setText("Tháng " + currentSelectedMonth + " · 2026");
+            tvSubtitleDate.setOnClickListener(v -> showMonthYearPickerDialog());
         }
 
-        // 🌟 NÚT 1: XỬ LÝ LOGIC ẨN/HIỆN VÀ TÌM KIẾM ĐỘNG THEO HASHTAG
         if (btnSearch != null && edtSearchHashtag != null) {
             btnSearch.setOnClickListener(v -> {
                 if (edtSearchHashtag.getVisibility() == View.GONE) {
@@ -92,13 +96,12 @@ public class DiaryActivity extends AppCompatActivity {
                     edtSearchHashtag.requestFocus();
                 } else {
                     edtSearchHashtag.setVisibility(View.GONE);
-                    edtSearchHashtag.setText(""); // Xóa chữ khi đóng thanh tìm kiếm
+                    edtSearchHashtag.setText("");
                     currentSearchKeyword = "";
-                    executeMasterFilter();        // Chạy lại bộ lọc tổng để khôi phục danh sách
+                    executeMasterFilter();
                 }
             });
 
-            // Gán TextWatcher lắng nghe từng ký tự gõ vào ô tìm kiếm để lọc real-time
             edtSearchHashtag.addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -106,7 +109,7 @@ public class DiaryActivity extends AppCompatActivity {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     currentSearchKeyword = s.toString().trim().toLowerCase();
-                    executeMasterFilter(); // Thực thi lọc ngay khi gõ
+                    executeMasterFilter();
                 }
 
                 @Override
@@ -114,12 +117,10 @@ public class DiaryActivity extends AppCompatActivity {
             });
         }
 
-        // 🌟 NÚT 2: XỬ LÝ LOGIC BẤM VÀO PLAYLIST ĐỂ HIỂN THỊ DIALOG LỌC CẢM XÚC
         if (btnList != null) {
             btnList.setOnClickListener(v -> showFilterMoodDialog());
         }
 
-        // Khởi tạo thanh chọn tháng
         monthList = new ArrayList<>();
         for (int i = 1; i <= 12; i++) {
             monthList.add("T" + i);
@@ -128,14 +129,11 @@ public class DiaryActivity extends AppCompatActivity {
         rvMonths.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         monthAdapter = new MonthAdapter(monthList, currentSelectedMonth, monthNumber -> {
             currentSelectedMonth = monthNumber;
-            if (tvSubtitleDate != null) {
-                tvSubtitleDate.setText("Tháng " + currentSelectedMonth + " · 2026");
-            }
-            executeMasterFilter(); // Chạy bộ lọc khi chuyển tháng
+            updateSubtitleDateText();
+            executeMasterFilter();
         });
         rvMonths.setAdapter(monthAdapter);
 
-        // Khởi tạo các mảng dữ liệu nhật ký
         diaryList = new ArrayList<>();
         fullFirebaseList = new ArrayList<>();
         rvDiaries.setLayoutManager(new LinearLayoutManager(this));
@@ -143,7 +141,6 @@ public class DiaryActivity extends AppCompatActivity {
         diaryAdapter = new DiaryAdapter(this, diaryList);
         rvDiaries.setAdapter(diaryAdapter);
 
-        // Bắt đầu lắng nghe kho dữ liệu tổng từ Cloud về
         listenToDiaryChanges();
 
         if (fabAdd != null) {
@@ -151,9 +148,12 @@ public class DiaryActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * HÀM LẮNG NGHE DỮ LIỆU TOÀN BỘ TỪ FIREBASE (Không gom cứng theo tháng ở bước này)
-     */
+    private void updateSubtitleDateText() {
+        if (tvSubtitleDate != null) {
+            tvSubtitleDate.setText("Tháng " + currentSelectedMonth + " · " + currentSelectedYear);
+        }
+    }
+
     private void listenToDiaryChanges() {
         db.collection("nhat_ky")
                 .orderBy("created_at", Query.Direction.DESCENDING)
@@ -183,39 +183,40 @@ public class DiaryActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                         }
-                        // Chạy hàm lọc đa điều kiện tổng lực để hiển thị lên màn hình
                         executeMasterFilter();
                     }
                 });
     }
 
     /**
-     * 🌟 BỘ LỌC TỔNG LIÊN HOÀN (MASTER FILTER): KIỂM TRA THÁNG + HASHTAG + CẢM XÚC CÙNG LÚC
+     * 🌟 BỘ LỌC TỔNG LIÊN HOÀN (MASTER FILTER): ĐÃ ĐỒNG BỘ THÊM BIẾN NĂM (currentSelectedYear)
      */
     private void executeMasterFilter() {
         diaryList.clear();
         Calendar cal = Calendar.getInstance();
 
         for (DiaryModel diary : fullFirebaseList) {
-            // ĐIỀU KIỆN 1: Lọc trùng tháng đang chọn
             cal.setTimeInMillis(diary.getCreated_at());
             int diaryMonth = cal.get(Calendar.MONTH) + 1;
-            String monthStr = "Tháng " + currentSelectedMonth;
+            int diaryYear = cal.get(Calendar.YEAR);
 
-            boolean isSameMonth = (diaryMonth == currentSelectedMonth) ||
-                    (diary.getDate() != null && diary.getDate().contains(monthStr));
-            if (!isSameMonth) {
-                continue; // Sai tháng bỏ qua
+            // ĐIỀU KIỆN 1: Lọc trùng đồng thời cả Tháng và Năm đang chọn
+            String matchString = "Tháng " + currentSelectedMonth + " · " + currentSelectedYear;
+            boolean isSameTime = (diaryMonth == currentSelectedMonth && diaryYear == currentSelectedYear) ||
+                    (diary.getDate() != null && diary.getDate().contains(matchString));
+
+            if (!isSameTime) {
+                continue;
             }
 
-            // ĐIỀU KIỆN 2: Lọc trùng Cảm xúc đang chọn từ Bottom Sheet
+            // ĐIỀU KIỆN 2: Lọc cảm xúc
             if (!currentSelectedMoodFilter.equals("Tất cả")) {
                 if (diary.getMood() == null || !diary.getMood().trim().contains(currentSelectedMoodFilter)) {
-                    continue; // Sai cảm xúc bỏ qua
+                    continue;
                 }
             }
 
-            // ĐIỀU KIỆN 3: Lọc trùng Hashtag đang gõ trong EditText
+            // ĐIỀU KIỆN 3: Lọc Hashtag
             if (!currentSearchKeyword.isEmpty()) {
                 boolean hasMatchingTag = false;
                 if (diary.getTags() != null) {
@@ -227,11 +228,10 @@ public class DiaryActivity extends AppCompatActivity {
                     }
                 }
                 if (!hasMatchingTag) {
-                    continue; // Không trùng hashtag bỏ qua
+                    continue;
                 }
             }
 
-            // Vượt qua cả 3 chốt chặn trên thì thêm bài viết vào danh sách hiển thị
             diaryList.add(diary);
         }
 
@@ -239,17 +239,86 @@ public class DiaryActivity extends AppCompatActivity {
             tvTotalEntries.setText(diaryList.size() + " mục nhật ký");
         }
 
-        // Cập nhật lại điểm trung bình dựa trên list dữ liệu sau lọc
         updateAverageScore();
 
         if (diaryAdapter != null) {
             diaryAdapter.notifyDataSetChanged();
         }
+
+        // Đồng bộ thanh trượt ngang T1-T12 sáng đúng vị trí tháng vừa chọn
+        if (monthAdapter != null) {
+            monthAdapter.setSelectedMonth(currentSelectedMonth);
+            monthAdapter.notifyDataSetChanged();
+            rvMonths.scrollToPosition(currentSelectedMonth - 1);
+        }
     }
 
     /**
-     * 🌟 HÀM HIỂN THỊ DIALOG LỌC CẢM XÚC - ĐỔI MÀU NỀN ACTIVE VÀ HIỂN THỊ DẤU TÍCH DỘNG
+     * 🌟 HÀM HIỂN THỊ BOTTOM SHEET CHỌN NĂM VÀ THÁNG TRỰC QUAN
      */
+    private void showMonthYearPickerDialog() {
+        BottomSheetDialog pickerDialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
+        View view = getLayoutInflater().inflate(R.layout.layout_month_year_picker, null);
+        pickerDialog.setContentView(view);
+
+        TextView tvSelectedYear = view.findViewById(R.id.tvSelectedYear);
+        ImageButton btnPrevYear = view.findViewById(R.id.btnPrevYear);
+        ImageButton btnNextYear = view.findViewById(R.id.btnNextYear);
+
+        final int[] tempYear = {currentSelectedYear};
+        if (tvSelectedYear != null) {
+            tvSelectedYear.setText(String.valueOf(tempYear[0]));
+        }
+
+        if (btnPrevYear != null) {
+            btnPrevYear.setOnClickListener(v -> {
+                tempYear[0]--;
+                tvSelectedYear.setText(String.valueOf(tempYear[0]));
+            });
+        }
+
+        if (btnNextYear != null) {
+            btnNextYear.setOnClickListener(v -> {
+                tempYear[0]++;
+                tvSelectedYear.setText(String.valueOf(tempYear[0]));
+            });
+        }
+
+        // Tạo mảng ID tương ứng với 12 nút tháng trong file layout_month_year_picker.xml
+        int[] monthButtonsIds = {
+                R.id.m1, R.id.m2, R.id.m3, R.id.m4, R.id.m5, R.id.m6,
+                R.id.m7, R.id.m8, R.id.m9, R.id.m10, R.id.m11, R.id.m12
+        };
+
+        for (int i = 0; i < monthButtonsIds.length; i++) {
+            final int monthIndex = i + 1;
+            TextView btnMonth = view.findViewById(monthButtonsIds[i]);
+            if (btnMonth != null) {
+                // Đổi kiểu chữ nổi bật nếu là tháng hiện tại đang chọn
+                if (monthIndex == currentSelectedMonth) {
+                    btnMonth.setTextColor(Color.parseColor("#E86FA0"));
+                    btnMonth.setTypeface(null, android.graphics.Typeface.BOLD);
+                }
+
+                btnMonth.setOnClickListener(v -> {
+                    currentSelectedYear = tempYear[0];
+                    currentSelectedMonth = monthIndex;
+
+                    updateSubtitleDateText();
+                    executeMasterFilter();
+                    pickerDialog.dismiss();
+                });
+            }
+        }
+
+        View btnClose = view.findViewById(R.id.btnCloseSheet);
+        if (btnClose != null) {
+            btnClose.setOnClickListener(v -> pickerDialog.dismiss());
+        }
+
+        pickerDialog.show();
+    }
+
     private void showFilterMoodDialog() {
         BottomSheetDialog filterDialog = new BottomSheetDialog(DiaryActivity.this);
         View view = getLayoutInflater().inflate(R.layout.dialog_filter_mood, null);
@@ -258,7 +327,6 @@ public class DiaryActivity extends AppCompatActivity {
         ImageButton btnClose = view.findViewById(R.id.btn_close_filter);
         if (btnClose != null) btnClose.setOnClickListener(v -> filterDialog.dismiss());
 
-        // Ánh xạ các LinearLayout hàng bấm chọn
         LinearLayout btnAll = view.findViewById(R.id.btn_filter_all);
         LinearLayout btnHappy = view.findViewById(R.id.btn_filter_happy);
         LinearLayout btnPeace = view.findViewById(R.id.btn_filter_peace);
@@ -266,7 +334,6 @@ public class DiaryActivity extends AppCompatActivity {
         LinearLayout btnStress = view.findViewById(R.id.btn_filter_stress);
         LinearLayout btnTired = view.findViewById(R.id.btn_filter_tired);
 
-        // Ánh xạ các TextView chữ bên trong để đổi màu tương phản
         TextView tvAll = (TextView) btnAll.getChildAt(0);
         TextView tvHappy = (TextView) btnHappy.getChildAt(0);
         TextView tvPeace = (TextView) btnPeace.getChildAt(0);
@@ -274,7 +341,6 @@ public class DiaryActivity extends AppCompatActivity {
         TextView tvStress = (TextView) btnStress.getChildAt(0);
         TextView tvTired = (TextView) btnTired.getChildAt(0);
 
-        // Ánh xạ các TextView dấu tích (✓)
         TextView tvCheckAll = view.findViewById(R.id.tv_check_all);
         TextView tvCheckHappy = view.findViewById(R.id.tv_check_happy);
         TextView tvCheckPeace = view.findViewById(R.id.tv_check_peace);
@@ -282,7 +348,6 @@ public class DiaryActivity extends AppCompatActivity {
         TextView tvCheckStress = view.findViewById(R.id.tv_check_stress);
         TextView tvCheckTired = view.findViewById(R.id.tv_check_tired);
 
-        // 1. Reset toàn bộ các hàng về trạng thái bình thường (Nền trắng viền xám nhạt, ẩn dấu tích, chữ xám đậm)
         btnAll.setBackgroundResource(R.drawable.bg_filter_item_normal);
         btnHappy.setBackgroundResource(R.drawable.bg_filter_item_normal);
         btnPeace.setBackgroundResource(R.drawable.bg_filter_item_normal);
@@ -305,7 +370,6 @@ public class DiaryActivity extends AppCompatActivity {
         tvCheckStress.setVisibility(View.GONE);
         tvCheckTired.setVisibility(View.GONE);
 
-        // 2. Kích hoạt bừng sáng ô Active dựa vào bộ lọc hiện tại (Nền hồng nhạt viền hồng, hiện dấu ✓, chữ hồng đậm)
         int activeColor = android.graphics.Color.parseColor("#E86FA0");
         switch (currentSelectedMoodFilter) {
             case "Tất cả":
@@ -340,7 +404,6 @@ public class DiaryActivity extends AppCompatActivity {
                 break;
         }
 
-        // 3. Cài đặt sự kiện nhấn chọn cảm xúc mới cho từng khối
         btnAll.setOnClickListener(v -> { currentSelectedMoodFilter = "Tất cả"; executeMasterFilter(); filterDialog.dismiss(); });
         btnHappy.setOnClickListener(v -> { currentSelectedMoodFilter = "Vui vẻ"; executeMasterFilter(); filterDialog.dismiss(); });
         btnPeace.setOnClickListener(v -> { currentSelectedMoodFilter = "Bình yên"; executeMasterFilter(); filterDialog.dismiss(); });
@@ -351,9 +414,6 @@ public class DiaryActivity extends AppCompatActivity {
         filterDialog.show();
     }
 
-    /**
-     * HÀM MỞ BOTTOM SHEET DIALOG GHI NHẬT KÝ MỚI
-     */
     private void showAddDiaryDialog() {
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(DiaryActivity.this);
         bottomSheetDialog.setContentView(R.layout.dialog_add_diary);
@@ -368,7 +428,7 @@ public class DiaryActivity extends AppCompatActivity {
         long currentTimestamp = System.currentTimeMillis();
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, d 'Tháng' M", new Locale("vi", "VN"));
         if (tvDate != null) {
-            tvDate.setText(dateFormat.format(new Date(currentTimestamp)) + " · 2026");
+            tvDate.setText(dateFormat.format(new Date(currentTimestamp)) + " · " + currentSelectedYear);
         }
 
         if (btnClose != null) {
@@ -456,7 +516,7 @@ public class DiaryActivity extends AppCompatActivity {
                 }
 
                 String documentId = "diary_" + System.currentTimeMillis();
-                String formattedDate = tvDate != null ? tvDate.getText().toString() : "Thứ Ba, 30 Tháng 6";
+                String formattedDate = tvDate != null ? tvDate.getText().toString() : "Thứ Ba, 30 Tháng 6 · " + currentSelectedYear;
 
                 DiaryModel newDiary = new DiaryModel(
                         documentId,
@@ -484,9 +544,6 @@ public class DiaryActivity extends AppCompatActivity {
         bottomSheetDialog.show();
     }
 
-    /**
-     * HÀM TÍNH ĐIỂM TRUNG BÌNH CHUẨN XÁC DỰA TRÊN MỨC ĐỘ CẢM XÚC
-     */
     private void updateAverageScore() {
         if (tvAverageScore == null) return;
 

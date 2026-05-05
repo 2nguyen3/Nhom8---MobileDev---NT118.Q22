@@ -30,7 +30,6 @@ public class MonthAdapter extends RecyclerView.Adapter<MonthAdapter.MonthViewHol
     @NonNull
     @Override
     public MonthViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // 🌟 ĐỔI THÀNH LAYOUT CUSTOM CỦA BẠN
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_month, parent, false);
         return new MonthViewHolder(view);
     }
@@ -81,5 +80,9 @@ public class MonthAdapter extends RecyclerView.Adapter<MonthAdapter.MonthViewHol
             super(itemView);
             tvMonthName = itemView.findViewById(R.id.tv_month_name);
         }
+    }
+
+    public void setSelectedMonth(int selectedMonth) {
+        this.selectedPosition = selectedMonth - 1;
     }
 }

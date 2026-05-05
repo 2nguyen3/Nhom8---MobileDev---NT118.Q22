@@ -36,6 +36,18 @@
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
 
+        <service
+            android:name=".ui.therapy.NatureService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <service
+            android:name=".ui.therapy.PodcastService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />```
+
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="true" >
