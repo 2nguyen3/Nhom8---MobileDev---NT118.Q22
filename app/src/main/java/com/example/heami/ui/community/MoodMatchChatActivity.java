@@ -1,5 +1,8 @@
 package com.example.heami.ui.community;
 
+import com.example.heami.data.repositories.MoodMatchRepository;
+
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -11,6 +14,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,7 +26,6 @@ import android.os.Looper;
 
 import com.example.heami.R;
 import com.example.heami.data.models.ChatMessageModel;
-import com.example.heami.data.repositories.MoodMatchRepository;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -109,6 +112,10 @@ public class MoodMatchChatActivity extends AppCompatActivity {
     private MoodMatchMessageAdapter messageAdapter;
     private String currentRoomStatus = "ACTIVE";
     private com.google.firebase.Timestamp roomPurgeAt;
+
+    private boolean currentRoomPinned = false;
+    private boolean currentRoomMuted = false;
+    private boolean currentRoomArchived = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -234,11 +241,7 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         }
 
         if (btnMoreMoodChat != null) {
-            btnMoreMoodChat.setOnClickListener(v -> Toast.makeText(
-                    MoodMatchChatActivity.this,
-                    "Tùy chọn chat sẽ hoàn thiện thêm sau nhé",
-                    Toast.LENGTH_SHORT
-            ).show());
+            btnMoreMoodChat.setOnClickListener(this::showChatOptionsMenu);
         }
 
         if (btnSendMoodChat != null) {
@@ -613,7 +616,7 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                 boolean online = hasConnections && Boolean.TRUE.equals(isForeground);
 
                 if (txtPartnerPresence != null) {
-                    txtPartnerPresence.setText(online ? "Đang hoạt động" : "Đang offline");
+                    txtPartnerPresence.setText(online ? "Đang Online" : "Đang Offline");
                 }
             }
 
@@ -745,6 +748,10 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                     roomPurgeAt = snapshot.getTimestamp("purge_at");
                     currentRoomStatus = safeText(snapshot.getString("status"), "ACTIVE");
 
+                    currentRoomPinned = Boolean.TRUE.equals(snapshot.get("pinned_by_map." + currentUserId));
+                    currentRoomMuted = Boolean.TRUE.equals(snapshot.get("muted_by_map." + currentUserId));
+                    currentRoomArchived = Boolean.TRUE.equals(snapshot.get("archived_by_map." + currentUserId));
+
                     if (isCurrentRoomExpired()) {
                         Toast.makeText(
                                 MoodMatchChatActivity.this,
@@ -757,6 +764,251 @@ public class MoodMatchChatActivity extends AppCompatActivity {
 
                     applyRoomStatusUi();
                 });
+    }
+
+    private void showChatOptionsMenu(@NonNull View anchor) {
+        PopupMenu popupMenu = new PopupMenu(this, anchor);
+
+        popupMenu.getMenu().add(
+                0, 1, 0,
+                currentRoomPinned ? "Bỏ ghim cuộc trò chuyện" : "Ghim cuộc trò chuyện"
+        );
+
+        popupMenu.getMenu().add(
+                0, 2, 1,
+                currentRoomMuted ? "Bật lại thông báo" : "Tắt thông báo"
+        );
+
+        popupMenu.getMenu().add(
+                0, 3, 2,
+                currentRoomArchived ? "Bỏ lưu trữ" : "Lưu trữ cuộc trò chuyện"
+        );
+
+        if ("ACTIVE".equals(currentRoomStatus)) {
+            popupMenu.getMenu().add(
+                    0, 4, 3,
+                    "Kết thúc trò chuyện"
+            );
+        }
+
+        popupMenu.getMenu().add(
+                0, 5, 4,
+                "Báo cáo cuộc trò chuyện"
+        );
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == 1) {
+                toggleCurrentRoomPinned();
+                return true;
+            }
+
+            if (itemId == 2) {
+                toggleCurrentRoomMuted();
+                return true;
+            }
+
+            if (itemId == 3) {
+                toggleCurrentRoomArchived();
+                return true;
+            }
+
+            if (itemId == 4) {
+                confirmEndCurrentChat();
+                return true;
+            }
+
+            if (itemId == 5) {
+                showReportChatDialog();
+                return true;
+            }
+
+            return false;
+        });
+
+        popupMenu.show();
+    }
+
+    private void toggleCurrentRoomPinned() {
+        if (roomId.isEmpty()) return;
+
+        moodMatchRepository.setRoomPinned(
+                roomId,
+                !currentRoomPinned,
+                new MoodMatchRepository.SimpleActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(
+                                MoodMatchChatActivity.this,
+                                currentRoomPinned ? "Đã bỏ ghim cuộc trò chuyện" : "Đã ghim cuộc trò chuyện",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        Toast.makeText(MoodMatchChatActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    private void toggleCurrentRoomMuted() {
+        if (roomId.isEmpty()) return;
+
+        moodMatchRepository.setRoomMuted(
+                roomId,
+                !currentRoomMuted,
+                new MoodMatchRepository.SimpleActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(
+                                MoodMatchChatActivity.this,
+                                currentRoomMuted ? "Đã bật lại thông báo" : "Đã tắt thông báo",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        Toast.makeText(MoodMatchChatActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    private void toggleCurrentRoomArchived() {
+        if (roomId.isEmpty()) return;
+
+        moodMatchRepository.setRoomArchived(
+                roomId,
+                !currentRoomArchived,
+                new MoodMatchRepository.SimpleActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        boolean willArchive = !currentRoomArchived;
+
+                        Toast.makeText(
+                                MoodMatchChatActivity.this,
+                                willArchive ? "Đã lưu trữ cuộc trò chuyện" : "Đã bỏ lưu trữ",
+                                Toast.LENGTH_SHORT
+                        ).show();
+
+                        if (willArchive) {
+                            openCommunityChatList();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        Toast.makeText(MoodMatchChatActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    private void confirmEndCurrentChat() {
+        if (roomId.isEmpty() || matchId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy thông tin cuộc trò chuyện", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Kết thúc trò chuyện")
+                .setMessage("Bạn có chắc muốn kết thúc cuộc trò chuyện này không?")
+                .setNegativeButton("Hủy", null)
+                .setPositiveButton("Kết thúc", (dialog, which) -> {
+                    isEndingChat = true;
+
+                    moodMatchRepository.endMoodMatch(
+                            matchId,
+                            roomId,
+                            "USER_ENDED",
+                            new MoodMatchRepository.SimpleActionListener() {
+                                @Override
+                                public void onSuccess() {
+                                    Toast.makeText(
+                                            MoodMatchChatActivity.this,
+                                            "Cuộc trò chuyện đã được kết thúc",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+
+                                @Override
+                                public void onFailure(@NonNull String errorMessage) {
+                                    isEndingChat = false;
+                                    Toast.makeText(MoodMatchChatActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                    );
+                })
+                .show();
+    }
+
+    private void showReportChatDialog() {
+        if (roomId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy thông tin cuộc trò chuyện", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final String[] reasons = new String[]{
+                "Quấy rối / xúc phạm",
+                "Nội dung không an toàn",
+                "Spam / làm phiền",
+                "Khác"
+        };
+
+        final int[] selectedIndex = {0};
+
+        new AlertDialog.Builder(this)
+                .setTitle("Báo cáo cuộc trò chuyện")
+                .setSingleChoiceItems(reasons, 0, (dialog, which) -> selectedIndex[0] = which)
+                .setNegativeButton("Hủy", null)
+                .setPositiveButton("Gửi báo cáo", (dialog, which) -> {
+                    String selectedReason;
+                    switch (selectedIndex[0]) {
+                        case 0:
+                            selectedReason = "HARASSMENT";
+                            break;
+                        case 1:
+                            selectedReason = "UNSAFE_CONTENT";
+                            break;
+                        case 2:
+                            selectedReason = "SPAM";
+                            break;
+                        default:
+                            selectedReason = "OTHER";
+                            break;
+                    }
+
+                    moodMatchRepository.reportChatConversation(
+                            roomId,
+                            matchId,
+                            selectedReason,
+                            "",
+                            new MoodMatchRepository.SimpleActionListener() {
+                                @Override
+                                public void onSuccess() {
+                                    Toast.makeText(
+                                            MoodMatchChatActivity.this,
+                                            "Heami đã ghi nhận báo cáo của bạn",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+
+                                @Override
+                                public void onFailure(@NonNull String errorMessage) {
+                                    Toast.makeText(
+                                            MoodMatchChatActivity.this,
+                                            errorMessage,
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+                            }
+                    );
+                })
+                .show();
     }
 
     private boolean isCurrentRoomExpired() {

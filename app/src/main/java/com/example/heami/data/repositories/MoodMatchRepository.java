@@ -16,6 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.FieldValue;
 
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -393,6 +394,44 @@ public class MoodMatchRepository {
                     String message = e.getMessage() != null
                             ? e.getMessage()
                             : "Không thể kết thúc MoodMatch";
+                    listener.onFailure(message);
+                });
+    }
+
+    public void reportChatConversation(
+            @NonNull String roomId,
+            @NonNull String matchId,
+            @NonNull String reason,
+            @NonNull String note,
+            @NonNull SimpleActionListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String reportId = firestore.collection("chat_reports").document().getId();
+
+        HashMap<String, Object> reportData = new HashMap<>();
+        reportData.put("report_id", reportId);
+        reportData.put("room_id", roomId);
+        reportData.put("match_id", matchId);
+        reportData.put("reported_by", firebaseUser.getUid());
+        reportData.put("reason", safeText(reason, "UNSAFE_CHAT"));
+        reportData.put("note", safeText(note, ""));
+        reportData.put("status", "PENDING");
+        reportData.put("created_at", FieldValue.serverTimestamp());
+
+        firestore.collection("chat_reports")
+                .document(reportId)
+                .set(reportData)
+                .addOnSuccessListener(unused -> listener.onSuccess())
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể gửi báo cáo cuộc trò chuyện";
                     listener.onFailure(message);
                 });
     }
