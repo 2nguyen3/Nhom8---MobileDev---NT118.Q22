@@ -1,7 +1,5 @@
 package com.example.heami.ui.community;
 
-import com.example.heami.ui.checkin.CheckInAiActivity;
-
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -20,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
 import com.example.heami.data.repositories.MoodMatchRepository;
+import com.example.heami.ui.checkin.CheckInAiActivity;
 import com.google.firebase.Timestamp;
 
 public class MoodMatchActivity extends AppCompatActivity {
@@ -47,7 +46,6 @@ public class MoodMatchActivity extends AppCompatActivity {
 
     private Button btnMoodMatchCTA;
     private TextView txtBackToCommunity;
-
     private View moodMatchRoot;
 
     private MoodMatchRepository moodMatchRepository;
@@ -65,8 +63,9 @@ public class MoodMatchActivity extends AppCompatActivity {
     private boolean isSearchingActive = false;
     private boolean isMatched = false;
     private boolean isRetryMode = false;
-
     private boolean isCheckInRequiredMode = false;
+    private boolean isProvisioningRoom = false;
+    private boolean hasOpenedChat = false;
 
     private final Runnable showAnalyzingRunnable = this::showAnalyzingStateAnimated;
 
@@ -148,8 +147,7 @@ public class MoodMatchActivity extends AppCompatActivity {
                 if (!btnMoodMatchCTA.isEnabled()) return;
 
                 if (isCheckInRequiredMode) {
-                    Intent intent = new Intent(MoodMatchActivity.this, CheckInAiActivity.class);
-                    startActivity(intent);
+                    startActivity(new Intent(MoodMatchActivity.this, CheckInAiActivity.class));
                     return;
                 }
 
@@ -183,18 +181,26 @@ public class MoodMatchActivity extends AppCompatActivity {
     }
 
     private void handleExitRequested() {
-        if (isSearchingActive && !currentRequestId.isEmpty()) {
-            moodMatchRepository.cancelSearchingRequest(currentRequestId, new MoodMatchRepository.SimpleActionListener() {
-                @Override
-                public void onSuccess() {
-                    finish();
-                }
+        if (isProvisioningRoom || hasOpenedChat) {
+            finish();
+            return;
+        }
 
-                @Override
-                public void onFailure(@NonNull String errorMessage) {
-                    finish();
-                }
-            });
+        if (isSearchingActive && !currentRequestId.isEmpty() && !isMatched) {
+            moodMatchRepository.cancelMoodMatchRequestSafely(
+                    currentRequestId,
+                    new MoodMatchRepository.SimpleActionListener() {
+                        @Override
+                        public void onSuccess() {
+                            finish();
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull String errorMessage) {
+                            finish();
+                        }
+                    }
+            );
             return;
         }
 
@@ -207,6 +213,9 @@ public class MoodMatchActivity extends AppCompatActivity {
         isSearchingActive = false;
         isMatched = false;
         isRetryMode = false;
+        isCheckInRequiredMode = false;
+        isProvisioningRoom = false;
+        hasOpenedChat = false;
 
         currentRequestId = "";
         currentMatchId = "";
@@ -229,6 +238,7 @@ public class MoodMatchActivity extends AppCompatActivity {
                 isSearchingActive = true;
                 isMatched = false;
                 isRetryMode = false;
+                isCheckInRequiredMode = false;
 
                 showSearchingStateImmediate();
                 scheduleAnalyzingState();
@@ -312,20 +322,59 @@ public class MoodMatchActivity extends AppCompatActivity {
     private void handleMatchedSession(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
         clearScheduledTasks();
 
-        isSearchingActive = false;
-        isMatched = true;
-        isRetryMode = false;
-
         currentRequestId = sessionInfo.getRequestId();
         currentMatchId = sessionInfo.getMatchId();
-        currentRoomId = sessionInfo.getRoomId();
         currentExpiresAt = sessionInfo.getExpiresAt();
 
         matchedUserId = sessionInfo.getMatchedUserId();
         matchedUserName = sessionInfo.getMatchedUserName();
         matchedUserAvatar = sessionInfo.getMatchedUserAvatar();
 
-        showSuccessStateAnimated(sessionInfo);
+        isSearchingActive = false;
+        isMatched = true;
+        isRetryMode = false;
+        isCheckInRequiredMode = false;
+
+        provisionRoomAndShowSuccess();
+    }
+
+    private void provisionRoomAndShowSuccess() {
+        if (isProvisioningRoom || hasOpenedChat) {
+            return;
+        }
+
+        if (currentMatchId.isEmpty() || matchedUserId.isEmpty()) {
+            showFailureState("Thiếu thông tin ghép cặp để tạo phòng chat");
+            return;
+        }
+
+        isProvisioningRoom = true;
+
+        if (btnMoodMatchCTA != null) {
+            btnMoodMatchCTA.setEnabled(false);
+            btnMoodMatchCTA.setAlpha(0.6f);
+            btnMoodMatchCTA.setText("Đang tạo phòng chat...");
+        }
+
+        moodMatchRepository.ensureMoodMatchChatRoom(
+                currentMatchId,
+                matchedUserId,
+                currentMoodTag,
+                new MoodMatchRepository.EnsureRoomListener() {
+                    @Override
+                    public void onSuccess(@NonNull String roomId) {
+                        isProvisioningRoom = false;
+                        currentRoomId = roomId;
+                        showSuccessStateAnimated();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        isProvisioningRoom = false;
+                        showFailureState(errorMessage);
+                    }
+                }
+        );
     }
 
     private void showSearchingStateImmediate() {
@@ -388,12 +437,12 @@ public class MoodMatchActivity extends AppCompatActivity {
         }
     }
 
-    private void showSuccessStateAnimated(@NonNull MoodMatchRepository.MoodMatchSessionInfo sessionInfo) {
-        crossfadeState(layoutStateAnalyzing != null && layoutStateAnalyzing.getVisibility() == View.VISIBLE
-                        ? layoutStateAnalyzing
-                        : layoutStateSearching,
-                layoutStateSuccess
-        );
+    private void showSuccessStateAnimated() {
+        View fromView = (layoutStateAnalyzing != null && layoutStateAnalyzing.getVisibility() == View.VISIBLE)
+                ? layoutStateAnalyzing
+                : layoutStateSearching;
+
+        crossfadeState(fromView, layoutStateSuccess);
 
         if (layoutStateSuccess != null) {
             layoutStateSuccess.setScaleX(0.94f);
@@ -406,19 +455,16 @@ public class MoodMatchActivity extends AppCompatActivity {
         }
 
         if (txtSuccessTitle != null) {
-            String partnerName = sessionInfo.getMatchedUserName().trim().isEmpty()
+            String partnerName = matchedUserName.trim().isEmpty()
                     ? "Bạn đã được kết nối!"
-                    : "Đã ghép với " + sessionInfo.getMatchedUserName() + "!";
+                    : "Đã ghép với " + matchedUserName + "!";
             txtSuccessTitle.setText(partnerName);
         }
 
         if (btnMoodMatchCTA != null) {
             btnMoodMatchCTA.setText("Vào phòng trò chuyện");
             btnMoodMatchCTA.setEnabled(true);
-            btnMoodMatchCTA.animate()
-                    .alpha(1f)
-                    .setDuration(220)
-                    .start();
+            btnMoodMatchCTA.animate().alpha(1f).setDuration(220).start();
         }
     }
 
@@ -428,6 +474,7 @@ public class MoodMatchActivity extends AppCompatActivity {
         isSearchingActive = false;
         isMatched = false;
         isRetryMode = true;
+        isProvisioningRoom = false;
 
         if (layoutStateSearching != null) {
             layoutStateSearching.setVisibility(View.VISIBLE);
@@ -469,6 +516,7 @@ public class MoodMatchActivity extends AppCompatActivity {
         isSearchingActive = false;
         isMatched = false;
         isRetryMode = true;
+        isProvisioningRoom = false;
 
         if (layoutStateSearching != null) {
             layoutStateSearching.setVisibility(View.VISIBLE);
@@ -505,6 +553,10 @@ public class MoodMatchActivity extends AppCompatActivity {
     }
 
     private void openMoodMatchChat() {
+        if (currentRoomId.isEmpty()) {
+            return;
+        }
+
         Intent intent = new Intent(MoodMatchActivity.this, MoodMatchChatActivity.class);
         intent.putExtra("room_id", currentRoomId);
         intent.putExtra("match_id", currentMatchId);
@@ -512,7 +564,11 @@ public class MoodMatchActivity extends AppCompatActivity {
         intent.putExtra("matched_user_name", matchedUserName);
         intent.putExtra("matched_user_avatar", matchedUserAvatar);
         intent.putExtra("mood_tag", currentMoodTag);
+        intent.putExtra("room_status", "ACTIVE");
+
+        hasOpenedChat = true;
         startActivity(intent);
+        finish();
     }
 
     @NonNull
@@ -541,6 +597,7 @@ public class MoodMatchActivity extends AppCompatActivity {
         isMatched = false;
         isRetryMode = false;
         isCheckInRequiredMode = true;
+        isProvisioningRoom = false;
 
         if (layoutStateSearching != null) {
             layoutStateSearching.setVisibility(View.VISIBLE);
@@ -567,8 +624,7 @@ public class MoodMatchActivity extends AppCompatActivity {
 
         if (txtSearchingSubtitle != null) {
             txtSearchingSubtitle.setText(
-                    "Heami cần cảm xúc đã xác nhận trong hôm nay,\n" +
-                            "để kết nối bạn với một người phù hợp hơn."
+                    "Heami cần cảm xúc đã xác nhận trong hôm nay,\nđể kết nối bạn với một người phù hợp hơn."
             );
         }
 
@@ -593,10 +649,7 @@ public class MoodMatchActivity extends AppCompatActivity {
         if (to != null) {
             to.setVisibility(View.VISIBLE);
             to.setAlpha(0f);
-            to.animate()
-                    .alpha(1f)
-                    .setDuration(300)
-                    .start();
+            to.animate().alpha(1f).setDuration(300).start();
         }
 
         if (from != null) {

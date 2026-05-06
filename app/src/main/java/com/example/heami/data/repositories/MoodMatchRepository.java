@@ -40,6 +40,16 @@ public class MoodMatchRepository {
         void onFailure(@NonNull String errorMessage);
     }
 
+    public interface EnsureRoomListener {
+        void onSuccess(@NonNull String roomId);
+        void onFailure(@NonNull String errorMessage);
+    }
+
+    @NonNull
+    private String buildMoodMatchRoomId(@NonNull String matchId) {
+        return "mm_" + matchId;
+    }
+
     public interface SimpleActionListener {
         void onSuccess();
         void onFailure(@NonNull String errorMessage);
@@ -257,7 +267,7 @@ public class MoodMatchRepository {
                 });
     }
 
-    public void cancelSearchingRequest(
+    public void cancelMoodMatchRequestSafely(
             @NonNull String requestId,
             @NonNull SimpleActionListener listener
     ) {
@@ -268,42 +278,43 @@ public class MoodMatchRepository {
             return;
         }
 
-        firestore.collection("mood_match_requests")
-                .document(requestId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        listener.onSuccess();
-                        return;
+        DocumentReference requestRef = firestore.collection("mood_match_requests").document(requestId);
+
+        firestore.runTransaction(transaction -> {
+                    DocumentSnapshot requestSnap = transaction.get(requestRef);
+                    if (!requestSnap.exists()) {
+                        return null;
                     }
 
-                    MoodMatchRequestModel request = documentSnapshot.toObject(MoodMatchRequestModel.class);
-                    if (request == null) {
-                        listener.onFailure("Không đọc được dữ liệu ghép cặp");
-                        return;
+                    String status = safeText(requestSnap.getString("status"), "SEARCHING");
+                    String matchId = safeText(requestSnap.getString("match_id"), "");
+
+                    // Nếu đã MATCHED hoặc đã có match_id thì không cho hủy kiểu searching nữa
+                    if (!"SEARCHING".equals(status) || !matchId.isEmpty()) {
+                        return null;
                     }
 
-                    String ownerId = safeText(request.getUser_id(), "");
-                    String status = safeText(request.getStatus(), "SEARCHING");
+                    transaction.update(
+                            requestRef,
+                            "status", "CANCELED",
+                            "canceled_at", Timestamp.now()
+                    );
 
-                    if (!firebaseUser.getUid().equals(ownerId)) {
-                        listener.onFailure("Bạn không có quyền hủy yêu cầu này");
-                        return;
-                    }
-
-                    if (!"SEARCHING".equals(status)) {
-                        listener.onSuccess();
-                        return;
-                    }
-
-                    markRequestStatus(requestId, "CANCELLED", listener);
-                })
+                    return null;
+                }).addOnSuccessListener(unused -> listener.onSuccess())
                 .addOnFailureListener(e -> {
                     String message = e.getMessage() != null
                             ? e.getMessage()
                             : "Không thể hủy tìm kiếm";
                     listener.onFailure(message);
                 });
+    }
+
+    public void cancelSearchingRequest(
+            @NonNull String requestId,
+            @NonNull SimpleActionListener listener
+    ) {
+        cancelMoodMatchRequestSafely(requestId, listener);
     }
 
     public void markRequestTimeout(
@@ -394,6 +405,111 @@ public class MoodMatchRepository {
                     String message = e.getMessage() != null
                             ? e.getMessage()
                             : "Không thể kết thúc MoodMatch";
+                    listener.onFailure(message);
+                });
+    }
+
+    public void ensureMoodMatchChatRoom(
+            @NonNull String matchId,
+            @NonNull String partnerUserId,
+            @NonNull String moodTag,
+            @NonNull EnsureRoomListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String currentUserId = firebaseUser.getUid();
+        String roomId = buildMoodMatchRoomId(matchId);
+
+        DocumentReference roomRef = firestore.collection("chat_rooms").document(roomId);
+        DocumentReference matchRef = firestore.collection("mood_matches").document(matchId);
+        DocumentReference myUserRef = firestore.collection("users").document(currentUserId);
+        DocumentReference partnerUserRef = firestore.collection("users").document(partnerUserId);
+
+        firestore.runTransaction(transaction -> {
+                    DocumentSnapshot matchSnap = transaction.get(matchRef);
+                    if (!matchSnap.exists()) {
+                        throw new RuntimeException("Không tìm thấy match");
+                    }
+
+                    String matchStatus = safeText(matchSnap.getString("status"), "ACTIVE");
+                    if ("ENDED".equals(matchStatus) || "CANCELED".equals(matchStatus)) {
+                        throw new RuntimeException("Match đã không còn hiệu lực");
+                    }
+
+                    DocumentSnapshot roomSnap = transaction.get(roomRef);
+                    if (roomSnap.exists()) {
+                        return roomId;
+                    }
+
+                    DocumentSnapshot myUserSnap = transaction.get(myUserRef);
+                    DocumentSnapshot partnerUserSnap = transaction.get(partnerUserRef);
+
+                    String myName = safeText(myUserSnap.getString("nickname"), "Người dùng ẩn danh");
+                    String myAvatar = safeText(myUserSnap.getString("avatar_url"), "");
+
+                    String partnerName = safeText(partnerUserSnap.getString("nickname"), "Người bạn ẩn danh");
+                    String partnerAvatar = safeText(partnerUserSnap.getString("avatar_url"), "");
+
+                    List<String> memberIds = new ArrayList<>();
+                    List<String> memberNames = new ArrayList<>();
+                    List<String> memberAvatars = new ArrayList<>();
+
+                    if (currentUserId.compareTo(partnerUserId) <= 0) {
+                        memberIds.add(currentUserId);
+                        memberIds.add(partnerUserId);
+
+                        memberNames.add(myName);
+                        memberNames.add(partnerName);
+
+                        memberAvatars.add(myAvatar);
+                        memberAvatars.add(partnerAvatar);
+                    } else {
+                        memberIds.add(partnerUserId);
+                        memberIds.add(currentUserId);
+
+                        memberNames.add(partnerName);
+                        memberNames.add(myName);
+
+                        memberAvatars.add(partnerAvatar);
+                        memberAvatars.add(myAvatar);
+                    }
+
+                    HashMap<String, Long> unreadMap = new HashMap<>();
+                    unreadMap.put(currentUserId, 0L);
+                    unreadMap.put(partnerUserId, 0L);
+
+                    Timestamp now = Timestamp.now();
+
+                    HashMap<String, Object> roomData = new HashMap<>();
+                    roomData.put("room_id", roomId);
+                    roomData.put("member_ids", memberIds);
+                    roomData.put("member_names", memberNames);
+                    roomData.put("member_avatars", memberAvatars);
+                    roomData.put("type", "MOOD_MATCH");
+                    roomData.put("related_id", matchId);
+                    roomData.put("match_mood_tag", safeText(moodTag, "stress"));
+                    roomData.put("created_at", now);
+                    roomData.put("last_message", "");
+                    roomData.put("last_message_id", "");
+                    roomData.put("last_message_at", now);
+                    roomData.put("last_sender_id", "");
+                    roomData.put("status", "ACTIVE");
+                    roomData.put("unread_count_map", unreadMap);
+
+                    transaction.set(roomRef, roomData);
+                    transaction.update(matchRef, "room_id", roomId);
+
+                    return roomId;
+                }).addOnSuccessListener(listener::onSuccess)
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể tạo phòng chat";
                     listener.onFailure(message);
                 });
     }
@@ -512,7 +628,7 @@ public class MoodMatchRepository {
                 .document(candidateRequest.getRequest_id());
 
         String matchId = firestore.collection("mood_matches").document().getId();
-        String roomId = firestore.collection("chat_rooms").document().getId();
+        String roomId = buildMoodMatchRoomId(matchId);
 
         DocumentReference matchRef = firestore.collection("mood_matches").document(matchId);
         DocumentReference roomRef = firestore.collection("chat_rooms").document(roomId);
@@ -557,33 +673,49 @@ public class MoodMatchRepository {
                         throw new RuntimeException("Yêu cầu của người kia đã hết hạn");
                     }
 
-                    if (safeText(latestMine.getUser_id(), "").equals(safeText(latestCandidate.getUser_id(), ""))) {
+                    String myUserId = safeText(latestMine.getUser_id(), "");
+                    String candidateUserId = safeText(latestCandidate.getUser_id(), "");
+
+                    if (myUserId.equals(candidateUserId)) {
                         throw new RuntimeException("Không thể ghép với chính mình");
                     }
 
                     MoodMatchModel matchModel = new MoodMatchModel(
                             matchId,
-                            safeText(latestMine.getUser_id(), ""),
-                            safeText(latestCandidate.getUser_id(), ""),
+                            myUserId,
+                            candidateUserId,
                             safeText(latestMine.getMood_tag(), ""),
                             now
                     );
                     matchModel.setRoom_id(roomId);
 
-                    List<String> memberIds = Arrays.asList(
-                            safeText(latestMine.getUser_id(), ""),
-                            safeText(latestCandidate.getUser_id(), "")
-                    );
+                    List<String> memberIds = new ArrayList<>();
+                    List<String> memberNames = new ArrayList<>();
+                    List<String> memberAvatars = new ArrayList<>();
 
-                    List<String> memberNames = Arrays.asList(
-                            safeText(currentUser.getNickname(), "Người dùng Heami"),
-                            safeText(candidateUser.getNickname(), "Người dùng Heami")
-                    );
+                    if (myUserId.compareTo(candidateUserId) <= 0) {
+                        memberIds.add(myUserId);
+                        memberIds.add(candidateUserId);
 
-                    List<String> memberAvatars = Arrays.asList(
-                            safeText(currentUser.getAvatar_url(), ""),
-                            safeText(candidateUser.getAvatar_url(), "")
-                    );
+                        memberNames.add(safeText(currentUser.getNickname(), "Người dùng Heami"));
+                        memberNames.add(safeText(candidateUser.getNickname(), "Người dùng Heami"));
+
+                        memberAvatars.add(safeText(currentUser.getAvatar_url(), ""));
+                        memberAvatars.add(safeText(candidateUser.getAvatar_url(), ""));
+                    } else {
+                        memberIds.add(candidateUserId);
+                        memberIds.add(myUserId);
+
+                        memberNames.add(safeText(candidateUser.getNickname(), "Người dùng Heami"));
+                        memberNames.add(safeText(currentUser.getNickname(), "Người dùng Heami"));
+
+                        memberAvatars.add(safeText(candidateUser.getAvatar_url(), ""));
+                        memberAvatars.add(safeText(currentUser.getAvatar_url(), ""));
+                    }
+
+                    HashMap<String, Long> unreadMap = new HashMap<>();
+                    unreadMap.put(myUserId, 0L);
+                    unreadMap.put(candidateUserId, 0L);
 
                     ChatRoomModel roomModel = new ChatRoomModel(
                             roomId,
@@ -595,6 +727,8 @@ public class MoodMatchRepository {
                             safeText(latestMine.getMood_tag(), ""),
                             now
                     );
+                    roomModel.setUnread_count_map(unreadMap);
+                    roomModel.setLast_message_id("");
 
                     transaction.set(matchRef, matchModel);
                     transaction.set(roomRef, roomModel);
@@ -602,14 +736,14 @@ public class MoodMatchRepository {
                     transaction.update(
                             myRequestRef,
                             "status", "MATCHED",
-                            "matched_user_id", safeText(latestCandidate.getUser_id(), ""),
+                            "matched_user_id", candidateUserId,
                             "match_id", matchId
                     );
 
                     transaction.update(
                             candidateRequestRef,
                             "status", "MATCHED",
-                            "matched_user_id", safeText(latestMine.getUser_id(), ""),
+                            "matched_user_id", myUserId,
                             "match_id", matchId
                     );
 
@@ -620,14 +754,12 @@ public class MoodMatchRepository {
                             "MATCHED",
                             safeText(latestMine.getMood_tag(), ""),
                             latestMine.getExpires_at(),
-                            safeText(latestCandidate.getUser_id(), ""),
+                            candidateUserId,
                             safeText(candidateUser.getNickname(), "Người dùng Heami"),
                             safeText(candidateUser.getAvatar_url(), "")
                     );
                 }).addOnSuccessListener(listener::onMatched)
-                .addOnFailureListener(e -> {
-                    listener.onSearching(buildSearchingSessionInfo(myRequest));
-                });
+                .addOnFailureListener(e -> listener.onSearching(buildSearchingSessionInfo(myRequest)));
     }
 
     private void findBestCandidate(

@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MoodMatchChatActivity extends AppCompatActivity {
 
@@ -116,6 +118,8 @@ public class MoodMatchChatActivity extends AppCompatActivity {
     private boolean currentRoomPinned = false;
     private boolean currentRoomMuted = false;
     private boolean currentRoomArchived = false;
+
+    private final List<ChatMessageModel> latestLoadedMessages = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -335,10 +339,15 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                     }
 
                     sortMessagesByTime(messages);
+
+                    latestLoadedMessages.clear();
+                    latestLoadedMessages.addAll(messages);
+
                     markIncomingMessagesDelivered(messages);
                     markIncomingMessagesSeen(messages);
                     updateMessageUiState(false, messages.size());
-                    messageAdapter.submitList(messages);
+                    messageAdapter.submitList(new ArrayList<>(messages));
+                    updateGreetingCardVisibility(messages);
 
                     resetMyUnreadCount();
 
@@ -349,7 +358,6 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                     }
                 });
     }
-
     private void sendMessage() {
         if (!"ACTIVE".equals(currentRoomStatus)) {
             Toast.makeText(this, "Cuộc trò chuyện này đã kết thúc", Toast.LENGTH_SHORT).show();
@@ -763,6 +771,7 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                     }
 
                     applyRoomStatusUi();
+                    updateGreetingCardVisibility(latestLoadedMessages);
                 });
     }
 
@@ -1059,6 +1068,37 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         if (txtTypingIndicator != null && isEnded) {
             txtTypingIndicator.setVisibility(View.GONE);
         }
+    }
+
+    private void updateGreetingCardVisibility(@NonNull List<ChatMessageModel> messages) {
+        if (txtSystemCard == null) {
+            return;
+        }
+
+        if (!"ACTIVE".equals(currentRoomStatus)) {
+            txtSystemCard.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        Set<String> distinctSenders = new HashSet<>();
+
+        for (ChatMessageModel message : messages) {
+            String senderId = safeText(message.getSender_id(), "");
+            String text = safeText(message.getText(), "");
+            String status = safeText(message.getStatus(), "ACTIVE");
+
+            if (senderId.isEmpty() || text.isEmpty() || !"ACTIVE".equals(status)) {
+                continue;
+            }
+
+            distinctSenders.add(senderId);
+        }
+
+        boolean bothSentFirstMessage =
+                distinctSenders.contains(currentUserId)
+                        && distinctSenders.contains(matchedUserId);
+
+        txtSystemCard.setVisibility(bothSentFirstMessage ? View.GONE : View.VISIBLE);
     }
 
     private void updateMessageUiState(boolean isLoading, int messageCount) {
