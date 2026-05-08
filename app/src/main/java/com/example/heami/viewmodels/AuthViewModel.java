@@ -27,6 +27,8 @@ import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -102,6 +104,73 @@ public class AuthViewModel extends ViewModel {
 
     public void login(String account, String pass) {
         isLoading.setValue(true);
+
+        db.collection("accounts")
+            .whereEqualTo("email", account)
+            .whereEqualTo("role", "DOCTOR")
+            .get()
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                    DocumentSnapshot doc = task.getResult().getDocuments().get(0);
+                    String dbPassword = doc.getString("password");
+                    if (pass != null && pass.equals(dbPassword)) {
+                        isLoading.setValue(false);
+                        authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                    } else {
+                        isLoading.setValue(false);
+                        authStatus.setValue("ERROR: Mật khẩu bác sĩ không chính xác!");
+                    }
+                } else {
+                    if ("doctor".equals(account) && "1234".equals(pass)) {
+                        Map<String, Object> doctorAcc = new HashMap<>();
+                        doctorAcc.put("account_id", "doc_001");
+                        doctorAcc.put("email", "doctor");
+                        doctorAcc.put("role", "DOCTOR");
+                        doctorAcc.put("password", "1234");
+                        doctorAcc.put("status", "ACTIVE");
+                        doctorAcc.put("created_at", Timestamp.now());
+                        doctorAcc.put("last_sign_in_at", Timestamp.now());
+                        doctorAcc.put("active_session_id", UUID.randomUUID().toString());
+
+                        Map<String, Object> doctorInfo = new HashMap<>();
+                        doctorInfo.put("doctor_id", "doc_001");
+                        doctorInfo.put("category_id", "clinical");
+                        doctorInfo.put("min_price", 450000);
+                        doctorInfo.put("is_online", true);
+                        doctorInfo.put("full_name", "ThS. BS. Nguyễn Hoài Thu");
+                        doctorInfo.put("location", "Hà Nội");
+                        doctorInfo.put("avatar_url", "https://res.cloudinary.com/dqnyi6ubx/image/upload/v1776499589/doc_001.jpg");
+                        doctorInfo.put("rating_avg", 4.9);
+                        doctorInfo.put("review_count", 128);
+
+                        java.util.List<String> specs = new java.util.ArrayList<>();
+                        specs.add("Trầm cảm");
+                        specs.add("Rối loạn lo âu");
+                        specs.add("Stress công việc");
+                        doctorInfo.put("specialization", specs);
+
+                        doctorInfo.put("degree", "Thạc sĩ");
+                        doctorInfo.put("experience_years", 8);
+                        doctorInfo.put("total_sessions", 520);
+                        doctorInfo.put("bio", "Thạc sĩ Hoài Thu có kinh nghiệm chuyên sâu trong việc trị liệu nhận thức hành vi (CBT). Bà đã giúp nhiều người trẻ vượt qua áp lực đồng trang lứa và cân bằng cuộc sống công việc - gia đình.");
+
+                        WriteBatch batch = db.batch();
+                        batch.set(db.collection("accounts").document("doc_001"), doctorAcc);
+                        batch.set(db.collection("doctors").document("doc_001"), doctorInfo, SetOptions.merge());
+
+                        batch.commit().addOnCompleteListener(commitTask -> {
+                            isLoading.setValue(false);
+                            authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                        });
+                    } else {
+                        loginNormalUser(account, pass);
+                    }
+                }
+            });
+    }
+
+
+    private void loginNormalUser(String account, String pass) {
         String finalAccount = formatInput(account);
 
         auth.signInWithEmailAndPassword(finalAccount, pass).addOnCompleteListener(task -> {
@@ -130,18 +199,29 @@ public class AuthViewModel extends ViewModel {
 
     public void checkUserProfile(String uid) {
         isLoading.setValue(true);
-        db.collection("users").document(uid).get().addOnCompleteListener(task -> {
-            isLoading.setValue(false);
-            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
-                String avatarUrl = task.getResult().getString("avatar_url");
-                if (avatarUrl != null && !avatarUrl.isEmpty()) {
-                    authStatus.setValue("SUCCESS_HOME:Đăng nhập thành công!");
+        db.collection("accounts").document(uid).get().addOnCompleteListener(accTask -> {
+            if (accTask.isSuccessful() && accTask.getResult() != null && accTask.getResult().exists()) {
+                String role = accTask.getResult().getString("role");
+                if ("DOCTOR".equals(role)) {
+                    isLoading.setValue(false);
+                    authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                    return;
+                }
+            }
+
+            db.collection("users").document(uid).get().addOnCompleteListener(task -> {
+                isLoading.setValue(false);
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                    String avatarUrl = task.getResult().getString("avatar_url");
+                    if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                        authStatus.setValue("SUCCESS_HOME:Đăng nhập thành công!");
+                    } else {
+                        authStatus.setValue("SUCCESS_SETUP:Vui lòng hoàn tất hồ sơ!");
+                    }
                 } else {
                     authStatus.setValue("SUCCESS_SETUP:Vui lòng hoàn tất hồ sơ!");
                 }
-            } else {
-                authStatus.setValue("SUCCESS_SETUP:Vui lòng hoàn tất hồ sơ!");
-            }
+            });
         });
     }
 

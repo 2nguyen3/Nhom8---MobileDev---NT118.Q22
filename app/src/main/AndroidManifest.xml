@@ -160,6 +160,25 @@
             android:enabled="true"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.doctor.DoctorHomeActivity"
+            android:exported="false" />
+            <activity
+                android:name=".ui.doctor.DoctorAppointmentsActivity"
+                android:exported="false" />
+            <activity
+                android:name=".ui.doctor.DoctorPatientsActivity"
+                android:exported="false" />
+            <activity
+                android:name=".ui.doctor.DoctorMessagesActivity"
+                android:exported="false" />
+            <activity
+                android:name=".ui.doctor.DoctorProfileActivity"
+                android:exported="false" />
+            <activity
+                android:name=".ui.doctor.DoctorChatDetailActivity"
+                android:exported="false" />
+
     </application>
 
 </manifest>

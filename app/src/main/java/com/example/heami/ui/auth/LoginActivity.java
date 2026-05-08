@@ -41,6 +41,7 @@ import androidx.credentials.exceptions.NoCredentialException;
 
 import com.example.heami.ui.main.HomeActivity;
 import com.example.heami.ui.onboarding.OnboardingActivity;
+import com.example.heami.ui.doctor.DoctorHomeActivity;
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 
@@ -126,6 +127,10 @@ public class LoginActivity extends AppCompatActivity {
 
             if (status.startsWith("SUCCESS_HOME")) {
                 startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            } else if (status.startsWith("SUCCESS_DOCTOR")) {
+                startActivity(new Intent(LoginActivity.this, DoctorHomeActivity.class));
                 finish();
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             } else if (status.startsWith("SUCCESS_SETUP")) {
