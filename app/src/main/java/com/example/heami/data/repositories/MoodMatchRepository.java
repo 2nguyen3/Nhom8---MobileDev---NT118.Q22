@@ -539,6 +539,8 @@ public class MoodMatchRepository {
         reportData.put("note", safeText(note, ""));
         reportData.put("status", "PENDING");
         reportData.put("created_at", FieldValue.serverTimestamp());
+        reportData.put("reviewed_by", "");
+        reportData.put("reviewed_at", null);
 
         firestore.collection("chat_reports")
                 .document(reportId)
@@ -1157,6 +1159,65 @@ public class MoodMatchRepository {
                     String message = e.getMessage() != null
                             ? e.getMessage()
                             : "Không thể cập nhật trạng thái room";
+                    listener.onFailure(message);
+                });
+    }
+
+    public void cleanupCurrentUserCommunityGarbage(
+            @NonNull SimpleActionListener listener
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            listener.onFailure("Người dùng chưa đăng nhập");
+            return;
+        }
+
+        String uid = firebaseUser.getUid();
+
+        firestore.collection("mood_match_requests")
+                .whereEqualTo("user_id", uid)
+                .whereEqualTo("status", "SEARCHING")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot == null || querySnapshot.isEmpty()) {
+                        listener.onSuccess();
+                        return;
+                    }
+
+                    com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+                    boolean hasWrite = false;
+                    long nowMs = System.currentTimeMillis();
+
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        Timestamp expiresAt = doc.getTimestamp("expires_at");
+                        if (expiresAt != null && expiresAt.toDate().getTime() <= nowMs) {
+                            batch.update(
+                                    doc.getReference(),
+                                    "status", "TIMEOUT"
+                            );
+                            hasWrite = true;
+                        }
+                    }
+
+                    if (!hasWrite) {
+                        listener.onSuccess();
+                        return;
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> listener.onSuccess())
+                            .addOnFailureListener(e -> {
+                                String message = e.getMessage() != null
+                                        ? e.getMessage()
+                                        : "Không thể cleanup request timeout";
+                                listener.onFailure(message);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    String message = e.getMessage() != null
+                            ? e.getMessage()
+                            : "Không thể tải request để cleanup";
                     listener.onFailure(message);
                 });
     }

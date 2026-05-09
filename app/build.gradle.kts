@@ -78,4 +78,7 @@ dependencies {
 
     // Realtime Database
     implementation("com.google.firebase:firebase-database")
+
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

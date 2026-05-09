@@ -167,7 +167,9 @@ public class MoodMatchActivity extends AppCompatActivity {
         }
 
         if (moodMatchRoot != null) {
-            moodMatchRoot.setOnClickListener(v -> handleExitRequested());
+            moodMatchRoot.setOnClickListener(null);
+            moodMatchRoot.setClickable(false);
+            moodMatchRoot.setFocusable(false);
         }
     }
 
@@ -181,26 +183,38 @@ public class MoodMatchActivity extends AppCompatActivity {
     }
 
     private void handleExitRequested() {
-        if (isProvisioningRoom || hasOpenedChat) {
+        if (hasOpenedChat) {
             finish();
             return;
         }
 
-        if (isSearchingActive && !currentRequestId.isEmpty() && !isMatched) {
-            moodMatchRepository.cancelMoodMatchRequestSafely(
-                    currentRequestId,
-                    new MoodMatchRepository.SimpleActionListener() {
-                        @Override
-                        public void onSuccess() {
-                            finish();
-                        }
+        if (isProvisioningRoom || isMatched) {
+            finish();
+            return;
+        }
 
-                        @Override
-                        public void onFailure(@NonNull String errorMessage) {
-                            finish();
-                        }
-                    }
-            );
+        if (isSearchingActive && !currentRequestId.isEmpty()) {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Hủy tìm kiếm?")
+                    .setMessage("Bạn có chắc muốn dừng Mood Match lúc này không?")
+                    .setNegativeButton("Ở lại", null)
+                    .setPositiveButton("Hủy tìm kiếm", (dialog, which) -> {
+                        moodMatchRepository.cancelMoodMatchRequestSafely(
+                                currentRequestId,
+                                new MoodMatchRepository.SimpleActionListener() {
+                                    @Override
+                                    public void onSuccess() {
+                                        finish();
+                                    }
+
+                                    @Override
+                                    public void onFailure(@NonNull String errorMessage) {
+                                        finish();
+                                    }
+                                }
+                        );
+                    })
+                    .show();
             return;
         }
 

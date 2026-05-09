@@ -28,6 +28,10 @@ public class ChatRoomModel {
     private Timestamp ended_at;
     private Timestamp purge_at;
 
+    private String search_blob;
+    private List<String> recent_messages_preview;
+    private Timestamp search_updated_at;
+
     public ChatRoomModel() {
         this.member_ids = new ArrayList<>();
         this.member_names = new ArrayList<>();
@@ -37,6 +41,8 @@ public class ChatRoomModel {
         this.muted_by_map = new HashMap<>();
         this.archived_by_map = new HashMap<>();
         this.last_message_id = "";
+        this.search_blob = "";
+        this.recent_messages_preview = new ArrayList<>();
     }
 
     public ChatRoomModel(
@@ -62,6 +68,8 @@ public class ChatRoomModel {
         this.last_sender_id = "";
         this.status = "ACTIVE";
         this.unread_count_map = new HashMap<>();
+        this.search_blob = "";
+        this.recent_messages_preview = new ArrayList<>();
     }
 
     public String getRoom_id() {
@@ -187,4 +195,16 @@ public class ChatRoomModel {
     public Map<String, Boolean> getArchived_by_map() { return archived_by_map; }
 
     public void setArchived_by_map(Map<String, Boolean> archived_by_map) { this.archived_by_map = archived_by_map; }
+
+    public String getSearch_blob() { return search_blob; }
+
+    public void setSearch_blob(String search_blob) { this.search_blob = search_blob; }
+
+    public List<String> getRecent_messages_preview() { return recent_messages_preview; }
+
+    public void setRecent_messages_preview(List<String> recent_messages_preview) { this.recent_messages_preview = recent_messages_preview; }
+
+    public Timestamp getSearch_updated_at() { return search_updated_at; }
+
+    public void setSearch_updated_at(Timestamp search_updated_at) { this.search_updated_at = search_updated_at; }
 }

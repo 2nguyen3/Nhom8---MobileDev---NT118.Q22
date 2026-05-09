@@ -20,6 +20,7 @@ import com.google.firebase.database.ValueEventListener;
 
 public class HeamiApp extends Application implements DefaultLifecycleObserver {
 
+    private static boolean appForegroundStatic = false;
     private static final String TAG = "HeamiPresence";
     private static final String RTDB_URL =
             "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -77,6 +78,8 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         } else {
             Log.d(TAG, "No current user at startup");
         }
+
+        createHeamiChatNotificationChannel();
     }
 
     @Override
@@ -93,6 +96,8 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
                 }
             });
         }
+
+        appForegroundStatic = true;
     }
 
     @Override
@@ -119,6 +124,8 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
                 }
             });
         }
+
+        appForegroundStatic = false;
     }
 
     private void attachPresence(@NonNull String uid) {
@@ -221,5 +228,30 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         myConnectionsRef = null;
         lastOnlineRef = null;
         foregroundRef = null;
+    }
+
+    public static boolean isAppForegroundStatic() {
+        return appForegroundStatic;
+    }
+
+    private void createHeamiChatNotificationChannel() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+            return;
+        }
+
+        android.app.NotificationChannel channel = new android.app.NotificationChannel(
+                "heami_chat_messages",
+                "Tin nhắn Heami",
+                android.app.NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("Thông báo tin nhắn mới từ Community và Mood Match");
+        channel.enableVibration(true);
+        channel.setShowBadge(true);
+        channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PRIVATE);
+
+        android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
+        if (manager != null) {
+            manager.createNotificationChannel(channel);
+        }
     }
 }

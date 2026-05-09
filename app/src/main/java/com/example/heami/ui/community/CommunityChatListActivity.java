@@ -32,10 +32,11 @@ import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.text.Normalizer;
+import java.util.Locale;
 
 public class CommunityChatListActivity extends AppCompatActivity {
 
@@ -65,7 +66,6 @@ public class CommunityChatListActivity extends AppCompatActivity {
     private final Set<String> onlineUserIds = new HashSet<>();
 
     private CommunityChatRoomAdapter adapter;
-    private boolean showingUnreadOnly = false;
 
     private final android.os.Handler purgeHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
@@ -81,6 +81,9 @@ public class CommunityChatListActivity extends AppCompatActivity {
     private TextView tabCommunityChatArchived;
 
     private MoodMatchRepository moodMatchRepository;
+
+    private TextView txtCommunityChatEmptyTitle;
+    private TextView txtCommunityChatEmptySubtitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,8 +106,22 @@ public class CommunityChatListActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        startRealtimeRoomListener();
-        startPartnerOnlineListener();
+
+        moodMatchRepository.cleanupCurrentUserCommunityGarbage(
+                new MoodMatchRepository.SimpleActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        startRealtimeRoomListener();
+                        startPartnerOnlineListener();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull String errorMessage) {
+                        startRealtimeRoomListener();
+                        startPartnerOnlineListener();
+                    }
+                }
+        );
     }
 
     @Override
@@ -131,6 +148,8 @@ public class CommunityChatListActivity extends AppCompatActivity {
         rvCommunityChatRooms = findViewById(R.id.rvCommunityChatRooms);
         layoutCommunityChatEmptyState = findViewById(R.id.layoutCommunityChatEmptyState);
         tabCommunityChatArchived = findViewById(R.id.tabCommunityChatArchived);
+        txtCommunityChatEmptyTitle = findViewById(R.id.txtCommunityChatEmptyTitle);
+        txtCommunityChatEmptySubtitle = findViewById(R.id.txtCommunityChatEmptySubtitle);
     }
 
     private void setupRecyclerView() {
@@ -148,10 +167,7 @@ public class CommunityChatListActivity extends AppCompatActivity {
 
         rvCommunityChatRooms.setLayoutManager(new LinearLayoutManager(this));
         rvCommunityChatRooms.setAdapter(adapter);
-
         attachSwipeActions();
-        rvCommunityChatRooms.setLayoutManager(new LinearLayoutManager(this));
-        rvCommunityChatRooms.setAdapter(adapter);
     }
 
     private void setupActions() {
@@ -334,7 +350,7 @@ public class CommunityChatListActivity extends AppCompatActivity {
         filteredRoomList.clear();
 
         String keyword = edtCommunityChatSearch != null && edtCommunityChatSearch.getText() != null
-                ? edtCommunityChatSearch.getText().toString().trim().toLowerCase()
+                ? normalizeForSearch(edtCommunityChatSearch.getText().toString())
                 : "";
 
         for (ChatRoomModel room : fullRoomList) {
@@ -369,9 +385,46 @@ public class CommunityChatListActivity extends AppCompatActivity {
     }
 
     private boolean matchesKeyword(@NonNull ChatRoomModel room, @NonNull String keyword) {
-        String partnerName = resolvePartnerName(room).toLowerCase();
-        String lastMessage = safeText(room.getLast_message(), "").toLowerCase();
-        return partnerName.contains(keyword) || lastMessage.contains(keyword);
+        String partnerName = normalizeForSearch(resolvePartnerName(room));
+        String lastMessage = normalizeForSearch(safeText(room.getLast_message(), ""));
+        String searchBlob = normalizeForSearch(safeText(room.getSearch_blob(), ""));
+        String stateKeywords = normalizeForSearch(buildRoomSearchStateText(room));
+
+        return partnerName.contains(keyword)
+                || lastMessage.contains(keyword)
+                || searchBlob.contains(keyword)
+                || stateKeywords.contains(keyword);
+    }
+
+    @NonNull
+    private String normalizeForSearch(String raw) {
+        String value = safeText(raw, "").toLowerCase(Locale.getDefault()).trim();
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{M}+", "");
+    }
+
+    @NonNull
+    private String buildRoomSearchStateText(@NonNull ChatRoomModel room) {
+        StringBuilder builder = new StringBuilder();
+
+        if (isPinned(room)) {
+            builder.append(" ghim");
+        }
+
+        if (isMuted(room)) {
+            builder.append(" tat thong bao");
+        }
+
+        if (isArchived(room)) {
+            builder.append(" luu tru");
+        }
+
+        String status = safeText(room.getStatus(), "ACTIVE");
+        if ("ENDED".equals(status)) {
+            builder.append(" da ket thuc");
+        }
+
+        return builder.toString();
     }
 
     private boolean isUnreadLike(@NonNull ChatRoomModel room) {
@@ -463,6 +516,51 @@ public class CommunityChatListActivity extends AppCompatActivity {
 
         if (rvCommunityChatRooms != null) {
             rvCommunityChatRooms.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+        }
+
+        if (!isEmpty) {
+            return;
+        }
+
+        String keyword = edtCommunityChatSearch != null && edtCommunityChatSearch.getText() != null
+                ? edtCommunityChatSearch.getText().toString().trim()
+                : "";
+
+        if (!keyword.isEmpty()) {
+            if (txtCommunityChatEmptyTitle != null) {
+                txtCommunityChatEmptyTitle.setText("Không tìm thấy cuộc trò chuyện phù hợp");
+            }
+            if (txtCommunityChatEmptySubtitle != null) {
+                txtCommunityChatEmptySubtitle.setText("Thử từ khóa khác như tên người bạn hoặc nội dung tin nhắn gần nhất");
+            }
+            return;
+        }
+
+        if (currentFilterMode == FILTER_UNREAD) {
+            if (txtCommunityChatEmptyTitle != null) {
+                txtCommunityChatEmptyTitle.setText("Không có tin nhắn chưa đọc");
+            }
+            if (txtCommunityChatEmptySubtitle != null) {
+                txtCommunityChatEmptySubtitle.setText("Khi có tin nhắn mới chưa xem, chúng sẽ hiện ở đây");
+            }
+            return;
+        }
+
+        if (currentFilterMode == FILTER_ARCHIVED) {
+            if (txtCommunityChatEmptyTitle != null) {
+                txtCommunityChatEmptyTitle.setText("Chưa có cuộc trò chuyện lưu trữ");
+            }
+            if (txtCommunityChatEmptySubtitle != null) {
+                txtCommunityChatEmptySubtitle.setText("Những cuộc trò chuyện bạn lưu trữ sẽ hiện ở tab này");
+            }
+            return;
+        }
+
+        if (txtCommunityChatEmptyTitle != null) {
+            txtCommunityChatEmptyTitle.setText("Chưa có cuộc trò chuyện nào");
+        }
+        if (txtCommunityChatEmptySubtitle != null) {
+            txtCommunityChatEmptySubtitle.setText("Khi Mood Match thành công,\nđoạn chat sẽ hiện ở đây");
         }
     }
 

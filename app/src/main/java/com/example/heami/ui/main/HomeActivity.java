@@ -1,5 +1,23 @@
 package com.example.heami.ui.main;
 
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Build;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import androidx.annotation.NonNull;
+
+import com.example.heami.notifications.HeamiFirebaseMessagingService;
+import com.example.heami.ui.community.MoodMatchChatActivity;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
+
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -27,6 +45,9 @@ import java.util.Date;
 import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
+
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
+    private BroadcastReceiver chatBannerReceiver;
 
     private TextView txtGreetingLabel;
     private TextView txtGreetingTitle;
@@ -72,6 +93,10 @@ public class HomeActivity extends AppCompatActivity {
         applyStaticStyles();
         startHomeAnimations();
         setupActions();
+
+        setupNotificationPermissionLauncher();
+        syncFcmToken();
+        handleNotificationIntent(getIntent());
     }
 
     @Override
@@ -88,6 +113,19 @@ public class HomeActivity extends AppCompatActivity {
 
         updateGreetingLabel();
         loadTodayMoodState();
+        handleNotificationIntent(intent);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        registerChatBannerReceiver();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterChatBannerReceiver();
     }
 
     private void initViews() {
@@ -792,6 +830,144 @@ public class HomeActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+    }
+
+    private void setupNotificationPermissionLauncher() {
+        notificationPermissionLauncher =
+                registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                    // no-op
+                });
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+    }
+
+    private void syncFcmToken() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) return;
+
+        FirebaseMessaging.getInstance().getToken()
+                .addOnSuccessListener(token -> {
+                    if (token == null || token.trim().isEmpty()) return;
+
+                    java.util.HashMap<String, Object> updates = new java.util.HashMap<>();
+                    updates.put("account_id", user.getUid());
+                    updates.put("fcm_token", token);
+
+                    firestore.collection("accounts")
+                            .document(user.getUid())
+                            .set(updates, SetOptions.merge());
+                });
+    }
+
+    private void handleNotificationIntent(Intent intent) {
+        if (intent == null) return;
+
+        String type = intent.getStringExtra("type");
+        if (!"COMMUNITY_CHAT".equals(type)) {
+            return;
+        }
+
+        String roomId = safeText(intent.getStringExtra("room_id"), "");
+        String matchId = safeText(intent.getStringExtra("match_id"), "");
+        String matchedUserId = safeText(intent.getStringExtra("matched_user_id"), "");
+        String matchedUserName = safeText(intent.getStringExtra("matched_user_name"), "Người bạn ẩn danh");
+        String moodTag = safeText(intent.getStringExtra("mood_tag"), "stress");
+
+        if (roomId.isEmpty()) {
+            return;
+        }
+
+        Intent chatIntent = new Intent(this, MoodMatchChatActivity.class);
+        chatIntent.putExtra("room_id", roomId);
+        chatIntent.putExtra("match_id", matchId);
+        chatIntent.putExtra("matched_user_id", matchedUserId);
+        chatIntent.putExtra("matched_user_name", matchedUserName);
+        chatIntent.putExtra("mood_tag", moodTag);
+        chatIntent.putExtra("room_status", "ACTIVE");
+        startActivity(chatIntent);
+
+        intent.removeExtra("type");
+    }
+
+    private void registerChatBannerReceiver() {
+        if (chatBannerReceiver != null) return;
+
+        chatBannerReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String type = safeText(intent.getStringExtra("type"), "");
+                if (!"COMMUNITY_CHAT".equals(type)) return;
+
+                String roomId = safeText(intent.getStringExtra("room_id"), "");
+                String matchId = safeText(intent.getStringExtra("match_id"), "");
+                String matchedUserId = safeText(intent.getStringExtra("matched_user_id"), "");
+                String matchedUserName = safeText(intent.getStringExtra("matched_user_name"), "Người bạn ẩn danh");
+                String previewText = safeText(intent.getStringExtra("preview_text"), "Bạn có tin nhắn mới");
+                String moodTag = safeText(intent.getStringExtra("mood_tag"), "stress");
+
+                showHeamiChatBanner(roomId, matchId, matchedUserId, matchedUserName, previewText, moodTag);
+            }
+        };
+
+        IntentFilter filter = new IntentFilter(HeamiFirebaseMessagingService.ACTION_CHAT_PUSH_BANNER);
+
+        ContextCompat.registerReceiver(
+                this,
+                chatBannerReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+    }
+
+    private void unregisterChatBannerReceiver() {
+        if (chatBannerReceiver == null) return;
+
+        try {
+            unregisterReceiver(chatBannerReceiver);
+        } catch (Exception ignored) {
+        }
+
+        chatBannerReceiver = null;
+    }
+
+    private void showHeamiChatBanner(
+            @NonNull String roomId,
+            @NonNull String matchId,
+            @NonNull String matchedUserId,
+            @NonNull String matchedUserName,
+            @NonNull String previewText,
+            @NonNull String moodTag
+    ) {
+        View root = findViewById(android.R.id.content);
+        if (root == null) return;
+
+        Snackbar snackbar = Snackbar.make(
+                root,
+                "🌸 " + matchedUserName + ": " + previewText,
+                Snackbar.LENGTH_LONG
+        );
+
+        snackbar.setBackgroundTint(0xFFFDEAF1);
+        snackbar.setTextColor(0xFF2D1B47);
+        snackbar.setActionTextColor(0xFFE8507A);
+
+        snackbar.setAction("Mở", v -> {
+            Intent chatIntent = new Intent(this, MoodMatchChatActivity.class);
+            chatIntent.putExtra("room_id", roomId);
+            chatIntent.putExtra("match_id", matchId);
+            chatIntent.putExtra("matched_user_id", matchedUserId);
+            chatIntent.putExtra("matched_user_name", matchedUserName);
+            chatIntent.putExtra("mood_tag", moodTag);
+            chatIntent.putExtra("room_status", "ACTIVE");
+            startActivity(chatIntent);
+        });
+
+        snackbar.show();
     }
 }
 

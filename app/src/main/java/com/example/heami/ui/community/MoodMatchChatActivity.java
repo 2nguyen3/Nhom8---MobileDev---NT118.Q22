@@ -2,6 +2,19 @@ package com.example.heami.ui.community;
 
 import com.example.heami.data.repositories.MoodMatchRepository;
 
+import com.google.firebase.auth.GetTokenResult;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import org.json.JSONObject;
+
+import java.io.IOException;
+
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -38,7 +51,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.firestore.SetOptions;
 
+import java.text.Normalizer;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +63,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MoodMatchChatActivity extends AppCompatActivity {
+
+    private static final String PUSH_API_URL = "https://heami-push-server.vercel.app/api/chat-push";
+    private final OkHttpClient pushHttpClient = new OkHttpClient();
 
     private static final String RTDB_URL =
             "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -343,6 +362,8 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                     latestLoadedMessages.clear();
                     latestLoadedMessages.addAll(messages);
 
+                    rebuildRoomSearchIndexFromFirestore();
+
                     markIncomingMessagesDelivered(messages);
                     markIncomingMessagesSeen(messages);
                     updateMessageUiState(false, messages.size());
@@ -445,6 +466,8 @@ public class MoodMatchChatActivity extends AppCompatActivity {
 
             batch.commit()
                     .addOnSuccessListener(unused -> {
+                        triggerChatPushNotification(messageId, content);
+
                         edtMoodChatInput.setText("");
                         isSendingMessage = false;
                         btnSendMoodChat.setEnabled(true);
@@ -472,6 +495,57 @@ public class MoodMatchChatActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT
             ).show();
         });
+    }
+
+    private void triggerChatPushNotification(@NonNull String messageId, @NonNull String messageText) {
+        if (roomId.isEmpty()) return;
+
+        if (auth.getCurrentUser() == null) return;
+
+        auth.getCurrentUser()
+                .getIdToken(false)
+                .addOnSuccessListener(result -> callPushApi(result, messageId, messageText))
+                .addOnFailureListener(e -> {
+                    // Không rollback gửi tin, push chỉ là side-effect
+                });
+    }
+
+    private void callPushApi(
+            @NonNull GetTokenResult tokenResult,
+            @NonNull String messageId,
+            @NonNull String messageText
+    ) {
+        String idToken = safeText(tokenResult.getToken(), "");
+        if (idToken.isEmpty()) return;
+
+        try {
+            JSONObject json = new JSONObject();
+            json.put("roomId", roomId);
+            json.put("messageId", messageId);
+            json.put("messageText", messageText);
+
+            Request request = new Request.Builder()
+                    .url(PUSH_API_URL)
+                    .addHeader("Authorization", "Bearer " + idToken)
+                    .post(RequestBody.create(
+                            json.toString(),
+                            MediaType.parse("application/json")
+                    ))
+                    .build();
+
+            pushHttpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    // im lặng, không ảnh hưởng flow chat
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    response.close();
+                }
+            });
+        } catch (Exception ignored) {
+        }
     }
 
     private void markIncomingMessagesDelivered(@NonNull List<ChatMessageModel> messages) {
@@ -1067,6 +1141,7 @@ public class MoodMatchChatActivity extends AppCompatActivity {
 
         if (txtTypingIndicator != null && isEnded) {
             txtTypingIndicator.setVisibility(View.GONE);
+            setMyTyping(false);
         }
     }
 
@@ -1197,6 +1272,107 @@ public class MoodMatchChatActivity extends AppCompatActivity {
             default:
                 return "🌸";
         }
+    }
+
+    @NonNull
+    private String normalizeForSearch(String raw) {
+        String value = safeText(raw, "").toLowerCase(Locale.getDefault()).trim();
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{M}+", "");
+    }
+
+    @NonNull
+    private List<String> buildRecentPreviewsFromAllMessages(
+            @NonNull List<ChatMessageModel> messages
+    ) {
+        List<String> previews = new ArrayList<>();
+
+        for (int i = messages.size() - 1; i >= 0 && previews.size() < 5; i--) {
+            ChatMessageModel message = messages.get(i);
+            String text = normalizeForSearch(safeText(message.getText(), ""));
+            if (!text.isEmpty() && !previews.contains(text)) {
+                previews.add(text);
+            }
+        }
+
+        return previews;
+    }
+
+    @NonNull
+    private String buildSearchBlobFromAllMessages(
+            @NonNull String partnerName,
+            @NonNull String moodTag,
+            @NonNull String roomStatus,
+            @NonNull List<ChatMessageModel> messages
+    ) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(normalizeForSearch(partnerName)).append(" ");
+        builder.append(normalizeForSearch(moodTag)).append(" ");
+
+        if ("ENDED".equals(roomStatus)) {
+            builder.append("da ket thuc ");
+        }
+
+        for (ChatMessageModel message : messages) {
+            String text = normalizeForSearch(safeText(message.getText(), ""));
+            if (!text.isEmpty()) {
+                builder.append(text).append(" ");
+            }
+        }
+
+        return builder.toString().trim();
+    }
+
+    private void rebuildRoomSearchIndexFromFirestore() {
+        if (roomId.isEmpty()) return;
+
+        firestore.collection("chat_rooms")
+                .document(roomId)
+                .collection("messages")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<ChatMessageModel> allMessages = new ArrayList<>();
+
+                    for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                        ChatMessageModel message = document.toObject(ChatMessageModel.class);
+                        if (message == null) continue;
+
+                        if (message.getMessage_id() == null || message.getMessage_id().trim().isEmpty()) {
+                            message.setMessage_id(document.getId());
+                        }
+
+                        String status = safeText(message.getStatus(), "ACTIVE");
+                        if (!"ACTIVE".equals(status)) {
+                            continue;
+                        }
+
+                        allMessages.add(message);
+                    }
+
+                    sortMessagesByTime(allMessages);
+
+                    String partnerName = safeText(matchedUserName, "Người bạn ẩn danh");
+                    String finalMoodTag = safeText(this.moodTag, "stress");
+                    String roomStatus = safeText(currentRoomStatus, "ACTIVE");
+
+                    List<String> previews = buildRecentPreviewsFromAllMessages(allMessages);
+                    String searchBlob = buildSearchBlobFromAllMessages(
+                            partnerName,
+                            finalMoodTag,
+                            roomStatus,
+                            allMessages
+                    );
+
+                    HashMap<String, Object> updates = new HashMap<>();
+                    updates.put("search_blob", searchBlob);
+                    updates.put("recent_messages_preview", previews);
+                    updates.put("search_updated_at", FieldValue.serverTimestamp());
+
+                    firestore.collection("chat_rooms")
+                            .document(roomId)
+                            .set(updates, SetOptions.merge());
+                });
     }
 
     @NonNull

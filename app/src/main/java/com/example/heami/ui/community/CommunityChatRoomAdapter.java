@@ -83,6 +83,7 @@ public class CommunityChatRoomAdapter extends RecyclerView.Adapter<CommunityChat
         private final TextView txtUnreadBadge;
         private final TextView txtPinBadge;
         private final TextView txtMuteBadge;
+        private final TextView txtArchivedBadge;
         private final View viewChatRoomOnlineDot;
 
         ChatRoomViewHolder(@NonNull View itemView) {
@@ -95,6 +96,7 @@ public class CommunityChatRoomAdapter extends RecyclerView.Adapter<CommunityChat
             txtPinBadge = itemView.findViewById(R.id.txtChatRoomPinBadge);
             txtMuteBadge = itemView.findViewById(R.id.txtChatRoomMuteBadge);
             viewChatRoomOnlineDot = itemView.findViewById(R.id.viewChatRoomOnlineDot);
+            txtArchivedBadge = itemView.findViewById(R.id.txtChatRoomArchivedBadge);
         }
 
         void bind(@NonNull ChatRoomModel room) {
@@ -143,11 +145,13 @@ public class CommunityChatRoomAdapter extends RecyclerView.Adapter<CommunityChat
 
             txtPinBadge.setVisibility(isPinned(room) ? View.VISIBLE : View.GONE);
             txtMuteBadge.setVisibility(isMuted(room) ? View.VISIBLE : View.GONE);
+            txtArchivedBadge.setVisibility(isArchived(room) ? View.VISIBLE : View.GONE);
 
             boolean partnerOnline =
                     !partnerId.isEmpty()
                             && onlineUserIds.contains(partnerId)
-                            && "ACTIVE".equals(status);
+                            && "ACTIVE".equals(status)
+                            && !isArchived(room);
 
             if (viewChatRoomOnlineDot != null) {
                 viewChatRoomOnlineDot.setVisibility(partnerOnline ? View.VISIBLE : View.GONE);
@@ -158,6 +162,11 @@ public class CommunityChatRoomAdapter extends RecyclerView.Adapter<CommunityChat
                 listener.onChatRoomLongClick(room, v);
                 return true;
             });
+        }
+
+        private boolean isArchived(@NonNull ChatRoomModel room) {
+            return room.getArchived_by_map() != null
+                    && Boolean.TRUE.equals(room.getArchived_by_map().get(currentUserId));
         }
 
         @NonNull
