@@ -726,56 +726,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Section 4: Account settings -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <FrameLayout
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@drawable/bg_stat_icon_green">
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_setting"
-                            app:tint="#009688"
-                            android:contentDescription="settings icon" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="14dp"
-                        android:text="Cài đặt tài khoản"
-                        android:textColor="#1A2530"
-                        android:textSize="14sp"
-                        android:textStyle="bold"/>
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_chevron_right"
-                        app:tint="#B5BFD1"
-                        android:contentDescription="chevron" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Section 5: Logout -->
+            <!-- Section 4: Logout -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardDoctorLogout"
                 android:layout_width="match_parent"

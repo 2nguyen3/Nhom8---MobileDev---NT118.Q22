@@ -222,13 +222,13 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
 
         // Collapsed by default
-        boolean expanded = model.isExpanded();
+        boolean expanded = model.isIs_expanded();
         holder.layoutDetail.setVisibility(expanded ? View.VISIBLE : View.GONE);
         holder.imgChevron.setRotation(expanded ? 180f : 0f);
 
         holder.itemView.setOnClickListener(v -> {
-            boolean nextExpanded = !model.isExpanded();
-            model.setExpanded(nextExpanded);
+            boolean nextExpanded = !model.isIs_expanded();
+            model.setIs_expanded(nextExpanded);
             if (holder.itemView.getParent() instanceof ViewGroup) {
                 TransitionSet set = new TransitionSet()
                         .setOrdering(TransitionSet.ORDERING_TOGETHER)
@@ -295,7 +295,7 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         holder.txtHint.setText("\"" + hint + "\"");
 
         if (holder.badgeDoctorOnline != null) {
-            if (model.isDoctorOnline()) {
+            if (model.isDoctor_online()) {
                 holder.badgeDoctorOnline.setVisibility(View.VISIBLE);
                 startPulseAnimation(holder.dotDoctorOnline);
             } else {

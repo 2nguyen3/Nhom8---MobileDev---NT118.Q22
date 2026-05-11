@@ -311,7 +311,7 @@ public class ConsultationsActivity extends AppCompatActivity {
         for (ConsultationModel model : upcomingList) {
             String doctorId = model.getDoctorId();
             if (doctorId == null || doctorId.isEmpty()) {
-                model.setDoctorOnline(false);
+                model.setDoctor_online(false);
                 pending[0]--;
                 if (pending[0] <= 0 && isUpcomingTab) upcomingAdapter.notifyDataSetChanged();
                 continue;
@@ -321,15 +321,15 @@ public class ConsultationsActivity extends AppCompatActivity {
                     .addOnSuccessListener(doc -> {
                         if (doc.exists()) {
                             Boolean isOnline = doc.getBoolean("is_online");
-                            model.setDoctorOnline(isOnline != null && isOnline);
+                            model.setDoctor_online(isOnline != null && isOnline);
                         } else {
-                            model.setDoctorOnline(false);
+                            model.setDoctor_online(false);
                         }
                         pending[0]--;
                         if (pending[0] <= 0 && isUpcomingTab) upcomingAdapter.notifyDataSetChanged();
                     })
                     .addOnFailureListener(e -> {
-                        model.setDoctorOnline(false);
+                        model.setDoctor_online(false);
                         pending[0]--;
                         if (pending[0] <= 0 && isUpcomingTab) upcomingAdapter.notifyDataSetChanged();
                     });

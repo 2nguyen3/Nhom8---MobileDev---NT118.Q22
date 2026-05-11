@@ -178,6 +178,9 @@
             <activity
                 android:name=".ui.doctor.DoctorChatDetailActivity"
                 android:exported="false" />
+            <activity
+                android:name=".ui.doctor.DoctorPatientDetailActivity"
+                android:exported="false" />
 
     </application>
 

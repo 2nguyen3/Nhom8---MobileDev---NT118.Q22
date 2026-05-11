@@ -374,6 +374,44 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
+        <!-- GHI CHÚ SỨC KHỎE -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="GHI CHÚ SỨC KHỎE"
+            android:textColor="#9E8AAA"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <EditText
+                    android:id="@+id/edtBookingNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:background="@drawable/bg_bio_box"
+                    android:gravity="top|start"
+                    android:hint="Nhập ghi chú cho bác sĩ (tình trạng sức khỏe, triệu chứng...)"
+                    android:textColor="#2D1B47"
+                    android:textColorHint="#9E8AAA"
+                    android:textSize="14sp"
+                    android:padding="12dp"
+                    android:inputType="textMultiLine"
+                    android:scrollbars="vertical" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
         <!-- PHÍ THANH TOÁN -->
         <LinearLayout
             android:layout_width="match_parent"

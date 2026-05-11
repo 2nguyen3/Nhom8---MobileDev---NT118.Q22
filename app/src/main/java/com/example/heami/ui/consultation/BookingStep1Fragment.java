@@ -111,4 +111,14 @@ public class BookingStep1Fragment extends Fragment {
                 });
         }
     }
+
+    public String getBookingNote() {
+        if (getView() != null) {
+            android.widget.EditText edtNote = getView().findViewById(R.id.edtBookingNote);
+            if (edtNote != null) {
+                return edtNote.getText().toString().trim();
+            }
+        }
+        return "";
+    }
 }

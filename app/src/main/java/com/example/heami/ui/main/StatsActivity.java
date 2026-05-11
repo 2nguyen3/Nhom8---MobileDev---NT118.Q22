@@ -1660,6 +1660,15 @@ public class StatsActivity extends AppCompatActivity {
                     String selectedDoctorName = doctorNames.get(position);
                     dialog.dismiss();
                     sendReportToDoctorChatroom(selectedChatroomId, selectedDoctorName, reportText, pdfBytes, fileName);
+
+                    // Cập nhật trạng thái chia sẻ trong Firestore settings
+                    String myUid = FirebaseAuth.getInstance().getUid();
+                    if (myUid != null) {
+                        Map<String, Object> update = new HashMap<>();
+                        update.put("shareStatsWithDoctor", true);
+                        db.collection("users").document(myUid).collection("settings").document("default")
+                                .set(update, com.google.firebase.firestore.SetOptions.merge());
+                    }
                 });
             }
         });

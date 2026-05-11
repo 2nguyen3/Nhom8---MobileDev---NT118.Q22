@@ -162,7 +162,16 @@ public class BookingFlowActivity extends AppCompatActivity {
 
         if (btnMainAction != null) {
             btnMainAction.setOnClickListener(v -> {
-                if (currentStep == 1) updateStepUI(2);
+                if (currentStep == 1) {
+                    Fragment currentFrag = getSupportFragmentManager().findFragmentById(R.id.booking_nav_host);
+                    if (currentFrag instanceof BookingStep1Fragment) {
+                        String note = ((BookingStep1Fragment) currentFrag).getBookingNote();
+                        if (bookingModel != null) {
+                            bookingModel.setNote(note);
+                        }
+                    }
+                    updateStepUI(2);
+                }
             });
         }
 
@@ -212,23 +221,42 @@ public class BookingFlowActivity extends AppCompatActivity {
                 .create();
 
         webView.setWebViewClient(new WebViewClient() {
+            private boolean isProcessed = false;
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String currentUrl = request.getUrl().toString();
-                return checkReturnUrl(currentUrl, dialog);
+                if (checkReturnUrl(currentUrl, dialog)) {
+                    return true;
+                }
+                return super.shouldOverrideUrlLoading(view, request);
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (checkReturnUrl(url, dialog)) {
+                    return true;
+                }
+                return super.shouldOverrideUrlLoading(view, url);
             }
 
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-                checkReturnUrl(url, dialog);
+                if (checkReturnUrl(url, dialog)) {
+                    return;
+                }
                 super.onPageStarted(view, url, favicon);
             }
 
             private boolean checkReturnUrl(String url, AlertDialog dialog) {
-                if (url.startsWith("heami://vnpay_return")) {
-                    handleVNPAYCallback(url);
-                    if (dialog.isShowing()) {
-                        dialog.dismiss();
+                if (url != null && (url.startsWith("heami://vnpay_return") || url.contains("vnpay_return"))) {
+                    if (!isProcessed) {
+                        isProcessed = true;
+                        handleVNPAYCallback(url);
+                        if (dialog.isShowing()) {
+                            dialog.dismiss();
+                        }
                     }
                     return true;
                 }

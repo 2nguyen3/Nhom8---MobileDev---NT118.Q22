@@ -44,8 +44,12 @@ public class DoctorHomeActivity extends AppCompatActivity {
     private void setupActions() {
         updateTimeGreeting();
 
+        android.content.SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+        boolean isDoctor = prefs.getBoolean("is_doctor", false);
         String uid = "doc_001";
-        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+        if (isDoctor) {
+            uid = prefs.getString("doctor_id", "doc_001");
+        } else if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         }
 

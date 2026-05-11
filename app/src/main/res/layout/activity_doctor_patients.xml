@@ -6,13 +6,39 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_home_gradient">
 
+    <!-- Decor Background Blobs -->
+    <ImageView
+        android:id="@+id/decorFlowerPinkTop"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:alpha="0.6"
+        android:src="@drawable/ic_flower_pink"
+        android:contentDescription="decor pink"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="60dp"
+        android:layout_marginStart="40dp" />
+
+    <ImageView
+        android:id="@+id/decorFlowerMintMid"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:alpha="0.5"
+        android:src="@drawable/ic_flower_mint"
+        android:contentDescription="decor mint"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="160dp"
+        android:layout_marginEnd="30dp" />
+
+    <!-- Main Scroll Content -->
     <ScrollView
         android:id="@+id/scrollDoctorPatients"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:fillViewport="true"
-        android:paddingBottom="24dp"
+        android:paddingBottom="16dp"
         android:scrollbars="none"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/layoutBottomNavDoctorContainer"
@@ -27,119 +53,239 @@
             android:paddingEnd="22dp"
             android:paddingTop="52dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Header Section -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Quản Lý Bệnh Nhân"
-                android:textColor="#2D3A5E"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="24dp"/>
+                android:layout_marginBottom="20dp">
 
-            <!-- Search box -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="QUẢN LÝ BỆNH NHÂN"
+                        android:textColor="#09A38C"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Bệnh nhân"
+                        android:textColor="#112233"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Following count card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+
+                    <FrameLayout
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/bg_stat_icon_green">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_heartbeat"
+                            app:tint="#009688"
+                            android:contentDescription="pulse icon" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/txtPatientCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="4 bệnh nhân đang theo dõi"
+                        android:textColor="#7F8C8D"
+                        android:textSize="14sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Search box fully rounded -->
             <EditText
+                android:id="@+id/edtSearchPatients"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:hint="Tìm kiếm bệnh nhân..."
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:background="@drawable/bg_doctor_search"
+                android:hint="Tìm bệnh nhân..."
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:background="@drawable/bg_search_pill"
                 android:textColor="#2D3A5E"
-                android:textColorHint="#9FB4C0"
+                android:textColorHint="#B5BFD1"
                 android:textSize="14sp"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="16dp"
                 android:drawableStart="@drawable/ic_doctor_search"
-                android:drawablePadding="8dp"
-                android:singleLine="true"/>
+                android:drawablePadding="10dp"
+                android:singleLine="true"
+                android:elevation="0dp"/>
 
-            <!-- Patient List stubs -->
-            <LinearLayout
+            <!-- Horizontal Scroll Filter Tabs -->
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:scrollbars="none"
+                android:layout_marginBottom="20dp">
 
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="1dp"
-                    app:cardBackgroundColor="#FFFFFF">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@drawable/ic_avatar_placeholder"/>
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Nguyễn Văn A"
-                                android:textColor="#2D3A5E"
-                                android:textSize="15sp"
-                                android:textStyle="bold"/>
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Lần khám cuối: 28/06/2026"
-                                android:textColor="#7F8C8D"
-                                android:textSize="12sp"
-                                android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                    android:orientation="horizontal"
+                    android:paddingBottom="4dp">
 
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
+                    <!-- Tab 1 -->
+                    <TextView
+                        android:id="@+id/btnFilterAll"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tất cả"
+                        android:textColor="#009688"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:background="@drawable/bg_chip_active_border"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <!-- Tab 2 -->
+                    <TextView
+                        android:id="@+id/btnFilterHasPlan"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Có kế hoạch"
+                        android:textColor="#7F8C8D"
+                        android:textSize="13sp"
+                        android:background="@drawable/bg_chip_inactive_border"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <!-- Tab 3 -->
+                    <TextView
+                        android:id="@+id/btnFilterBadMood"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mood xấu gần đây"
+                        android:textColor="#7F8C8D"
+                        android:textSize="13sp"
+                        android:background="@drawable/bg_chip_inactive_border"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <!-- Tab 4 -->
+                    <TextView
+                        android:id="@+id/btnFilterChat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Trị liệu Chat"
+                        android:textColor="#7F8C8D"
+                        android:textSize="13sp"
+                        android:background="@drawable/bg_chip_inactive_border"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <!-- Tab 5 -->
+                    <TextView
+                        android:id="@+id/btnFilterVideo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Trị liệu Video"
+                        android:textColor="#7F8C8D"
+                        android:textSize="13sp"
+                        android:background="@drawable/bg_chip_inactive_border"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp" />
+
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Patient List -->
+            <LinearLayout
+                android:id="@+id/layoutPatientsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="24dp">
+            </LinearLayout>
+
+            <!-- Empty State -->
+            <LinearLayout
+                android:id="@+id/layoutPatientsEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="60dp"
+                android:paddingBottom="60dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="1dp"
-                    app:cardBackgroundColor="#FFFFFF">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@drawable/ic_avatar_placeholder"/>
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Trần Thị B"
-                                android:textColor="#2D3A5E"
-                                android:textSize="15sp"
-                                android:textStyle="bold"/>
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Lần khám cuối: 25/06/2026"
-                                android:textColor="#7F8C8D"
-                                android:textSize="12sp"
-                                android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                    android:text="🔍"
+                    android:textSize="48sp"
+                    android:layout_marginBottom="16dp" />
 
+                <TextView
+                    android:id="@+id/txtEmptyStateTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Chưa có bệnh nhân nào"
+                    android:textColor="#313866"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/txtEmptyStateSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Hãy thử tìm kiếm bằng từ khoá khác nhé"
+                    android:textColor="#7F8C8D"
+                    android:textSize="13sp"
+                    android:gravity="center" />
             </LinearLayout>
 
         </LinearLayout>

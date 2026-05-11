@@ -161,7 +161,13 @@ public class DoctorActivity extends AppCompatActivity {
                     isFetchError = false;
                     allDoctors.clear();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        allDoctors.add(document.toObject(DoctorModel.class));
+                        DoctorModel doctor = document.toObject(DoctorModel.class);
+                        if (doctor != null) {
+                            if (doctor.getDoctor_id() == null || doctor.getDoctor_id().isEmpty()) {
+                                doctor.setDoctor_id(document.getId());
+                            }
+                            allDoctors.add(doctor);
+                        }
                     }
                     applyFilters();
                 })

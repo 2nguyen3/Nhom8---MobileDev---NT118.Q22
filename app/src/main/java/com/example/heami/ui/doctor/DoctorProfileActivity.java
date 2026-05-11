@@ -54,8 +54,12 @@ public class DoctorProfileActivity extends AppCompatActivity {
     }
 
     private void setupActions() {
+        android.content.SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+        boolean isDoctor = prefs.getBoolean("is_doctor", false);
         String uid = "doc_001";
-        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+        if (isDoctor) {
+            uid = prefs.getString("doctor_id", "doc_001");
+        } else if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         }
 
@@ -98,14 +102,48 @@ public class DoctorProfileActivity extends AppCompatActivity {
             cardDoctorLogout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    FirebaseAuth.getInstance().signOut();
-                    Toast.makeText(DoctorProfileActivity.this, "Đã đăng xuất thành công!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(DoctorProfileActivity.this, LoginActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
+                    showLogoutDialog();
                 }
             });
         }
+    }
+
+    private void showLogoutDialog() {
+        android.app.Dialog dialog = new android.app.Dialog(this, R.style.HeamiDialogTheme);
+        dialog.setContentView(R.layout.dialog_logout_confirmation);
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+        if (dialog.getWindow() != null) {
+            android.view.WindowManager.LayoutParams lp = new android.view.WindowManager.LayoutParams();
+            lp.copyFrom(dialog.getWindow().getAttributes());
+            lp.width = android.view.WindowManager.LayoutParams.MATCH_PARENT;
+            lp.height = android.view.WindowManager.LayoutParams.WRAP_CONTENT;
+            lp.gravity = android.view.Gravity.CENTER;
+            dialog.getWindow().setAttributes(lp);
+        }
+
+        com.google.android.material.button.MaterialButton btnStay = dialog.findViewById(R.id.btnStay);
+        TextView tvConfirmLogout = dialog.findViewById(R.id.tvConfirmLogout);
+
+        if (btnStay != null) btnStay.setOnClickListener(v -> dialog.dismiss());
+        if (tvConfirmLogout != null) {
+            tvConfirmLogout.setOnClickListener(v -> {
+                dialog.dismiss();
+                performLogout();
+            });
+        }
+        dialog.show();
+    }
+
+    private void performLogout() {
+        FirebaseAuth.getInstance().signOut();
+        android.content.SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+        prefs.edit().clear().apply();
+        Toast.makeText(this, "Đã đăng xuất tài khoản", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

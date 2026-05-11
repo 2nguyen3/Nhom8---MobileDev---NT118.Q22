@@ -43,8 +43,10 @@ public class ConsultationModel implements Serializable {
     @PropertyName("is_online")
     private boolean isOnline;
     
-    private boolean isExpanded;
-    private boolean doctorOnline;
+    @PropertyName("is_expanded")
+    private boolean is_expanded;
+    @PropertyName("doctor_online")
+    private boolean doctor_online;
 
     public ConsultationModel() { }
 
@@ -138,9 +140,13 @@ public class ConsultationModel implements Serializable {
     @PropertyName("is_online")
     public void setOnline(boolean online) { isOnline = online; }
 
-    public boolean isExpanded() { return isExpanded; }
-    public void setExpanded(boolean expanded) { isExpanded = expanded; }
+    @PropertyName("is_expanded")
+    public boolean isIs_expanded() { return is_expanded; }
+    @PropertyName("is_expanded")
+    public void setIs_expanded(boolean is_expanded) { this.is_expanded = is_expanded; }
 
-    public boolean isDoctorOnline() { return doctorOnline; }
-    public void setDoctorOnline(boolean doctorOnline) { this.doctorOnline = doctorOnline; }
+    @PropertyName("doctor_online")
+    public boolean isDoctor_online() { return doctor_online; }
+    @PropertyName("doctor_online")
+    public void setDoctor_online(boolean doctor_online) { this.doctor_online = doctor_online; }
 }

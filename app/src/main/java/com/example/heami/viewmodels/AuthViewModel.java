@@ -102,6 +102,42 @@ public class AuthViewModel extends ViewModel {
         isLoading.setValue(false);
     }
 
+    // Email/password dùng cho Firebase Auth của tài khoản Doctor (nội bộ, không phải login credentials)
+    private static final String DOCTOR_FIREBASE_EMAIL = "doctor_doc001@heami.vn";
+    private static final String DOCTOR_FIREBASE_PASS  = "Heami@Doc001";
+
+    /**
+     * Đăng nhập vào Firebase Auth bằng tài khoản email/password nội bộ của Doctor.
+     * Nếu tài khoản chưa tồn tại → tự động tạo trước, rồi sign in.
+     * Giúp đảm bảo Firestore Rules (require auth) luôn được thỏa mãn.
+     */
+    private void signInDoctorFirebaseAuth(Runnable onSuccess) {
+        auth.signInWithEmailAndPassword(DOCTOR_FIREBASE_EMAIL, DOCTOR_FIREBASE_PASS)
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    android.util.Log.d("AuthViewModel", "Doctor Firebase sign-in OK uid=" + auth.getUid());
+                    onSuccess.run();
+                } else {
+                    // Tài khoản chưa tồn tại → tạo mới
+                    android.util.Log.d("AuthViewModel", "Doctor sign-in failed, creating account...");
+                    auth.createUserWithEmailAndPassword(DOCTOR_FIREBASE_EMAIL, DOCTOR_FIREBASE_PASS)
+                        .addOnCompleteListener(createTask -> {
+                            if (createTask.isSuccessful()) {
+                                android.util.Log.d("AuthViewModel", "Doctor Firebase account created, uid=" + auth.getUid());
+                                onSuccess.run();
+                            } else {
+                                // Fallback cuối: thử ẩn danh
+                                android.util.Log.e("AuthViewModel", "Create failed: " + createTask.getException());
+                                auth.signInAnonymously().addOnCompleteListener(anonTask -> {
+                                    android.util.Log.d("AuthViewModel", "Anon fallback uid=" + auth.getUid());
+                                    onSuccess.run();
+                                });
+                            }
+                        });
+                }
+            });
+    }
+
     public void login(String account, String pass) {
         isLoading.setValue(true);
 
@@ -114,8 +150,11 @@ public class AuthViewModel extends ViewModel {
                     DocumentSnapshot doc = task.getResult().getDocuments().get(0);
                     String dbPassword = doc.getString("password");
                     if (pass != null && pass.equals(dbPassword)) {
-                        isLoading.setValue(false);
-                        authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                        // Đăng nhập Firebase Auth bằng tài khoản email cố định của Doctor
+                        signInDoctorFirebaseAuth(() -> {
+                            isLoading.setValue(false);
+                            authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                        });
                     } else {
                         isLoading.setValue(false);
                         authStatus.setValue("ERROR: Mật khẩu bác sĩ không chính xác!");
@@ -159,8 +198,10 @@ public class AuthViewModel extends ViewModel {
                         batch.set(db.collection("doctors").document("doc_001"), doctorInfo, SetOptions.merge());
 
                         batch.commit().addOnCompleteListener(commitTask -> {
-                            isLoading.setValue(false);
-                            authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                            signInDoctorFirebaseAuth(() -> {
+                                isLoading.setValue(false);
+                                authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                            });
                         });
                     } else {
                         loginNormalUser(account, pass);
@@ -207,6 +248,13 @@ public class AuthViewModel extends ViewModel {
                     authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
                     return;
                 }
+            }
+
+            // Nếu uid là doc_001 (Doctor mặc định), bỏ qua bước check user profile của người dùng
+            if ("doc_001".equals(uid)) {
+                isLoading.setValue(false);
+                authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                return;
             }
 
             db.collection("users").document(uid).get().addOnCompleteListener(task -> {
