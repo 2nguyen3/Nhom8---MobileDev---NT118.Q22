@@ -1,43 +1,55 @@
 package com.example.heami.data.models;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class UserSettingsModel {
-    private String theme_mode;          // "LIGHT", "DARK"
-    private boolean is_notif_enabled;   // Bật/tắt thông báo tổng
-    private Map<String, Boolean> notif_config; // Cấu hình riêng: {"chat": true, "appointment": true, "checkin": true, "plan": true}
-    private Map<String, String> reminders;     // Giờ nhắc nhở: {"breathing": "08:00", "checkin": "21:00"}
+    private String theme_mode;
+    private boolean notif_checkin;
+    private boolean notif_plan;
+    private boolean notif_appoint;
+    private boolean notif_chat;
+    private boolean is_protected_mode;
 
     public UserSettingsModel() {
-        this.notif_config = new HashMap<>();
-        this.reminders = new HashMap<>();
+        this.theme_mode = "LIGHT";
+        this.notif_checkin = true;
+        this.notif_plan = true;
+        this.notif_appoint = true;
+        this.notif_chat = true;
+        this.is_protected_mode = false;
     }
 
-    public UserSettingsModel(String theme_mode, boolean is_notif_enabled) {
+    public UserSettingsModel(String theme_mode, boolean defaultNotifVal) {
         this.theme_mode = theme_mode;
-        this.is_notif_enabled = is_notif_enabled;
+        this.notif_checkin = defaultNotifVal;
+        this.notif_plan = defaultNotifVal;
+        this.notif_appoint = defaultNotifVal;
+        this.notif_chat = defaultNotifVal;
+        this.is_protected_mode = false;
+    }
 
-        this.notif_config = new HashMap<>();
-        this.notif_config.put("chat", true);
-        this.notif_config.put("appointment", true);
-        this.notif_config.put("checkin", true);
-        this.notif_config.put("plan", true);
-
-        this.reminders = new HashMap<>();
-        this.reminders.put("breathing", "08:00");
-        this.reminders.put("checkin", "09:00");
+    public UserSettingsModel(String theme_mode, boolean notif_checkin, boolean notif_plan, boolean notif_appoint, boolean notif_chat, boolean is_protected_mode) {
+        this.theme_mode = theme_mode;
+        this.notif_checkin = notif_checkin;
+        this.notif_plan = notif_plan;
+        this.notif_appoint = notif_appoint;
+        this.notif_chat = notif_chat;
+        this.is_protected_mode = is_protected_mode;
     }
 
     public String getTheme_mode() { return theme_mode; }
     public void setTheme_mode(String theme_mode) { this.theme_mode = theme_mode; }
 
-    public boolean isIs_notif_enabled() { return is_notif_enabled; }
-    public void setIs_notif_enabled(boolean is_notif_enabled) { this.is_notif_enabled = is_notif_enabled; }
+    public boolean isNotif_checkin() { return notif_checkin; }
+    public void setNotif_checkin(boolean notif_checkin) { this.notif_checkin = notif_checkin; }
 
-    public Map<String, Boolean> getNotif_config() { return notif_config; }
-    public void setNotif_config(Map<String, Boolean> notif_config) { this.notif_config = notif_config; }
+    public boolean isNotif_plan() { return notif_plan; }
+    public void setNotif_plan(boolean notif_plan) { this.notif_plan = notif_plan; }
 
-    public Map<String, String> getReminders() { return reminders; }
-    public void setReminders(Map<String, String> reminders) { this.reminders = reminders; }
+    public boolean isNotif_appoint() { return notif_appoint; }
+    public void setNotif_appoint(boolean notif_appoint) { this.notif_appoint = notif_appoint; }
+
+    public boolean isNotif_chat() { return notif_chat; }
+    public void setNotif_chat(boolean notif_chat) { this.notif_chat = notif_chat; }
+
+    public boolean isIs_protected_mode() { return is_protected_mode; }
+    public void setIs_protected_mode(boolean is_protected_mode) { this.is_protected_mode = is_protected_mode; }
 }

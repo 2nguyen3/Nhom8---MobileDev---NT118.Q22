@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header: Căn lề trái -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <ImageButton
+                android:id="@+id/btnBackSelectFriend"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_doctor_detail_round_btn"
+                android:contentDescription="Quay lại"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_back"
+                app:tint="#313866" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:textStyle="bold"
+                android:text="Chọn Bạn Bè"
+                android:textColor="#313866"
+                android:textSize="20sp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F0F2F8"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Trạng thái trống/đang tải -->
+        <TextView
+            android:id="@+id/txtNoFriend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Đang tải danh sách bạn bè..."
+            android:textColor="#7D8BB7"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginVertical="24dp"
+            android:visibility="visible"/>
+
+        <!-- Danh sách -->
+        <ListView
+            android:id="@+id/lvFriends"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="8dp"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            android:clipToPadding="false"
+            android:paddingBottom="8dp"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

@@ -27,6 +27,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.heami.R;
 import com.example.heami.data.models.UserSettingsModel;
 import com.example.heami.ui.auth.LoginActivity;
+import com.example.heami.ui.consultation.ConsultationsActivity;
+import com.example.heami.utils.NotificationScheduler;
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
@@ -58,7 +60,7 @@ public class ProfileActivity extends AppCompatActivity {
     private String currentAvatarEmoji = "🌸";
     private String currentUserEmail = "";
     private UserSettingsModel userSettings;
-    private boolean isUpdatingUI = false; // Cờ ngăn chặn trigger ngược khi đang đồng bộ dữ liệu từ DB
+    private boolean isUpdatingUI = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -192,11 +194,24 @@ public class ProfileActivity extends AppCompatActivity {
                 userSettings = doc.toObject(UserSettingsModel.class);
                 syncSettingsToUI();
             } else {
-                userSettings = new UserSettingsModel("LIGHT", true);
+                userSettings = new UserSettingsModel("LIGHT", true, true, true, true, false);
                 settingsRef.set(userSettings);
                 syncSettingsToUI();
             }
+
+            if (userSettings != null) {
+                // Đồng bộ cấu hình checkin với SharedPreferences và báo cho scheduler
+                SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("notif_checkin", userSettings.isNotif_checkin()).apply();
+                if (userSettings.isNotif_checkin()) {
+                    NotificationScheduler.scheduleDailyCheckIn(this);
+                } else {
+                    NotificationScheduler.cancelDailyCheckIn(this);
+                }
+            }
+
             isUpdatingUI = false;
+            checkAndPromptNotificationPermission();
         });
     }
 
@@ -209,24 +224,18 @@ public class ProfileActivity extends AppCompatActivity {
             updateDarkModeStatusUI(swDarkMode.isChecked());
         }
 
-        Map<String, Boolean> config = userSettings.getNotif_config();
-        if (config != null) {
-            setSwitchChecked(R.id.switchNotiCheckin, config.getOrDefault("checkin", true));
-            setSwitchChecked(R.id.switchNotiPlan, config.getOrDefault("plan", true));
-            setSwitchChecked(R.id.switchNotiDr, config.getOrDefault("appointment", true));
-            setSwitchChecked(R.id.switchNotiChat, config.getOrDefault("chat", true));
-            
-            updateNotiTextColors();
+        setSwitchChecked(R.id.switchNotiCheckin, userSettings.isNotif_checkin());
+        setSwitchChecked(R.id.switchNotiPlan, userSettings.isNotif_plan());
+        setSwitchChecked(R.id.switchNotiDr, userSettings.isNotif_appoint());
+        setSwitchChecked(R.id.switchNotiChat, userSettings.isNotif_chat());
+        
+        SwitchMaterial swPrivacy = findViewById(R.id.switchPrivacy);
+        if (swPrivacy != null) {
+            swPrivacy.setChecked(userSettings.isIs_protected_mode());
+            updatePrivacyStatusUI(userSettings.isIs_protected_mode());
         }
-
-        // Đồng bộ thời gian nhắc nhở từ database
-        Map<String, String> reminders = userSettings.getReminders();
-        if (reminders != null && reminders.containsKey("checkin")) {
-            TextView tvCheckinTime = findViewById(R.id.tvNotiCheckinSub);
-            if (tvCheckinTime != null) {
-                tvCheckinTime.setText(reminders.get("checkin") + " mỗi sáng");
-            }
-        }
+        
+        updateNotiTextColors();
     }
 
     private void setSwitchChecked(int id, boolean checked) {
@@ -265,13 +274,131 @@ public class ProfileActivity extends AppCompatActivity {
         if (userSettings != null) {
             if ("theme_mode".equals(key)) {
                 userSettings.setTheme_mode((String) value);
-            } else if (key.startsWith("notif_config.")) {
-                String configKey = key.substring("notif_config.".length());
-                if (userSettings.getNotif_config() != null) {
-                    userSettings.getNotif_config().put(configKey, (Boolean) value);
+            } else if ("notif_checkin".equals(key)) {
+                userSettings.setNotif_checkin((Boolean) value);
+                SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("notif_checkin", (Boolean) value).apply();
+                if ((Boolean) value) {
+                    NotificationScheduler.scheduleDailyCheckIn(this);
+                } else {
+                    NotificationScheduler.cancelDailyCheckIn(this);
                 }
+            } else if ("notif_plan".equals(key)) {
+                userSettings.setNotif_plan((Boolean) value);
+            } else if ("notif_appoint".equals(key)) {
+                userSettings.setNotif_appoint((Boolean) value);
+                SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("notif_appoint", (Boolean) value).apply();
+            } else if ("notif_chat".equals(key)) {
+                userSettings.setNotif_chat((Boolean) value);
+            } else if ("is_protected_mode".equals(key)) {
+                userSettings.setIs_protected_mode((Boolean) value);
+            }
+            
+            // Nếu bật một thông báo bất kỳ thành true, kiểm tra quyền hệ thống
+            if (key.startsWith("notif_") && (Boolean) value) {
+                checkAndPromptNotificationPermission(key);
             }
         }
+    }
+
+    private void checkAndPromptNotificationPermission() {
+        if (userSettings == null) return;
+        boolean areNotificationsEnabled = androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled();
+        if (!areNotificationsEnabled) {
+            if (userSettings.isNotif_checkin()) {
+                showNotificationPermissionPromptDialog("notif_checkin");
+            } else if (userSettings.isNotif_plan()) {
+                showNotificationPermissionPromptDialog("notif_plan");
+            } else if (userSettings.isNotif_appoint()) {
+                showNotificationPermissionPromptDialog("notif_appoint");
+            } else if (userSettings.isNotif_chat()) {
+                showNotificationPermissionPromptDialog("notif_chat");
+            }
+        }
+    }
+
+    private void checkAndPromptNotificationPermission(String key) {
+        if (userSettings == null) return;
+        boolean areNotificationsEnabled = androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled();
+        if (!areNotificationsEnabled) {
+            showNotificationPermissionPromptDialog(key);
+        }
+    }
+
+    private int getSwitchIdByKey(String key) {
+        if ("notif_checkin".equals(key)) return R.id.switchNotiCheckin;
+        if ("notif_plan".equals(key)) return R.id.switchNotiPlan;
+        if ("notif_appoint".equals(key)) return R.id.switchNotiDr;
+        if ("notif_chat".equals(key)) return R.id.switchNotiChat;
+        return 0;
+    }
+
+    private int getTvIdByKey(String key) {
+        if ("notif_checkin".equals(key)) return R.id.tvNotiCheckinSub;
+        if ("notif_plan".equals(key)) return R.id.tvNotiPlanSub;
+        if ("notif_appoint".equals(key)) return R.id.tvNotiDrSub;
+        if ("notif_chat".equals(key)) return R.id.tvNotiChatSub;
+        return 0;
+    }
+
+    private void showNotificationPermissionPromptDialog(String key) {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_notification_permission_prompt, null);
+        builder.setView(dialogView);
+        
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        com.google.android.material.button.MaterialButton btnGoToSettings = dialogView.findViewById(R.id.btnGoToSettings);
+        TextView btnCancel = dialogView.findViewById(R.id.btnCancelPrompt);
+
+        if (btnGoToSettings != null) {
+            btnGoToSettings.setOnClickListener(v -> {
+                dialog.dismiss();
+                Intent intent = new Intent();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    intent.setAction(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                    intent.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+                } else {
+                    intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                    intent.putExtra("app_package", getPackageName());
+                    intent.putExtra("app_uid", getApplicationInfo().uid);
+                }
+                startActivity(intent);
+            });
+        }
+
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> {
+                dialog.dismiss();
+                // Tắt công tắc về false
+                isUpdatingUI = true;
+                int swId = getSwitchIdByKey(key);
+                if (swId != 0) {
+                    SwitchMaterial sw = findViewById(swId);
+                    if (sw != null) {
+                        sw.setChecked(false);
+                        int tvId = getTvIdByKey(key);
+                        if (tvId != 0) {
+                            TextView tv = findViewById(tvId);
+                            if (tv != null) {
+                                tv.setTextColor(colorTextOff);
+                            }
+                        }
+                    }
+                }
+                isUpdatingUI = false;
+                saveSettingUpdate(key, false);
+            });
+        }
+
+        dialog.show();
     }
 
     private void updateMoodGoalsUI(LinearLayout container, List<String> mood_goals) {
@@ -355,6 +482,7 @@ public class ProfileActivity extends AppCompatActivity {
                 if (user != null) {
                     FirebaseFirestore.getInstance().collection("users").document(user.getUid())
                             .update("is_protected_mode", isChecked);
+                    saveSettingUpdate("is_protected_mode", isChecked);
                 }
             });
         }
@@ -369,10 +497,10 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupNotifications() {
-        setupSingleNotiLogic(R.id.switchNotiCheckin, R.id.tvNotiCheckinSub, "checkin");
-        setupSingleNotiLogic(R.id.switchNotiPlan, R.id.tvNotiPlanSub, "plan");
-        setupSingleNotiLogic(R.id.switchNotiDr, R.id.tvNotiDrSub, "appointment");
-        setupSingleNotiLogic(R.id.switchNotiChat, R.id.tvNotiChatSub, "chat");
+        setupSingleNotiLogic(R.id.switchNotiCheckin, R.id.tvNotiCheckinSub, "notif_checkin");
+        setupSingleNotiLogic(R.id.switchNotiPlan, R.id.tvNotiPlanSub, "notif_plan");
+        setupSingleNotiLogic(R.id.switchNotiDr, R.id.tvNotiDrSub, "notif_appoint");
+        setupSingleNotiLogic(R.id.switchNotiChat, R.id.tvNotiChatSub, "notif_chat");
     }
 
     private void setupSingleNotiLogic(int swId, int tvId, String configKey) {
@@ -383,7 +511,7 @@ public class ProfileActivity extends AppCompatActivity {
             sw.setOnCheckedChangeListener((btn, isChecked) -> {
                 if (isUpdatingUI) return;
                 tv.setTextColor(isChecked ? colorActive : colorTextOff);
-                saveSettingUpdate("notif_config." + configKey, isChecked);
+                saveSettingUpdate(configKey, isChecked);
             });
         }
     }
@@ -427,16 +555,41 @@ public class ProfileActivity extends AppCompatActivity {
             findViewById(R.id.btnViewAnalysis).setOnClickListener(v -> startActivity(new Intent(this, StatsActivity.class)));
 
         if (findViewById(R.id.btnViewHistory) != null)
-            findViewById(R.id.btnViewHistory).setOnClickListener(v -> Toast.makeText(this, "Lịch sử đang được xử lý", Toast.LENGTH_SHORT).show());
+            findViewById(R.id.btnViewHistory).setOnClickListener(v -> startActivity(new Intent(this, ConsultationsActivity.class)));
 
         if (findViewById(R.id.layoutPrivacy2) != null)
-            findViewById(R.id.layoutPrivacy2).setOnClickListener(v -> Toast.makeText(this, "Xem chính sách bảo mật", Toast.LENGTH_SHORT).show());
+            findViewById(R.id.layoutPrivacy2).setOnClickListener(v -> showPrivacyPolicyDialog());
 
         if (findViewById(R.id.cardSOS) != null)
             findViewById(R.id.cardSOS).setOnClickListener(v -> startActivity(new Intent(this, SosActivity.class)));
 
         if (findViewById(R.id.layoutLogout) != null)
             findViewById(R.id.layoutLogout).setOnClickListener(v -> showLogoutDialog());
+    }
+
+    private void showPrivacyPolicyDialog() {
+        android.app.Dialog dialog = new android.app.Dialog(this, R.style.HeamiDialogTheme);
+        dialog.setContentView(R.layout.dialog_privacy_policy);
+
+        if (dialog.getWindow() != null) {
+            android.view.WindowManager.LayoutParams lp = new android.view.WindowManager.LayoutParams();
+            lp.copyFrom(dialog.getWindow().getAttributes());
+            lp.width = android.view.WindowManager.LayoutParams.MATCH_PARENT;
+            lp.height = android.view.WindowManager.LayoutParams.WRAP_CONTENT;
+            lp.gravity = android.view.Gravity.CENTER;
+            dialog.getWindow().setAttributes(lp);
+        }
+
+        com.google.android.material.button.MaterialButton btnOkay = dialog.findViewById(R.id.btnOkayPrivacy);
+
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+        if (btnOkay != null) {
+            btnOkay.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
     }
 
     private void showEditProfileDialog() {

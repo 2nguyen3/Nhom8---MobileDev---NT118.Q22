@@ -43,6 +43,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import com.example.heami.utils.ExitDialogHelper;
+
 public class CommunityActivity extends AppCompatActivity {
 
     private LinearLayout layoutPostsContainer;
@@ -98,6 +100,8 @@ public class CommunityActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_community);
+
+        ExitDialogHelper.registerExitHandler(this);
 
         BottomNavManager.setup(this, BottomNavManager.TAB_COMMUNITY);
 

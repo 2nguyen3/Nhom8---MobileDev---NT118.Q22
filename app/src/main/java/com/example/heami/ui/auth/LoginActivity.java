@@ -41,6 +41,7 @@ import androidx.credentials.exceptions.NoCredentialException;
 
 import com.example.heami.ui.main.HomeActivity;
 import com.example.heami.ui.onboarding.OnboardingActivity;
+import com.example.heami.ui.doctor.DoctorHomeActivity;
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 
@@ -76,7 +77,16 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Kiểm tra auto-login
+        // Kiểm tra nếu là Doctor đã lưu trong SharedPreferences thì đi thẳng vào DoctorHomeActivity
+        android.content.SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+        boolean isDoctor = prefs.getBoolean("is_doctor", false);
+        if (isDoctor) {
+            startActivity(new Intent(LoginActivity.this, com.example.heami.ui.doctor.DoctorHomeActivity.class));
+            finish();
+            return;
+        }
+
+        // Kiểm tra auto-login cho User
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             if (authViewModel != null) {
@@ -125,7 +135,18 @@ public class LoginActivity extends AppCompatActivity {
             if (status == null) return;
 
             if (status.startsWith("SUCCESS_HOME")) {
+                getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
+                    .putBoolean("is_doctor", false)
+                    .apply();
                 startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            } else if (status.startsWith("SUCCESS_DOCTOR")) {
+                getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
+                    .putBoolean("is_doctor", true)
+                    .putString("doctor_id", "doc_001")
+                    .apply();
+                startActivity(new Intent(LoginActivity.this, DoctorHomeActivity.class));
                 finish();
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             } else if (status.startsWith("SUCCESS_SETUP")) {

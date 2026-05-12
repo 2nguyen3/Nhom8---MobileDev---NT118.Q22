@@ -207,7 +207,7 @@ public class CheckInResultActivity extends AppCompatActivity {
             int totalWidth = progressResultMood.getWidth();
             int progressWidth = (int) (totalWidth * (moodPercent / 100f));
 
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+            FrameLayout .LayoutParams params = new FrameLayout.LayoutParams(
                     progressWidth,
                     FrameLayout.LayoutParams.MATCH_PARENT
             );
