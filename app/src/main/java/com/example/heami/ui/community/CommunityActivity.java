@@ -72,6 +72,7 @@ public class CommunityActivity extends AppCompatActivity {
     private boolean isLoadingPosts = false;
 
     private static final int COLLAPSED_POST_MAX_LINES = 4;
+    private static final long ONLINE_HEARTBEAT_TIMEOUT_MS = 45_000L;
     private final Set<String> expandedPostIds = new HashSet<>();
 
     private TextView txtOnlineCount;
@@ -1892,17 +1893,25 @@ public class CommunityActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
                 int onlineCount = 0;
+                long now = System.currentTimeMillis();
 
                 for (com.google.firebase.database.DataSnapshot userSnapshot : snapshot.getChildren()) {
                     com.google.firebase.database.DataSnapshot connectionsSnapshot =
                             userSnapshot.child("connections");
 
                     Boolean isForeground = userSnapshot.child("isForeground").getValue(Boolean.class);
+                    Long heartbeatAt = userSnapshot.child("heartbeat_at").getValue(Long.class);
 
                     boolean hasConnections =
                             connectionsSnapshot.exists() && connectionsSnapshot.getChildrenCount() > 0;
 
-                    if (hasConnections && Boolean.TRUE.equals(isForeground)) {
+                    boolean heartbeatFresh = false;
+                    if (heartbeatAt != null) {
+                        long diff = now - heartbeatAt;
+                        heartbeatFresh = diff >= 0 && diff <= ONLINE_HEARTBEAT_TIMEOUT_MS;
+                    }
+
+                    if (hasConnections && Boolean.TRUE.equals(isForeground) && heartbeatFresh) {
                         onlineCount++;
                     }
                 }

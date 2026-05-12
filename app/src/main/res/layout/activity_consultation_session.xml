@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F5FF">
+
+    <!-- Header -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutSessionToolbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#F2EDFF"
+        android:paddingStart="16dp"
+        android:paddingTop="52dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnSessionBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_chat_btn_back"
+            android:contentDescription="Back"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#1A2530" />
+
+        <FrameLayout
+            android:id="@+id/layoutSessionAvatar"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_community_chat_avatar_blue"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/btnSessionBack"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/txtSessionAvatarEmoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="🩺"
+                android:textSize="20sp" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutSessionTitleGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnSessionCall"
+            app:layout_constraintStart_toEndOf="@id/layoutSessionAvatar"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/txtSessionDoctorName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bác sĩ tư vấn Heami"
+                android:textColor="#1E2340"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtSessionSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="🟡 Chờ bắt đầu phiên chat"
+                android:textColor="#7A7391"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/txtSessionBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_mood_match_rule_item"
+                android:paddingStart="10dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
+                android:text="Chat tư vấn"
+                android:textColor="#6E52E5"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnSessionCall"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_chat_btn_call"
+            android:contentDescription="Call consultation"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_phone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#7B61FF" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Message area -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSessionMessages"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="16dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="14dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutSessionToolbar"
+        app:layout_constraintBottom_toTopOf="@id/layoutSessionInputBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Empty state overlay -->
+    <LinearLayout
+        android:id="@+id/layoutSessionEmptyState"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="28dp"
+        android:paddingEnd="28dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutSessionToolbar"
+        app:layout_constraintBottom_toTopOf="@id/layoutSessionInputBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:gravity="center"
+            android:text="💬"
+            android:textSize="34sp"
+            android:background="@drawable/bg_circle_white_alpha" />
+
+        <TextView
+            android:id="@+id/txtSessionEmptyTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Chưa có tin nhắn"
+            android:textColor="#2A2340"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtSessionEmptyDesc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="Khi phiên chat bắt đầu, tin nhắn giữa bạn và bác sĩ sẽ xuất hiện tại đây."
+            android:textColor="#8B83A6"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Input bar -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutSessionInputBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#FFF9FF"
+        android:elevation="8dp"
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutSessionInputShell"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_post_comment_input_shell"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <EditText
+                android:id="@+id/edtSessionInput"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:background="@android:color/transparent"
+                android:hint="Nhắn cho bác sĩ..."
+                android:imeOptions="actionSend"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:minLines="1"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:textColor="#1A2530"
+                android:textColorHint="#B9B2CC"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/btnSessionSend"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageButton
+                android:id="@+id/btnSessionSend"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_chat_btn_back"
+                android:contentDescription="Send consultation message"
+                android:padding="8dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_send_comment"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="#7B61FF" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

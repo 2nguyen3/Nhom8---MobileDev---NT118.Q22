@@ -133,6 +133,9 @@
             <activity
                 android:name=".ui.consultation.BookingFlowActivity"
                 android:exported="false" />
+            <activity
+                android:name=".ui.consultation.ConsultationSessionActivity"
+                android:exported="false" />
 
         <activity
             android:name=".ui.main.ProfileActivity"

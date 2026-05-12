@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -101,8 +102,23 @@ public class ConsultationsActivity extends AppCompatActivity {
 
     private void setupAdapters() {
         rvContent.setLayoutManager(new LinearLayoutManager(this));
-        upcomingAdapter = new ConsultationAdapter(this, upcomingList, false);
-        historyAdapter  = new ConsultationAdapter(this, historyList,  true);
+
+        ConsultationAdapter.OnConsultationJoinClickListener joinClickListener = model ->
+                openConsultationSession(model);
+
+        upcomingAdapter = new ConsultationAdapter(
+                this,
+                upcomingList,
+                false,
+                joinClickListener
+        );
+
+        historyAdapter = new ConsultationAdapter(
+                this,
+                historyList,
+                true,
+                joinClickListener
+        );
     }
 
     private void setupListeners() {
@@ -115,6 +131,49 @@ public class ConsultationsActivity extends AppCompatActivity {
                 android.widget.Toast.makeText(this, "Lỗi: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void openConsultationSession(ConsultationModel model) {
+        if (model == null) {
+            Toast.makeText(this, "Không tìm thấy dữ liệu phiên tư vấn", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String sessionId = model.getSessionId() != null ? model.getSessionId().trim() : "";
+        String status = model.getStatus() != null ? model.getStatus().trim().toUpperCase(Locale.ROOT) : "";
+        String formatType = model.getFormatType() != null ? model.getFormatType().trim() : "";
+
+        if (sessionId.isEmpty()) {
+            Toast.makeText(this, "Phiên tư vấn chưa có session_id hợp lệ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if ("COMPLETED".equals(status)) {
+            Toast.makeText(this, "Phiên tư vấn này đã hoàn thành", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if ("CANCELLED".equals(status) || "CANCELED".equals(status)) {
+            Toast.makeText(this, "Phiên tư vấn này đã bị hủy", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(this, ConsultationSessionActivity.class);
+        intent.putExtra(ConsultationSessionActivity.EXTRA_SESSION_ID, sessionId);
+        intent.putExtra(ConsultationSessionActivity.EXTRA_FORMAT_TYPE, formatType);
+        intent.putExtra(
+                ConsultationSessionActivity.EXTRA_DOCTOR_NAME,
+                model.getDoctorName() != null ? model.getDoctorName() : ""
+        );
+        intent.putExtra(
+                ConsultationSessionActivity.EXTRA_DOCTOR_AVATAR,
+                model.getDoctorAvatar() != null ? model.getDoctorAvatar() : ""
+        );
+        intent.putExtra(
+                ConsultationSessionActivity.EXTRA_STATUS,
+                model.getStatus() != null ? model.getStatus() : "BOOKED"
+        );
+        startActivity(intent);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -262,13 +321,16 @@ public class ConsultationsActivity extends AppCompatActivity {
             if ("COMPLETED".equals(status)) {
                 historyList.add(model);
                 doneCount++;
-                spentTotal += price;           // Lịch đã xong → tính tiền đã chi
-            } else if ("BOOKED".equals(status)) {
+                spentTotal += price;
+            } else if ("BOOKED".equals(status) || "ONGOING".equals(status)) {
                 upcomingList.add(model);
-                spentTotal += price;           // Đã thanh toán VNPay → cũng tính đã chi
-            } else {
-                // CANCELED / CANCELLED → lịch sử nhưng không tính tiền
+                spentTotal += price;
+            } else if ("CANCELLED".equals(status) || "CANCELED".equals(status)) {
                 historyList.add(model);
+            } else {
+                // fallback an toàn: vẫn cho vào upcoming để tránh render sai thành "Đã hủy"
+                upcomingList.add(model);
+                spentTotal += price;
             }
         }
 

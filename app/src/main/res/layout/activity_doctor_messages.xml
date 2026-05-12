@@ -6,754 +6,242 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_home_gradient">
 
-    <!-- Decor Background Blobs -->
+    <!-- Decor giữ style cũ -->
     <ImageView
         android:id="@+id/decorFlowerPinkTop"
         android:layout_width="18dp"
         android:layout_height="18dp"
-        android:alpha="0.6"
-        android:src="@drawable/ic_flower_pink"
-        android:contentDescription="decor pink"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="40dp"
         android:layout_marginTop="60dp"
-        android:layout_marginStart="40dp" />
+        android:alpha="0.6"
+        android:contentDescription="decor pink"
+        android:src="@drawable/ic_flower_pink"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/decorFlowerMintMid"
         android:layout_width="15dp"
         android:layout_height="15dp"
-        android:alpha="0.5"
-        android:src="@drawable/ic_flower_mint"
-        android:contentDescription="decor mint"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="160dp"
-        android:layout_marginEnd="30dp" />
+        android:layout_marginEnd="30dp"
+        android:alpha="0.5"
+        android:contentDescription="decor mint"
+        android:src="@drawable/ic_flower_mint"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Main Scroll Content -->
-    <ScrollView
-        android:id="@+id/scrollDoctorMessages"
+    <!-- Header giữ style cũ -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutDoctorMessagesHeader"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:paddingBottom="16dp"
-        android:scrollbars="none"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/layoutBottomNavDoctorContainer"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="22dp"
+        android:layout_marginTop="52dp"
+        android:layout_marginEnd="22dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/txtUnreadCountBadge"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="QUẢN LÝ TIN NHẮN"
+                android:textColor="#09A38C"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Tin nhắn"
+                android:textColor="#112233"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtUnreadCountBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_stat_icon_pink"
+            android:paddingStart="14dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="8dp"
+            android:text="0 chưa đọc"
+            android:textColor="#FF5A5F"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Card count giữ style cũ -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardConversationSummary"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="22dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="22dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutDoctorMessagesHeader">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="22dp"
-            android:paddingEnd="22dp"
-            android:paddingTop="52dp">
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
-            <!-- Header Section -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
+            <FrameLayout
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_stat_icon_green">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="chat bubble icon"
+                    android:src="@drawable/ic_nav_doctor_messages"
+                    app:tint="#009688" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/txtConversationCount"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/txtUnreadCountBadge"
-                    app:layout_constraintBottom_toBottomOf="parent">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="QUẢN LÝ TIN NHẮN"
-                        android:textColor="#09A38C"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Tin nhắn"
-                        android:textColor="#112233"
-                        android:textSize="26sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Unread Count Badge Pill -->
-                <TextView
-                    android:id="@+id/txtUnreadCountBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="2 chưa đọc"
-                    android:textColor="#FF5A5F"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/bg_stat_icon_pink"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- Conversations count card -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <FrameLayout
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@drawable/bg_stat_icon_green">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_nav_doctor_messages"
-                            app:tint="#009688"
-                            android:contentDescription="chat bubble icon" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="4 cuộc trò chuyện"
-                        android:textColor="#7F8C8D"
-                        android:textSize="14sp"
-                        android:textStyle="bold"/>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Search box fully rounded -->
-            <EditText
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:hint="Tìm cuộc trò chuyện..."
-                android:paddingStart="18dp"
-                android:paddingEnd="18dp"
-                android:background="@drawable/bg_search_pill"
-                android:textColor="#2D3A5E"
-                android:textColorHint="#B5BFD1"
+                android:layout_marginStart="12dp"
+                android:text="0 cuộc trò chuyện"
+                android:textColor="#7F8C8D"
                 android:textSize="14sp"
-                android:layout_marginBottom="20dp"
-                android:drawableStart="@drawable/ic_doctor_search"
-                android:drawablePadding="10dp"
-                android:singleLine="true"
-                android:elevation="0dp"/>
-
-            <!-- Chat List -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="24dp">
-
-                <!-- Chat Item 1: Bướm tím mộng -->
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/cardChatItem1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="14dp">
-
-                        <!-- Avatar container -->
-                        <FrameLayout
-                            android:id="@+id/chatAvatarContainer1"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:background="@drawable/bg_stat_icon_blue">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="🦋"
-                                    android:textSize="22sp"/>
-                            </FrameLayout>
-
-                            <!-- Mini mood emoji bottom-right -->
-                            <FrameLayout
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_gravity="bottom|end"
-                                android:background="@drawable/bg_welcome_card">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="😔"
-                                    android:textSize="10sp"/>
-                            </FrameLayout>
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:id="@+id/chatTextLayout1"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginStart="14dp"
-                            android:layout_marginEnd="10dp"
-                            app:layout_constraintStart_toEndOf="@id/chatAvatarContainer1"
-                            app:layout_constraintEnd_toStartOf="@id/chatBadgeContainer1"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Bướm tím mộng"
-                                    android:textColor="#1A2530"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Đang tư vấn"
-                                    android:textColor="#09A38C"
-                                    android:textSize="9sp"
-                                    android:textStyle="bold"
-                                    android:background="@drawable/bg_stat_icon_green"
-                                    android:paddingStart="8dp"
-                                    android:paddingEnd="8dp"
-                                    android:paddingTop="3dp"
-                                    android:paddingBottom="3dp"
-                                    android:layout_marginStart="8dp"/>
-                            </LinearLayout>
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="Cảm ơn bác sĩ rất nhiều. Hôm n..."
-                                android:textColor="#5A6B82"
-                                android:textSize="13sp"
-                                android:layout_marginTop="4dp"
-                                android:singleLine="true"/>
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginTop="6dp">
-
-                                <ImageView
-                                    android:layout_width="12dp"
-                                    android:layout_height="12dp"
-                                    android:src="@drawable/ic_clock"
-                                    app:tint="#B5BFD1"
-                                    android:contentDescription="clock icon"/>
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="10 phút trước"
-                                    android:textColor="#B5BFD1"
-                                    android:textSize="11sp"
-                                    android:layout_marginStart="4dp"/>
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- Right unread count badge -->
-                        <FrameLayout
-                            android:id="@+id/chatBadgeContainer1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <TextView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:background="@drawable/bg_dot_pink_small"
-                                android:text="2"
-                                android:textColor="#FFFFFF"
-                                android:textSize="11sp"
-                                android:textStyle="bold"
-                                android:gravity="center"/>
-                        </FrameLayout>
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-                </androidx.cardview.widget.CardView>
-
-                <!-- Chat Item 2: Cáo nhỏ hồng -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="14dp">
-
-                        <FrameLayout
-                            android:id="@+id/chatAvatarContainer2"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:background="@drawable/bg_stat_icon_pink">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="🦊"
-                                    android:textSize="22sp"/>
-                            </FrameLayout>
-
-                            <!-- Mini mood emoji -->
-                            <FrameLayout
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_gravity="bottom|end"
-                                android:background="@drawable/bg_welcome_card">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="😰"
-                                    android:textSize="10sp"/>
-                            </FrameLayout>
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:id="@+id/chatTextLayout2"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginStart="14dp"
-                            android:layout_marginEnd="10dp"
-                            app:layout_constraintStart_toEndOf="@id/chatAvatarContainer2"
-                            app:layout_constraintEnd_toStartOf="@id/chatBadgeContainer2"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Cáo nhỏ hồng"
-                                    android:textColor="#1A2530"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Đang tư vấn"
-                                    android:textColor="#09A38C"
-                                    android:textSize="9sp"
-                                    android:textStyle="bold"
-                                    android:background="@drawable/bg_stat_icon_green"
-                                    android:paddingStart="8dp"
-                                    android:paddingEnd="8dp"
-                                    android:paddingTop="3dp"
-                                    android:paddingBottom="3dp"
-                                    android:layout_marginStart="8dp"/>
-                            </LinearLayout>
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="Em đã làm theo hướng dẫn của ..."
-                                android:textColor="#5A6B82"
-                                android:textSize="13sp"
-                                android:layout_marginTop="4dp"
-                                android:singleLine="true"/>
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginTop="6dp">
-
-                                <ImageView
-                                    android:layout_width="12dp"
-                                    android:layout_height="12dp"
-                                    android:src="@drawable/ic_clock"
-                                    app:tint="#B5BFD1"
-                                    android:contentDescription="clock icon"/>
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="1 giờ trước"
-                                    android:textColor="#B5BFD1"
-                                    android:textSize="11sp"
-                                    android:layout_marginStart="4dp"/>
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- Right chevron icon -->
-                        <FrameLayout
-                            android:id="@+id/chatBadgeContainer2"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_chevron_right"
-                                app:tint="#B5BFD1"
-                                android:contentDescription="chevron icon"/>
-                        </FrameLayout>
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-                </androidx.cardview.widget.CardView>
-
-                <!-- Chat Item 3: Gấu bông trắng -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="14dp">
-
-                        <FrameLayout
-                            android:id="@+id/chatAvatarContainer3"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:background="@drawable/bg_stat_icon_green">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="🐨"
-                                    android:textSize="22sp"/>
-                            </FrameLayout>
-
-                            <!-- Mini mood emoji -->
-                            <FrameLayout
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_gravity="bottom|end"
-                                android:background="@drawable/bg_welcome_card">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="😊"
-                                    android:textSize="10sp"/>
-                            </FrameLayout>
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:id="@+id/chatTextLayout3"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginStart="14dp"
-                            android:layout_marginEnd="10dp"
-                            app:layout_constraintStart_toEndOf="@id/chatAvatarContainer3"
-                            app:layout_constraintEnd_toStartOf="@id/chatBadgeContainer3"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Gấu bông trắng"
-                                    android:textColor="#1A2530"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Đang tư vấn"
-                                    android:textColor="#09A38C"
-                                    android:textSize="9sp"
-                                    android:textStyle="bold"
-                                    android:background="@drawable/bg_stat_icon_green"
-                                    android:paddingStart="8dp"
-                                    android:paddingEnd="8dp"
-                                    android:paddingTop="3dp"
-                                    android:paddingBottom="3dp"
-                                    android:layout_marginStart="8dp"/>
-                            </LinearLayout>
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="Bác sĩ ơi, em hoàn thành đủ 5/7 ..."
-                                android:textColor="#5A6B82"
-                                android:textSize="13sp"
-                                android:layout_marginTop="4dp"
-                                android:singleLine="true"/>
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginTop="6dp">
-
-                                <ImageView
-                                    android:layout_width="12dp"
-                                    android:layout_height="12dp"
-                                    android:src="@drawable/ic_clock"
-                                    app:tint="#B5BFD1"
-                                    android:contentDescription="clock icon"/>
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="2 giờ trước"
-                                    android:textColor="#B5BFD1"
-                                    android:textSize="11sp"
-                                    android:layout_marginStart="4dp"/>
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- Right unread count badge -->
-                        <FrameLayout
-                            android:id="@+id/chatBadgeContainer3"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <TextView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:background="@drawable/bg_dot_pink_small"
-                                android:text="1"
-                                android:textColor="#FFFFFF"
-                                android:textSize="11sp"
-                                android:textStyle="bold"
-                                android:gravity="center"/>
-                        </FrameLayout>
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-                </androidx.cardview.widget.CardView>
-
-                <!-- Chat Item 4: Ếch xanh lá -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="14dp">
-
-                        <FrameLayout
-                            android:id="@+id/chatAvatarContainer4"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:background="@drawable/bg_light_gray_circle">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="🐸"
-                                    android:textSize="22sp"/>
-                            </FrameLayout>
-
-                            <!-- Mini mood emoji -->
-                            <FrameLayout
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_gravity="bottom|end"
-                                android:background="@drawable/bg_welcome_card">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:text="😌"
-                                    android:textSize="10sp"/>
-                            </FrameLayout>
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:id="@+id/chatTextLayout4"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginStart="14dp"
-                            android:layout_marginEnd="10dp"
-                            app:layout_constraintStart_toEndOf="@id/chatAvatarContainer4"
-                            app:layout_constraintEnd_toStartOf="@id/chatBadgeContainer4"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Ếch xanh lá"
-                                    android:textColor="#1A2530"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="Em cảm ơn bác sĩ đã luôn lắng ..."
-                                android:textColor="#5A6B82"
-                                android:textSize="13sp"
-                                android:layout_marginTop="4dp"
-                                android:singleLine="true"/>
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginTop="6dp">
-
-                                <ImageView
-                                    android:layout_width="12dp"
-                                    android:layout_height="12dp"
-                                    android:src="@drawable/ic_clock"
-                                    app:tint="#B5BFD1"
-                                    android:contentDescription="clock icon"/>
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="1 ngày trước"
-                                    android:textColor="#B5BFD1"
-                                    android:textSize="11sp"
-                                    android:layout_marginStart="4dp"/>
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- Right chevron icon -->
-                        <FrameLayout
-                            android:id="@+id/chatBadgeContainer4"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_chevron_right"
-                                app:tint="#B5BFD1"
-                                android:contentDescription="chevron icon"/>
-                        </FrameLayout>
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-                </androidx.cardview.widget.CardView>
-
-            </LinearLayout>
-
+                android:textStyle="bold" />
         </LinearLayout>
-    </ScrollView>
+    </androidx.cardview.widget.CardView>
 
-    <!-- Include Bottom Navigation Bar for Doctor -->
+    <!-- Search giữ style cũ -->
+    <EditText
+        android:id="@+id/edtDoctorMessagesSearch"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="22dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="22dp"
+        android:background="@drawable/bg_search_pill"
+        android:drawableStart="@drawable/ic_doctor_search"
+        android:drawablePadding="10dp"
+        android:elevation="0dp"
+        android:hint="Tìm cuộc trò chuyện..."
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:singleLine="true"
+        android:textColor="#2D3A5E"
+        android:textColorHint="#B5BFD1"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardConversationSummary" />
+
+    <!-- RecyclerView mới thay cho card cứng -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvDoctorConsultationRooms"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="14dp"
+        android:clipToPadding="false"
+        android:paddingStart="22dp"
+        android:paddingEnd="22dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintBottom_toTopOf="@id/layoutBottomNavDoctorContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/edtDoctorMessagesSearch" />
+
+    <!-- Empty state mới -->
+    <LinearLayout
+        android:id="@+id/layoutDoctorMessagesEmptyState"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="30dp"
+        android:paddingEnd="30dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/layoutBottomNavDoctorContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/edtDoctorMessagesSearch">
+
+        <TextView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:background="@drawable/bg_circle_white_alpha"
+            android:gravity="center"
+            android:text="💬"
+            android:textSize="36sp" />
+
+        <TextView
+            android:id="@+id/txtDoctorMessagesEmptyTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Chưa có cuộc trò chuyện tư vấn nào"
+            android:textColor="#20303C"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtDoctorMessagesEmptySubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="Khi user bắt đầu phiên chat tư vấn,\nđoạn chat sẽ xuất hiện ở đây."
+            android:textColor="#7B8794"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Progress mới -->
+    <ProgressBar
+        android:id="@+id/progressDoctorMessages"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:indeterminateTint="#7B61FF"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/layoutBottomNavDoctorContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/edtDoctorMessagesSearch" />
+
+    <!-- Bottom nav giữ nguyên -->
     <include
-        layout="@layout/bottom_nav_doctor"
         android:id="@+id/layoutBottomNavDoctorContainer"
+        layout="@layout/bottom_nav_doctor"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="10dp"
         android:layout_marginBottom="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

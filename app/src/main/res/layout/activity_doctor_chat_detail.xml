@@ -6,34 +6,33 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_home_gradient">
 
-    <!-- Header Toolbar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutChatToolbar"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="52dp"
-        android:paddingBottom="12dp"
         android:background="#95FFFFFF"
-        app:layout_constraintTop_toTopOf="parent">
+        android:paddingStart="16dp"
+        android:paddingTop="52dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Back Button -->
         <ImageButton
             android:id="@+id/btnChatDetailBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@drawable/bg_chat_btn_back"
-            android:src="@drawable/ic_back"
-            app:tint="#1A2530"
+            android:contentDescription="Back"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:contentDescription="Back"
+            android:src="@drawable/ic_back"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="#1A2530" />
 
-        <!-- Avatar -->
         <FrameLayout
             android:id="@+id/layoutChatDetailAvatar"
             android:layout_width="40dp"
@@ -45,6 +44,7 @@
             app:layout_constraintBottom_toBottomOf="parent">
 
             <TextView
+                android:id="@+id/txtChatDetailAvatarEmoji"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -52,13 +52,12 @@
                 android:textSize="20sp" />
         </FrameLayout>
 
-        <!-- Meta info -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:layout_marginStart="10dp"
             android:layout_marginEnd="10dp"
+            android:orientation="vertical"
             app:layout_constraintStart_toEndOf="@id/layoutChatDetailAvatar"
             app:layout_constraintEnd_toStartOf="@id/btnChatDetailCall"
             app:layout_constraintTop_toTopOf="parent"
@@ -68,211 +67,175 @@
                 android:id="@+id/txtChatDetailName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bướm tím mộng"
+                android:text="Người dùng Heami"
                 android:textColor="#1A2530"
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/txtChatDetailSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
                 android:text="🟢 Đang tư vấn"
                 android:textColor="#09A38C"
                 android:textSize="11sp"
-                android:textStyle="bold"
-                android:layout_marginTop="2dp"/>
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtChatDetailModeBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:paddingStart="10dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
+                android:text="Chat tư vấn"
+                android:textColor="#7B61FF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Call Button -->
         <ImageButton
             android:id="@+id/btnChatDetailCall"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@drawable/bg_chat_btn_call"
-            android:src="@drawable/ic_doctor_call"
-            app:tint="#09A38C"
+            android:contentDescription="Call"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:contentDescription="Call"
+            android:src="@drawable/ic_doctor_call"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="#09A38C" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Session Info Banner -->
     <LinearLayout
         android:id="@+id/layoutSessionBanner"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/bg_stat_icon_green"
         android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
         android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_stat_icon_green"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:padding="10dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutChatToolbar">
+        app:layout_constraintTop_toBottomOf="@id/layoutChatToolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
             android:layout_width="16dp"
             android:layout_height="16dp"
-            android:src="@drawable/ic_clock"
-            app:tint="#09A38C"
-            android:contentDescription="clock icon" />
+            android:contentDescription="clock icon"
+            android:src="@drawable/ic_timer"
+            app:tint="#09A38C" />
 
         <TextView
+            android:id="@+id/txtChatDetailBannerText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="30 phút • Còn 18 phút"
+            android:text="Phiên tư vấn đang hoạt động"
             android:textColor="#09A38C"
             android:textSize="13sp"
             android:textStyle="bold" />
 
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/txtChatDetailEndSession"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chip_inactive"
+            android:paddingStart="10dp"
+            android:paddingTop="5dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="5dp"
+            android:text="Kết thúc"
+            android:textColor="#09A38C"
+            android:textSize="11sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Scrollable Chat Bubbles -->
-    <ScrollView
-        android:id="@+id/scrollChatDetailBubbles"
-        android:layout_width="match_parent"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvChatDetailMessages"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
         android:clipToPadding="false"
-        android:fillViewport="true"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
         app:layout_constraintTop_toBottomOf="@id/layoutSessionBanner"
-        app:layout_constraintBottom_toTopOf="@id/layoutChatInputBar">
+        app:layout_constraintBottom_toTopOf="@id/layoutChatInputBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/layoutChatDetailEmptyState"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="30dp"
+        android:paddingEnd="30dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutSessionBanner"
+        app:layout_constraintBottom_toTopOf="@id/layoutChatInputBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:gravity="center"
+            android:text="💬"
+            android:textSize="34sp"
+            android:background="@drawable/bg_circle_white_alpha" />
+
+        <TextView
+            android:id="@+id/txtChatDetailEmptyTitle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="12dp">
+            android:layout_marginTop="16dp"
+            android:text="Chưa có tin nhắn"
+            android:textColor="#20303C"
+            android:textSize="17sp"
+            android:textStyle="bold" />
 
-            <!-- Message 1 (Left / Patient) -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_gravity="start"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="64dp">
+        <TextView
+            android:id="@+id/txtChatDetailEmptySubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="Khi phiên tư vấn bắt đầu, tin nhắn sẽ xuất hiện tại đây."
+            android:textColor="#7B8794"
+            android:textSize="13sp" />
+    </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Chào bác sĩ ạ, em cảm thấy hôm nay mood của em hơi xuống"
-                    android:textColor="#1A2530"
-                    android:textSize="15sp"
-                    android:background="@drawable/bg_chat_bubble_left"
-                    android:padding="14dp" />
+    <ProgressBar
+        android:id="@+id/progressChatDetail"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:indeterminateTint="#09A38C"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/layoutSessionBanner"
+        app:layout_constraintBottom_toTopOf="@id/layoutChatInputBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="10:30"
-                    android:textColor="#B5BFD1"
-                    android:textSize="11sp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginStart="4dp"/>
-            </LinearLayout>
-
-            <!-- Message 2 (Right / Doctor) -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_gravity="end"
-                android:layout_marginTop="16dp"
-                android:layout_marginStart="64dp"
-                android:gravity="end">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Chào em. Bác sĩ thấy em đã ghi nhật ký rồi nhỉ. Em có thể chia sẻ thêm về cảm giác hôm nay không?"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"
-                    android:background="@drawable/bg_chat_bubble_right"
-                    android:padding="14dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="10:32"
-                    android:textColor="#B5BFD1"
-                    android:textSize="11sp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="4dp"/>
-            </LinearLayout>
-
-            <!-- Message 3 (Left / Patient) -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_gravity="start"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="64dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Dạ, em cảm thấy mệt mỏi và không có động lực làm gì cả. Sáng nay thức dậy đã thấy nặng nề rồi ạ"
-                    android:textColor="#1A2530"
-                    android:textSize="15sp"
-                    android:background="@drawable/bg_chat_bubble_left"
-                    android:padding="14dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="10:35"
-                    android:textColor="#B5BFD1"
-                    android:textSize="11sp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginStart="4dp"/>
-            </LinearLayout>
-
-            <!-- Message 4 (Right / Doctor) -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_gravity="end"
-                android:layout_marginTop="16dp"
-                android:layout_marginStart="64dp"
-                android:gravity="end">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Bác sĩ hiểu. Điều này hoàn toàn bình thường khi em đang trong giai đoạn điều chỉnh. Em đã thử làm bài tập thở chưa?"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"
-                    android:background="@drawable/bg_chat_bubble_right"
-                    android:padding="14dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="10:37"
-                    android:textColor="#B5BFD1"
-                    android:textSize="11sp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="4dp"/>
-            </LinearLayout>
-
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- Bottom Input Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutChatInputBar"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
@@ -280,7 +243,9 @@
         android:background="@drawable/bg_search_pill"
         android:elevation="2dp"
         android:padding="6dp"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <EditText
             android:id="@+id/edtChatDetailInput"
@@ -290,10 +255,10 @@
             android:layout_marginEnd="8dp"
             android:background="#00000000"
             android:hint="Nhập tin nhắn..."
+            android:singleLine="true"
             android:textColor="#1A2530"
             android:textColorHint="#B5BFD1"
             android:textSize="14sp"
-            android:singleLine="true"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/btnChatDetailSend"
             app:layout_constraintTop_toTopOf="parent"
@@ -304,14 +269,14 @@
             android:layout_width="38dp"
             android:layout_height="38dp"
             android:background="@drawable/bg_chat_btn_back"
-            android:src="@drawable/ic_send_comment"
-            app:tint="#B5BFD1"
+            android:contentDescription="Send"
             android:padding="8dp"
             android:scaleType="centerInside"
-            android:contentDescription="Send"
+            android:src="@drawable/ic_send_comment"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="#B5BFD1" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

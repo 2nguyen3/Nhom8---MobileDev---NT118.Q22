@@ -42,19 +42,30 @@ import java.util.Locale;
  */
 public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    public interface OnConsultationJoinClickListener {
+        void onConsultationJoinClick(@NonNull ConsultationModel model);
+    }
+
     private static final String TAG = "HEAMI_DEBUG";
 
     private List<ConsultationModel> consultations;
     private Context context;
     private boolean isHistoryMode;
+    private final OnConsultationJoinClickListener joinClickListener;
 
     private final SimpleDateFormat dayFormat = new SimpleDateFormat("EEE, dd/MM/yyyy", new Locale("vi", "VN"));
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
-    public ConsultationAdapter(Context context, List<ConsultationModel> consultations, boolean isHistoryMode) {
+    public ConsultationAdapter(
+            Context context,
+            List<ConsultationModel> consultations,
+            boolean isHistoryMode,
+            OnConsultationJoinClickListener joinClickListener
+    ) {
         this.context = context;
         this.consultations = consultations;
         this.isHistoryMode = isHistoryMode;
+        this.joinClickListener = joinClickListener;
     }
 
     /** Gọi khi switch tab để thay đổi mode + dataset cùng lúc */
@@ -62,6 +73,22 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         this.isHistoryMode = historyMode;
         this.consultations = newData;
         notifyDataSetChanged();
+    }
+
+    private boolean isCallFormat(String formatType) {
+        if (formatType == null) return false;
+
+        String normalized = formatType.trim().toLowerCase(Locale.ROOT);
+        return normalized.contains("video")
+                || normalized.contains("call")
+                || normalized.contains("gọi");
+    }
+
+    private boolean canOpenSession(String status) {
+        if (status == null) return false;
+
+        String normalized = status.trim().toUpperCase(Locale.ROOT);
+        return "BOOKED".equals(normalized) || "ONGOING".equals(normalized);
     }
 
     @Override
@@ -157,21 +184,37 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         if (holder.txtPackageBadge != null) {
             boolean hasPkg = pkg != null && !pkg.isEmpty();
             boolean hasFmt = fmt != null && !fmt.isEmpty();
+
             if (hasPkg || hasFmt) {
                 holder.txtPackageBadge.setVisibility(View.VISIBLE);
                 StringBuilder badge = new StringBuilder();
+
                 if ("COMPLETED".equals(status)) {
                     badge.append("✦ ");
                     holder.txtPackageBadge.setTextColor(Color.parseColor("#4A9292"));
                     holder.txtPackageBadge.setBackgroundResource(R.drawable.bg_light_teal_circle);
-                } else {
+                } else if ("CANCELLED".equals(status) || "CANCELED".equals(status)) {
                     badge.append("✕ ");
                     holder.txtPackageBadge.setTextColor(Color.parseColor("#FF5252"));
                     holder.txtPackageBadge.setBackgroundResource(R.drawable.bg_tag_red);
+                } else if ("ONGOING".equals(status)) {
+                    badge.append("● ");
+                    holder.txtPackageBadge.setTextColor(Color.parseColor("#2EBD85"));
+                    holder.txtPackageBadge.setBackgroundResource(R.drawable.bg_light_teal_circle);
+                } else if ("BOOKED".equals(status)) {
+                    badge.append("● ");
+                    holder.txtPackageBadge.setTextColor(Color.parseColor("#E8507A"));
+                    holder.txtPackageBadge.setBackgroundResource(R.drawable.bg_chip_pink);
+                } else {
+                    badge.append("• ");
+                    holder.txtPackageBadge.setTextColor(Color.parseColor("#7A7A7A"));
+                    holder.txtPackageBadge.setBackgroundResource(R.drawable.bg_chip_inactive);
                 }
+
                 if (hasPkg) badge.append(pkg);
                 if (hasPkg && hasFmt) badge.append(" · ");
                 if (hasFmt) badge.append(fmt);
+
                 holder.txtPackageBadge.setText(badge.toString());
             } else {
                 holder.txtPackageBadge.setVisibility(View.GONE);
@@ -180,9 +223,11 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         // ── Badge trạng thái + feedback / cancel message ──
         if ("COMPLETED".equals(status)) {
-            holder.txtStatusBadge.setText("● Hoàn thành");
-            holder.txtStatusBadge.setTextColor(Color.parseColor("#00BFA5"));
-            holder.txtStatusBadge.setBackgroundResource(R.drawable.bg_tag_teal);
+            holder.txtStatusBadge.setText("✓ Hoàn thành");
+            holder.txtStatusBadge.setTextColor(Color.parseColor("#12B886"));
+            holder.txtStatusBadge.setBackgroundTintList(
+                    ColorStateList.valueOf(Color.parseColor("#EAFBF4"))
+            );
 
             if (holder.layoutFeedbackContent != null) holder.layoutFeedbackContent.setVisibility(View.VISIBLE);
             if (holder.txtCancelMessage != null) holder.txtCancelMessage.setVisibility(View.GONE);
@@ -191,34 +236,72 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             if (model.getUserFeedback() != null && !model.getUserFeedback().isEmpty()) {
                 Object comment = model.getUserFeedback().get("comment");
                 Object rating  = model.getUserFeedback().get("rating");
-                if (holder.txtUserComment != null)
+
+                if (holder.txtUserComment != null) {
                     holder.txtUserComment.setText(
                             comment != null && !comment.toString().isEmpty()
-                            ? "\"" + comment + "\""
-                            : "");
-                if (holder.ratingBar != null && rating instanceof Number)
+                                    ? "\"" + comment + "\""
+                                    : ""
+                    );
+                }
+
+                if (holder.ratingBar != null && rating instanceof Number) {
                     holder.ratingBar.setRating(((Number) rating).floatValue());
-                else if (holder.ratingBar != null)
+                } else if (holder.ratingBar != null) {
                     holder.ratingBar.setRating(0f);
+                }
             } else {
-                // Chưa có feedback — ẩn comment, rating = 0
                 if (holder.txtUserComment != null) holder.txtUserComment.setText("");
                 if (holder.ratingBar != null) holder.ratingBar.setRating(0f);
             }
-        } else {
-            // CANCELED / CANCELLED
+
+        } else if ("CANCELLED".equals(status) || "CANCELED".equals(status)) {
             holder.txtStatusBadge.setText("✕ Đã hủy");
-            holder.txtStatusBadge.setTextColor(Color.parseColor("#FF5252"));
-            holder.txtStatusBadge.setBackgroundResource(R.drawable.bg_tag_red);
+            holder.txtStatusBadge.setTextColor(Color.parseColor("#FF5A5F"));
+            holder.txtStatusBadge.setBackgroundTintList(
+                    ColorStateList.valueOf(Color.parseColor("#FFF1F1"))
+            );
+
             if (holder.layoutFeedbackContent != null) holder.layoutFeedbackContent.setVisibility(View.GONE);
             if (holder.txtCancelMessage != null) {
                 holder.txtCancelMessage.setVisibility(View.VISIBLE);
                 String note = model.getNote();
                 holder.txtCancelMessage.setText(
                         note != null && !note.isEmpty()
-                        ? "\"" + note + "\""
-                        : "Bạn đã hủy phiên tư vấn này.");
+                                ? "\"" + note + "\""
+                                : "Bạn đã hủy phiên tư vấn này."
+                );
             }
+
+        } else if ("ONGOING".equals(status)) {
+            holder.txtStatusBadge.setText("● Đang diễn ra");
+            holder.txtStatusBadge.setTextColor(Color.parseColor("#2EBD85"));
+            holder.txtStatusBadge.setBackgroundTintList(
+                    ColorStateList.valueOf(Color.parseColor("#EAFBF4"))
+            );
+
+            if (holder.layoutFeedbackContent != null) holder.layoutFeedbackContent.setVisibility(View.GONE);
+            if (holder.txtCancelMessage != null) holder.txtCancelMessage.setVisibility(View.GONE);
+
+        } else if ("BOOKED".equals(status)) {
+            holder.txtStatusBadge.setText("● Sắp diễn ra");
+            holder.txtStatusBadge.setTextColor(Color.parseColor("#E8507A"));
+            holder.txtStatusBadge.setBackgroundTintList(
+                    ColorStateList.valueOf(Color.parseColor("#FFF0F5"))
+            );
+
+            if (holder.layoutFeedbackContent != null) holder.layoutFeedbackContent.setVisibility(View.GONE);
+            if (holder.txtCancelMessage != null) holder.txtCancelMessage.setVisibility(View.GONE);
+
+        } else {
+            holder.txtStatusBadge.setText(status.isEmpty() ? "Không xác định" : status);
+            holder.txtStatusBadge.setTextColor(Color.parseColor("#7A7A7A"));
+            holder.txtStatusBadge.setBackgroundTintList(
+                    ColorStateList.valueOf(Color.parseColor("#F2F2F2"))
+            );
+
+            if (holder.layoutFeedbackContent != null) holder.layoutFeedbackContent.setVisibility(View.GONE);
+            if (holder.txtCancelMessage != null) holder.txtCancelMessage.setVisibility(View.GONE);
         }
 
         // Collapsed by default
@@ -241,19 +324,15 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             holder.layoutDetail.setVisibility(nextExpanded ? View.VISIBLE : View.GONE);
             holder.imgChevron.animate().rotation(nextExpanded ? 180f : 0f).setDuration(250).start();
         });
-
-        Glide.with(context)
-                .load(model.getDoctorAvatar())
-                .placeholder(R.drawable.ic_avatar_placeholder)
-                .error(R.drawable.ic_avatar_placeholder)
-                .into(holder.imgDoctorAvatar);
     }
 
     // ─────────────────────────────────────────────────────────
     //  UPCOMING BIND
     // ─────────────────────────────────────────────────────────
     private void bindUpcomingItem(UpcomingViewHolder holder, ConsultationModel model) {
-        holder.txtDoctorName.setText(model.getDoctorName() != null ? model.getDoctorName() : "Bác sĩ chuyên khoa");
+        holder.txtDoctorName.setText(
+                model.getDoctorName() != null ? model.getDoctorName() : "Bác sĩ chuyên khoa"
+        );
         holder.txtDoctorTitle.setText("Chuyên gia tâm lý");
 
         Glide.with(context)
@@ -265,19 +344,29 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         if (model.getStartTime() != null) {
             Date start = model.getStartTime().toDate();
             holder.txtDate.setText(dayFormat.format(start));
+
             String timeRange = timeFormat.format(start);
             if (model.getEndTime() != null) {
                 long durationMin = (model.getEndTime().getSeconds() - model.getStartTime().getSeconds()) / 60;
                 timeRange += " - " + durationMin + " phút";
             }
             holder.txtTime.setText(timeRange);
+        } else {
+            holder.txtDate.setText("—");
+            holder.txtTime.setText("—");
         }
 
-        holder.txtFormat.setText(model.getFormatType() != null ? model.getFormatType() : "Trực tuyến");
-        holder.txtPackage.setText(model.getPackageType() != null ? model.getPackageType() : "Tiêu chuẩn");
+        String formatType = model.getFormatType() != null ? model.getFormatType() : "Trực tuyến";
+        String packageType = model.getPackageType() != null ? model.getPackageType() : "Tiêu chuẩn";
+        String status = model.getStatus() != null ? model.getStatus().toUpperCase(Locale.ROOT) : "BOOKED";
 
-        if (model.getFormatType() != null && model.getFormatType().toLowerCase().contains("video")) {
-            holder.imgFormatIcon.setImageResource(R.drawable.ic_video_call);
+        holder.txtFormat.setText(formatType);
+        holder.txtPackage.setText(packageType);
+
+        boolean isCallMode = isCallFormat(formatType);
+
+        if (isCallMode) {
+            holder.imgFormatIcon.setImageResource(R.drawable.ic_phone);
             holder.imgFormatIcon.setColorFilter(Color.parseColor("#E8507A"));
         } else {
             holder.imgFormatIcon.setImageResource(R.drawable.ic_doctor_chat);
@@ -285,22 +374,78 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
 
         if (holder.txtStatusBadge != null) {
-            holder.txtStatusBadge.setText("● Sắp diễn ra");
-            holder.txtStatusBadge.setTextColor(Color.parseColor("#E8507A"));
-            holder.txtStatusBadge.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFF0F5")));
+            if ("ONGOING".equals(status)) {
+                holder.txtStatusBadge.setText("● Đang diễn ra");
+                holder.txtStatusBadge.setTextColor(Color.parseColor("#2EBD85"));
+                holder.txtStatusBadge.setBackgroundTintList(
+                        ColorStateList.valueOf(Color.parseColor("#EAFBF4"))
+                );
+            } else if ("COMPLETED".equals(status)) {
+                holder.txtStatusBadge.setText("✓ Đã hoàn thành");
+                holder.txtStatusBadge.setTextColor(Color.parseColor("#7B61FF"));
+                holder.txtStatusBadge.setBackgroundTintList(
+                        ColorStateList.valueOf(Color.parseColor("#F1EDFF"))
+                );
+            } else if ("CANCELLED".equals(status) || "CANCELED".equals(status)) {
+                holder.txtStatusBadge.setText("✕ Đã hủy");
+                holder.txtStatusBadge.setTextColor(Color.parseColor("#FF5A5F"));
+                holder.txtStatusBadge.setBackgroundTintList(
+                        ColorStateList.valueOf(Color.parseColor("#FFF1F1"))
+                );
+            } else {
+                holder.txtStatusBadge.setText("● Sắp diễn ra");
+                holder.txtStatusBadge.setTextColor(Color.parseColor("#E8507A"));
+                holder.txtStatusBadge.setBackgroundTintList(
+                        ColorStateList.valueOf(Color.parseColor("#FFF0F5"))
+                );
+            }
         }
 
-        String hint = (model.getNote() != null && !model.getNote().isEmpty())
-                ? model.getNote() : "Phiên tư vấn sẽ bắt đầu đúng giờ.";
+        String hint;
+        if ("ONGOING".equals(status)) {
+            hint = "Phiên tư vấn đang diễn ra. Bạn có thể vào ngay bây giờ.";
+        } else if ("COMPLETED".equals(status)) {
+            hint = "Phiên tư vấn này đã hoàn thành.";
+        } else if ("CANCELLED".equals(status) || "CANCELED".equals(status)) {
+            hint = model.getNote() != null && !model.getNote().isEmpty()
+                    ? model.getNote()
+                    : "Phiên tư vấn này đã bị hủy.";
+        } else {
+            hint = model.getNote() != null && !model.getNote().isEmpty()
+                    ? model.getNote()
+                    : "Phiên tư vấn sẽ bắt đầu đúng giờ.";
+        }
         holder.txtHint.setText("\"" + hint + "\"");
 
         if (holder.badgeDoctorOnline != null) {
-            if (model.isDoctor_online()) {
-                holder.badgeDoctorOnline.setVisibility(View.VISIBLE);
-                startPulseAnimation(holder.dotDoctorOnline);
+            boolean online = model.isDoctor_online();
+            holder.badgeDoctorOnline.setVisibility(online ? View.VISIBLE : View.GONE);
+            if (holder.dotDoctorOnline != null) {
+                if (online) startPulseAnimation(holder.dotDoctorOnline);
+                else stopPulseAnimation(holder.dotDoctorOnline);
+            }
+        }
+
+        if (holder.btnJoin != null) {
+            boolean canJoin = canOpenSession(status);
+
+            if (isCallMode) {
+                holder.btnJoin.setText("Vào phiên gọi");
             } else {
-                holder.badgeDoctorOnline.setVisibility(View.GONE);
-                stopPulseAnimation(holder.dotDoctorOnline);
+                holder.btnJoin.setText("Vào chatroom");
+            }
+
+            holder.btnJoin.setEnabled(canJoin);
+            holder.btnJoin.setAlpha(canJoin ? 1f : 0.55f);
+
+            if (canJoin) {
+                holder.btnJoin.setOnClickListener(v -> {
+                    if (joinClickListener != null) {
+                        joinClickListener.onConsultationJoinClick(model);
+                    }
+                });
+            } else {
+                holder.btnJoin.setOnClickListener(v -> { });
             }
         }
     }
