@@ -86,7 +86,7 @@ public class ConsultationsActivity extends AppCompatActivity {
         btnNewBooking       = findViewById(R.id.btnNewBooking);
 
         txtStatDone.setText("0");
-        txtStatSpent.setText("0đ");
+        txtStatSpent.setText("0 đ");
         txtTabUpcomingCount.setText("0");
         txtTabHistoryCount.setText("0");
 
@@ -342,14 +342,12 @@ public class ConsultationsActivity extends AppCompatActivity {
     private String formatMoney(double amount) {
         if (amount >= 1_000_000) {
             double m = amount / 1_000_000.0;
-            if (m == (long) m) return String.format(Locale.getDefault(), "%dTr", (long) m);
-            return String.format(Locale.getDefault(), "%.1fTr", m);
+            return String.format(Locale.getDefault(), "%,.3f Tr", m);
         } else if (amount >= 1_000) {
             double k = amount / 1_000.0;
-            if (k == (long) k) return String.format(Locale.getDefault(), "%dK", (long) k);
-            return String.format(Locale.getDefault(), "%.1fK", k);
+            return String.format(Locale.getDefault(), "%,.3f K", k);
         }
-        return String.format(Locale.getDefault(), "%,.0fđ", amount);
+        return String.format(Locale.getDefault(), "%,.0f đ", amount);
     }
 
     @Override

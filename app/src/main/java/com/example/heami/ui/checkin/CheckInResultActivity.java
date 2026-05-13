@@ -24,6 +24,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.example.heami.utils.StreakManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -652,17 +653,37 @@ public class CheckInResultActivity extends AppCompatActivity {
                 .addOnSuccessListener(unused -> {
                     saveTodayConfirmedMoodLocally();
 
-                    Toast.makeText(
-                            CheckInResultActivity.this,
-                            "Heami đã lưu một check-in mới 💗",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    StreakManager.updateCheckInStreak(user.getUid(), new StreakManager.StreakUpdateCallback() {
+                        @Override
+                        public void onSuccess(int currentStreak, int longestStreak, long totalCheckins) {
+                            Toast.makeText(
+                                    CheckInResultActivity.this,
+                                    "Heami đã lưu một check-in mới và duy trì chuỗi " + currentStreak + " ngày! 💗",
+                                    Toast.LENGTH_SHORT
+                            ).show();
 
-                    Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
-                    intent.putExtra("refresh_mood_today", true);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                    finish();
+                            Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
+                            intent.putExtra("refresh_mood_today", true);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                            startActivity(intent);
+                            finish();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(
+                                    CheckInResultActivity.this,
+                                    "Heami đã lưu một check-in mới 💗",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+
+                            Intent intent = new Intent(CheckInResultActivity.this, HomeActivity.class);
+                            intent.putExtra("refresh_mood_today", true);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                            startActivity(intent);
+                            finish();
+                        }
+                    });
                 })
                 .addOnFailureListener(e -> {
                     setSaveLoading(false);

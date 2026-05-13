@@ -1,14 +1,10 @@
 package com.example.heami.ui.consultation;
 
-import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.content.Intent;
 import android.view.View;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,8 +38,8 @@ public class BookingFlowActivity extends AppCompatActivity {
     private int currentStep = 1;
     private BookingModel bookingModel;
     private FirebaseFirestore db;
-    private String lastSessionId; // ID này sẽ được dùng để hiển thị ở Step 3
-    private String lastTransactionId; // ID giao dịch để hiển thị ở Step 3
+    private String lastSessionId;
+    private String lastTransactionId;
     private String vnp_TransactionNo = "";
 
     // Stepper Views
@@ -51,106 +47,165 @@ public class BookingFlowActivity extends AppCompatActivity {
     private View step1Divider, step2Divider;
     private TextView step1Label, step2Label, step3Label;
 
-    // Countdown Timer Views
+    // Countdown Timer
     private TextView txtBookingTimer;
     private android.os.CountDownTimer countDownTimer;
+    private long remainingTimeMs = 15 * 60 * 1000; // Thời gian còn lại (mặc định 15 phút)
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        android.util.Log.d("BookingFlow", "onNewIntent called. Action: " + intent.getAction() + ", Data: " + intent.getData());
+        setIntent(intent);
+        handleDeepLink(intent);
+    }
+
+    private void handleDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null) {
+            android.util.Log.d("BookingFlow", "handleDeepLink: intent or data is null");
+            return;
+        }
+        
+        Uri uri = intent.getData();
+        String urlStr = uri.toString();
+        android.util.Log.d("BookingFlow", "handleDeepLink intercepted: " + urlStr);
+        android.util.Log.d("BookingFlow", "Current bookingModel state in handleDeepLink: " + (bookingModel != null ? "EXISTS" : "NULL"));
+
+        if (urlStr.toLowerCase().contains("vnpay_return")) {
+            String responseCode = uri.getQueryParameter("vnp_ResponseCode");
+            String transactionNo = uri.getQueryParameter("vnp_TransactionNo");
+
+            android.util.Log.d("BookingFlow", "responseCode=" + responseCode + " txNo=" + transactionNo);
+
+            if ("00".equals(responseCode)) {
+                vnp_TransactionNo = (transactionNo != null) ? transactionNo : "";
+                lastTransactionId = vnp_TransactionNo;
+
+                // Hiển thị Toast thông báo thành công
+                Toast.makeText(this, "Thanh toán thành công!", Toast.LENGTH_SHORT).show();
+
+                // Lưu Firestore ở background
+                saveConsultationToFirestore();
+
+                // Đồng thời chuyển sang Step 3
+                if (!isFinishing() && !isDestroyed()) {
+                    updateStepUI(3);
+                }
+            } else {
+                String msg = (responseCode == null || responseCode.isEmpty())
+                        ? "Đã huỷ thanh toán."
+                        : "Thanh toán không thành công (mã: " + responseCode + "). Vui lòng thử lại.";
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+                // Tiếp tục đếm ngược từ thời điểm đã dừng (không đếm lại từ đầu)
+                startCountdownTimer(remainingTimeMs);
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_booking_flow);
 
+        android.util.Log.d("BookingFlow", "onCreate called. TaskId: " + getTaskId() + ", savedInstanceState is " + (savedInstanceState == null ? "NULL" : "NOT NULL"));
+        android.util.Log.d("BookingFlow", "onCreate Intent Data: " + getIntent().getData());
+
         db = FirebaseFirestore.getInstance();
-        bookingModel = (BookingModel) getIntent().getSerializableExtra("booking_model");
+        if (savedInstanceState != null) {
+            bookingModel = (BookingModel) savedInstanceState.getSerializable("booking_model");
+            currentStep = savedInstanceState.getInt("current_step", 1);
+            android.util.Log.d("BookingFlow", "onCreate: Restored bookingModel from savedInstanceState: " + (bookingModel != null ? "EXISTS" : "NULL"));
+        } else {
+            bookingModel = (BookingModel) getIntent().getSerializableExtra("booking_model");
+            android.util.Log.d("BookingFlow", "onCreate: Extracted bookingModel from intent: " + (bookingModel != null ? "EXISTS" : "NULL"));
+        }
 
         initViews();
         setupListeners();
         setupBackNavigation();
-        
-        updateStepUI(1);
+        updateStepUI(currentStep);
+
+        // Xử lý deep link nếu được mở từ ban đầu (mặc dù trường hợp này hiếm hơn onNewIntent)
+        handleDeepLink(getIntent());
+    }
+
+    @Override
+    protected void onSaveInstanceState(@androidx.annotation.NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        android.util.Log.d("BookingFlow", "onSaveInstanceState called");
+        if (bookingModel != null) {
+            outState.putSerializable("booking_model", bookingModel);
+        }
+        outState.putInt("current_step", currentStep);
     }
 
     @Override
     protected void onDestroy() {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-        }
+        android.util.Log.d("BookingFlow", "onDestroy called");
+        if (countDownTimer != null) countDownTimer.cancel();
         super.onDestroy();
     }
 
-    public BookingModel getBookingModel() {
-        return bookingModel;
-    }
+    // ─── Public getters dùng cho BookingStep3Fragment ───────────────────────
 
-    public String getLastSessionId() {
-        return lastSessionId;
-    }
+    public BookingModel getBookingModel() { return bookingModel; }
+    public String getLastSessionId()      { return lastSessionId; }
+    public String getLastTransactionId()  { return lastTransactionId; }
 
-    public String getLastTransactionId() {
-        return lastTransactionId;
-    }
+    // ─── Views & Listeners ──────────────────────────────────────────────────
 
     private void initViews() {
-        btnMainAction = findViewById(R.id.btnMainAction);
+        btnMainAction     = findViewById(R.id.btnMainAction);
         layoutBtnPayVnpay = findViewById(R.id.layoutBtnPayVnpay);
-        btnComplete = findViewById(R.id.btnComplete);
-        step1Number = findViewById(R.id.step1_number);
-        step2Number = findViewById(R.id.step2_number);
-        step3Number = findViewById(R.id.step3_number);
-        step1Divider = findViewById(R.id.step1_divider);
-        btnBackFlow = findViewById(R.id.btnBackFlow);
-        step2Divider = findViewById(R.id.step2_divider);
-        step1Label = findViewById(R.id.step1_label);
-        step2Label = findViewById(R.id.step2_label);
-        step3Label = findViewById(R.id.step3_label);
-
-        // Khởi động đồng hồ đếm ngược 15 phút giữ lịch hẹn
-        txtBookingTimer = findViewById(R.id.txtBookingTimer);
+        btnComplete       = findViewById(R.id.btnComplete);
+        step1Number       = findViewById(R.id.step1_number);
+        step2Number       = findViewById(R.id.step2_number);
+        step3Number       = findViewById(R.id.step3_number);
+        step1Divider      = findViewById(R.id.step1_divider);
+        btnBackFlow       = findViewById(R.id.btnBackFlow);
+        step2Divider      = findViewById(R.id.step2_divider);
+        step1Label        = findViewById(R.id.step1_label);
+        step2Label        = findViewById(R.id.step2_label);
+        step3Label        = findViewById(R.id.step3_label);
+        txtBookingTimer   = findViewById(R.id.txtBookingTimer);
         startCountdownTimer();
     }
 
     private void startCountdownTimer() {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-        }
-        countDownTimer = new android.os.CountDownTimer(15 * 60 * 1000, 1000) {
+        startCountdownTimer(remainingTimeMs);
+    }
+
+    private void startCountdownTimer(long durationMs) {
+        if (countDownTimer != null) countDownTimer.cancel();
+        remainingTimeMs = durationMs;
+        countDownTimer = new android.os.CountDownTimer(durationMs, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
+                remainingTimeMs = millisUntilFinished; // Lưu lại thời gian còn lại
                 long minutes = (millisUntilFinished / 1000) / 60;
                 long seconds = (millisUntilFinished / 1000) % 60;
-                String timeStr = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
                 if (txtBookingTimer != null) {
-                    txtBookingTimer.setText("Giữ lịch hẹn trong " + timeStr);
+                    txtBookingTimer.setText(String.format(Locale.getDefault(),
+                            "Giữ lịch hẹn trong %02d:%02d", minutes, seconds));
                 }
             }
 
             @Override
             public void onFinish() {
+                if (currentStep >= 3) return; // Đã thanh toán thành công, bỏ qua
                 if (txtBookingTimer != null) {
                     txtBookingTimer.setText("Lịch hẹn đã hết hạn giữ!");
-                    txtBookingTimer.setTextColor(Color.parseColor("#E86FA0")); // Đổi sang màu hồng đỏ cảnh báo
+                    txtBookingTimer.setTextColor(Color.parseColor("#E86FA0"));
                 }
-
-                // Vô hiệu hóa các nút bấm tiếp tục/thanh toán để ngăn người dùng giao dịch tiếp
-                if (btnMainAction != null) {
-                    btnMainAction.setEnabled(false);
-                    btnMainAction.setAlpha(0.5f);
-                }
-                if (layoutBtnPayVnpay != null) {
-                    layoutBtnPayVnpay.setEnabled(false);
-                    layoutBtnPayVnpay.setAlpha(0.5f);
-                }
-
-                // Hiển thị hộp thoại cảnh báo hết hạn, yêu cầu quay lại chọn lịch khác
+                if (btnMainAction != null) { btnMainAction.setEnabled(false); btnMainAction.setAlpha(0.5f); }
+                if (layoutBtnPayVnpay != null) { layoutBtnPayVnpay.setEnabled(false); layoutBtnPayVnpay.setAlpha(0.5f); }
                 if (!isFinishing() && !isDestroyed()) {
                     new AlertDialog.Builder(BookingFlowActivity.this)
-                        .setTitle("Hết hạn giữ lịch ⏰")
-                        .setMessage("Đã quá thời gian giữ chỗ ưu tiên. Vui lòng quay lại chọn lịch hẹn khác!")
-                        .setCancelable(false)
-                        .setPositiveButton("Quay lại", (dialogInterface, which) -> {
-                            finish(); // Thoát màn hình và quay về màn hình Chi tiết Bác sĩ
-                        })
-                        .show();
+                            .setTitle("Hết hạn giữ lịch ⏰")
+                            .setMessage("Đã quá thời gian giữ chỗ ưu tiên. Vui lòng quay lại chọn lịch hẹn khác!")
+                            .setCancelable(false)
+                            .setPositiveButton("Quay lại", (d, w) -> finish())
+                            .show();
                 }
             }
         };
@@ -163,12 +218,11 @@ public class BookingFlowActivity extends AppCompatActivity {
         if (btnMainAction != null) {
             btnMainAction.setOnClickListener(v -> {
                 if (currentStep == 1) {
-                    Fragment currentFrag = getSupportFragmentManager().findFragmentById(R.id.booking_nav_host);
+                    Fragment currentFrag = getSupportFragmentManager()
+                            .findFragmentById(R.id.booking_nav_host);
                     if (currentFrag instanceof BookingStep1Fragment) {
                         String note = ((BookingStep1Fragment) currentFrag).getBookingNote();
-                        if (bookingModel != null) {
-                            bookingModel.setNote(note);
-                        }
+                        if (bookingModel != null) bookingModel.setNote(note);
                     }
                     updateStepUI(2);
                 }
@@ -176,9 +230,7 @@ public class BookingFlowActivity extends AppCompatActivity {
         }
 
         if (layoutBtnPayVnpay != null) {
-            layoutBtnPayVnpay.setOnClickListener(v -> {
-                startVNPAYPayment();
-            });
+            layoutBtnPayVnpay.setOnClickListener(v -> startVNPAYPayment());
         }
 
         if (btnComplete != null) {
@@ -191,8 +243,15 @@ public class BookingFlowActivity extends AppCompatActivity {
         }
     }
 
+    // ─── VNPAY Payment ──────────────────────────────────────────────────────
+
     private void startVNPAYPayment() {
         if (bookingModel == null) return;
+
+        // Hủy bộ đếm ngược để tránh hết hạn trong lúc người dùng đang ở trang thanh toán VNPAY
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
 
         long amount = 0;
         try {
@@ -203,87 +262,28 @@ public class BookingFlowActivity extends AppCompatActivity {
             return;
         }
 
-        String orderInfo = "Thanh toan lich hen bac si: " + bookingModel.getDoctorName();
-//        String paymentUrl = VNPAYHelper.createPaymentUrl(orderInfo, amount, "127.0.0.1");
-        String paymentUrl = VNPAYHelper.createPaymentUrl(orderInfo, amount, "113.160.92.213");
+        String orderInfo = "Thanh toan lich hen bac si " + bookingModel.getDoctorName();
+        String paymentUrl = VNPAYHelper.createPaymentUrl(orderInfo, amount, "113.160.92.202");
 
-        showVNPAYWebView(paymentUrl);
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
-    private void showVNPAYWebView(String url) {
-        WebView webView = new WebView(this);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setDomStorageEnabled(true);
-        
-        AlertDialog dialog = new AlertDialog.Builder(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
-                .setView(webView)
-                .create();
-
-        webView.setWebViewClient(new WebViewClient() {
-            private boolean isProcessed = false;
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String currentUrl = request.getUrl().toString();
-                if (checkReturnUrl(currentUrl, dialog)) {
-                    return true;
-                }
-                return super.shouldOverrideUrlLoading(view, request);
+        if (paymentUrl.startsWith("error:")) {
+            if (paymentUrl.contains("missing_config")) {
+                Toast.makeText(this, "Lỗi: Chưa cấu hình VNPAY trong local.properties", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Lỗi khởi tạo cổng thanh toán VNPAY", Toast.LENGTH_SHORT).show();
             }
-
-            @SuppressWarnings("deprecation")
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (checkReturnUrl(url, dialog)) {
-                    return true;
-                }
-                return super.shouldOverrideUrlLoading(view, url);
-            }
-
-            @Override
-            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-                if (checkReturnUrl(url, dialog)) {
-                    return;
-                }
-                super.onPageStarted(view, url, favicon);
-            }
-
-            private boolean checkReturnUrl(String url, AlertDialog dialog) {
-                if (url != null && (url.startsWith("heami://vnpay_return") || url.contains("vnpay_return"))) {
-                    if (!isProcessed) {
-                        isProcessed = true;
-                        handleVNPAYCallback(url);
-                        if (dialog.isShowing()) {
-                            dialog.dismiss();
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        webView.loadUrl(url);
-        dialog.show();
-    }
-
-    private void handleVNPAYCallback(String url) {
-        Uri uri = Uri.parse(url);
-        String responseCode = uri.getQueryParameter("vnp_ResponseCode");
-        
-        if ("00".equals(responseCode)) {
-            vnp_TransactionNo = uri.getQueryParameter("vnp_TransactionNo");
-            Toast.makeText(this, "Thanh toán thành công!", Toast.LENGTH_SHORT).show();
-            saveConsultationToFirestore();
-        } else {
-            Toast.makeText(this, "Thanh toán không thành công. Vui lòng thử lại.", Toast.LENGTH_LONG).show();
+            return;
         }
+
+        Intent intent = new Intent(this, VNPAYWebViewActivity.class);
+        intent.putExtra(VNPAYWebViewActivity.EXTRA_PAYMENT_URL, paymentUrl);
+        startActivity(intent);
     }
+
+    // ─── Firebase ───────────────────────────────────────────────────────────
 
     private void saveConsultationToFirestore() {
         if (bookingModel == null) return;
-        
+
         String userId = FirebaseAuth.getInstance().getUid();
         if (userId == null) return;
 
@@ -297,9 +297,9 @@ public class BookingFlowActivity extends AppCompatActivity {
         consultation.setStatus("BOOKED");
         consultation.setBookedAt(Timestamp.now());
         consultation.setNote(bookingModel.getNote());
-        
-        final String gatewayId = vnp_TransactionNo != null && !vnp_TransactionNo.isEmpty() 
-                ? vnp_TransactionNo 
+
+        final String gatewayId = (!vnp_TransactionNo.isEmpty())
+                ? vnp_TransactionNo
                 : "VNP_" + System.currentTimeMillis();
         consultation.setTransactionId(gatewayId);
 
@@ -315,14 +315,14 @@ public class BookingFlowActivity extends AppCompatActivity {
             Date startDate = sdf.parse(bookingModel.getDate() + " " + bookingModel.getTime());
             if (startDate != null) {
                 consultation.setStartTime(new Timestamp(startDate));
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(startDate);
-                String packageType = bookingModel.getPackageType().toLowerCase();
-                if (packageType.contains("15")) calendar.add(Calendar.MINUTE, 15);
-                else if (packageType.contains("30")) calendar.add(Calendar.MINUTE, 30);
-                else if (packageType.contains("7")) calendar.add(Calendar.DAY_OF_YEAR, 7);
-                else calendar.add(Calendar.MINUTE, 30);
-                consultation.setEndTime(new Timestamp(calendar.getTime()));
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(startDate);
+                String pkg = bookingModel.getPackageType().toLowerCase();
+                if (pkg.contains("15"))      cal.add(Calendar.MINUTE, 15);
+                else if (pkg.contains("30")) cal.add(Calendar.MINUTE, 30);
+                else if (pkg.contains("7"))  cal.add(Calendar.DAY_OF_YEAR, 7);
+                else                          cal.add(Calendar.MINUTE, 30);
+                consultation.setEndTime(new Timestamp(cal.getTime()));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -331,77 +331,74 @@ public class BookingFlowActivity extends AppCompatActivity {
         db.collection("consultations")
                 .add(consultation)
                 .addOnSuccessListener(documentReference -> {
+                    if (isFinishing() || isDestroyed()) return;
                     String docId = documentReference.getId();
-                    lastSessionId = docId; // Gán ID thực tế từ DB
+                    lastSessionId = docId;
                     db.collection("consultations").document(docId).update("sessionId", docId);
-                    
-                    // Lưu Transaction
-                    lastTransactionId = gatewayId;
-                    Map<String, Object> transactionData = new HashMap<>();
-                    transactionData.put("session_id", docId);
-                    transactionData.put("amount", consultation.getPrice());
-                    transactionData.put("status", "SUCCESS");
-                    transactionData.put("user_id", userId);
-                    transactionData.put("doctor_id", consultation.getDoctorId());
-                    transactionData.put("created_at", Timestamp.now());
-                    transactionData.put("gateway_transaction_id", gatewayId);
-                    
-                    db.collection("transactions").document(gatewayId).set(transactionData)
-                        .addOnSuccessListener(aVoid -> {
-                            updateStepUI(3);
-                        })
-                        .addOnFailureListener(e -> {
-                            updateStepUI(3);
-                        });
+
+                    Map<String, Object> txData = new HashMap<>();
+                    txData.put("session_id",             docId);
+                    txData.put("amount",                 consultation.getPrice());
+                    txData.put("status",                 "SUCCESS");
+                    txData.put("user_id",                userId);
+                    txData.put("doctor_id",              consultation.getDoctorId());
+                    txData.put("created_at",             Timestamp.now());
+                    txData.put("gateway_transaction_id", gatewayId);
+                    db.collection("transactions").document(gatewayId).set(txData);
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Lỗi khi lưu lịch hẹn: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e ->
+                        android.util.Log.e("BookingFlow", "Lưu lịch hẹn thất bại: " + e.getMessage()));
     }
 
+    // ─── Navigation ─────────────────────────────────────────────────────────
+
     private void setupBackNavigation() {
-        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
-            public void handleOnBackPressed() {
-                handleBackAction();
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, callback);
+            public void handleOnBackPressed() { handleBackAction(); }
+        });
     }
 
     private void handleBackAction() {
-        if (currentStep == 2) updateStepUI(1);
-        else finish();
+        if (currentStep == 2) {
+            updateStepUI(1);
+        } else if (currentStep == 3) {
+            // Không cho back khi đã thanh toán thành công
+        } else {
+            finish();
+        }
     }
 
     private void updateStepUI(int step) {
         currentStep = step;
+        android.util.Log.d("BookingFlow", "updateStepUI → step=" + step);
         Fragment fragment;
 
         switch (step) {
             case 2:
                 fragment = new BookingStep2Fragment();
-                if (btnMainAction != null) btnMainAction.setVisibility(View.GONE);
+                if (btnMainAction     != null) btnMainAction.setVisibility(View.GONE);
                 if (layoutBtnPayVnpay != null) layoutBtnPayVnpay.setVisibility(View.VISIBLE);
-                if (btnComplete != null) btnComplete.setVisibility(View.GONE);
+                if (btnComplete       != null) btnComplete.setVisibility(View.GONE);
                 break;
+
             case 3:
+                if (countDownTimer != null) countDownTimer.cancel();
                 fragment = new BookingStep3Fragment();
-                if (btnMainAction != null) btnMainAction.setVisibility(View.GONE);
+                if (btnMainAction     != null) btnMainAction.setVisibility(View.GONE);
                 if (layoutBtnPayVnpay != null) layoutBtnPayVnpay.setVisibility(View.GONE);
-                if (btnComplete != null) btnComplete.setVisibility(View.VISIBLE);
-                
-                if (findViewById(R.id.layoutBookingTimerRow) != null) 
+                if (btnComplete       != null) btnComplete.setVisibility(View.VISIBLE);
+                if (findViewById(R.id.layoutBookingTimerRow) != null)
                     findViewById(R.id.layoutBookingTimerRow).setVisibility(View.GONE);
                 break;
+
             case 1:
             default:
                 fragment = new BookingStep1Fragment();
-                if (btnMainAction != null) btnMainAction.setVisibility(View.VISIBLE);
+                if (btnMainAction     != null) btnMainAction.setVisibility(View.VISIBLE);
                 if (layoutBtnPayVnpay != null) layoutBtnPayVnpay.setVisibility(View.GONE);
-                if (btnComplete != null) btnComplete.setVisibility(View.GONE);
-
-                if (findViewById(R.id.layoutBookingTimerRow) != null) 
+                if (btnComplete       != null) btnComplete.setVisibility(View.GONE);
+                if (findViewById(R.id.layoutBookingTimerRow) != null)
                     findViewById(R.id.layoutBookingTimerRow).setVisibility(View.VISIBLE);
                 break;
         }
@@ -412,32 +409,26 @@ public class BookingFlowActivity extends AppCompatActivity {
 
     private void replaceFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
-            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-            .replace(R.id.booking_nav_host, fragment)
-            .commit();
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                .replace(R.id.booking_nav_host, fragment)
+                .commitAllowingStateLoss();
     }
 
     private void updateStepperGraphics(int step) {
-        int colorActive = Color.parseColor("#00BFA5");
+        int colorActive   = Color.parseColor("#00BFA5");
         int colorInactive = Color.parseColor("#BDBDBD");
-        int bgActive = R.drawable.bg_light_teal_circle;
+        int bgActive   = R.drawable.bg_light_teal_circle;
         int bgInactive = R.drawable.bg_light_gray_circle;
-
-        updateStepView(step1Number, step1Label, true, bgActive, Color.parseColor("#4A9292"), Color.parseColor("#2D1B47"));
-        updateStepView(step2Number, step2Label, step >= 2, step >= 2 ? bgActive : bgInactive, step >= 2 ? Color.parseColor("#4A9292") : colorInactive, step >= 2 ? Color.parseColor("#2D1B47") : colorInactive);
-        updateStepView(step3Number, step3Label, step >= 3, step >= 3 ? bgActive : bgInactive, step >= 3 ? Color.parseColor("#4A9292") : colorInactive, step >= 3 ? Color.parseColor("#2D1B47") : colorInactive);
-
+        updateStepView(step1Number, step1Label, true,       bgActive,   Color.parseColor("#4A9292"), Color.parseColor("#2D1B47"));
+        updateStepView(step2Number, step2Label, step >= 2,  step >= 2 ? bgActive : bgInactive, step >= 2 ? Color.parseColor("#4A9292") : colorInactive, step >= 2 ? Color.parseColor("#2D1B47") : colorInactive);
+        updateStepView(step3Number, step3Label, step >= 3,  step >= 3 ? bgActive : bgInactive, step >= 3 ? Color.parseColor("#4A9292") : colorInactive, step >= 3 ? Color.parseColor("#2D1B47") : colorInactive);
         if (step1Divider != null) step1Divider.setBackgroundColor(step >= 2 ? colorActive : Color.parseColor("#E0E0E0"));
         if (step2Divider != null) step2Divider.setBackgroundColor(step >= 3 ? colorActive : Color.parseColor("#E0E0E0"));
     }
 
-    private void updateStepView(TextView number, TextView label, boolean active, int bgRes, int textColor, int labelColor) {
-        if (number != null) {
-            number.setBackgroundResource(bgRes);
-            number.setTextColor(textColor);
-        }
-        if (label != null) {
-            label.setTextColor(labelColor);
-        }
+    private void updateStepView(TextView number, TextView label, boolean active,
+                                int bgRes, int textColor, int labelColor) {
+        if (number != null) { number.setBackgroundResource(bgRes); number.setTextColor(textColor); }
+        if (label  != null) label.setTextColor(labelColor);
     }
 }

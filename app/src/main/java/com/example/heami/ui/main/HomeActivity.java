@@ -1144,11 +1144,14 @@ public class HomeActivity extends AppCompatActivity {
                                 }
                             }
 
-                            Glide.with(this)
-                                    .load(model.getDoctorAvatar())
-                                    .placeholder(R.drawable.ic_avatar_placeholder)
-                                    .error(R.drawable.ic_avatar_placeholder)
-                                    .into(imgAvatar);
+                            // Guard against Glide crashing when Activity is destroyed in background
+                            if (!isDestroyed() && !isFinishing()) {
+                                Glide.with(this)
+                                        .load(model.getDoctorAvatar())
+                                        .placeholder(R.drawable.ic_avatar_placeholder)
+                                        .error(R.drawable.ic_avatar_placeholder)
+                                        .into(imgAvatar);
+                            }
 
                             cardView.setOnClickListener(v -> {
                                 Intent intent = new Intent(HomeActivity.this, ConsultationsActivity.class);
