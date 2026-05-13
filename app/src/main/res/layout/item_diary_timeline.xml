@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingBottom="20dp">
+
+    <LinearLayout
+        android:layout_width="55dp"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_item_mood_icon"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_close_button"
+            android:backgroundTint="#FFF0F3"
+            android:gravity="center"
+            android:text="😊"
+            android:textSize="20sp" />
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:layout_marginTop="4dp"
+            android:background="#FFE3E8" /> </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_edit_text_diary"
+        android:backgroundTint="#FFFFFF"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tv_item_day_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HÔM NAY"
+                android:textColor="@color/text_sub_gray"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.03"/>
+
+            <TextView
+                android:id="@+id/tv_item_score"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:background="@drawable/bg_close_button"
+                android:backgroundTint="#C2EFE3"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="3dp"
+                android:text="8/10"
+                android:textColor="#115948"
+                android:textSize="12sp"
+                android:textStyle="bold"/>
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/tv_item_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Thứ 2, 10 Tháng 3"
+            android:textColor="@color/text_main_dark"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_item_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:lineSpacingExtra="3dp"
+            android:text="Hôm nay mình đã đi dạo ở công viên, ngắm hoa anh đào nở rộ cảm thấy rất thư thái sau một tuần làm việc căng thẳng..."
+            android:textColor="#566573"
+            android:textSize="14sp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/item_chip_group_tags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:chipSpacingHorizontal="6dp"
+            app:chipSpacingVertical="2dp">
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </LinearLayout>
+</LinearLayout>

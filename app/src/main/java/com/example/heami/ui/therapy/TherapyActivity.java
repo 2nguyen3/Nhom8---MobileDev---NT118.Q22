@@ -29,6 +29,8 @@ public class TherapyActivity extends AppCompatActivity {
     private ImageButton btnOpenMusic; // Khai báo ở đây
     private ImageButton btnOpenNatureSound;
 
+    private ImageButton btnOpenDiary;
+
     private ImageButton btnOpen1Breath;
 
     private ImageButton btnOpen3Breath;
@@ -50,8 +52,10 @@ public class TherapyActivity extends AppCompatActivity {
         initViews();
         setupFilterListeners();
 
-        // GỌI HÀM MỞ NHẠC Ở ĐÂY
+
         setupMusicButton();
+
+        setupDiaryButton();
 
         setupNatureButton();
 
@@ -91,6 +95,8 @@ public class TherapyActivity extends AppCompatActivity {
 
         btnOpenNatureSound = findViewById(R.id.btnOpenNatureSound);
 
+        btnOpenDiary = findViewById(R.id.btnOpenDiary);
+
         btnOpen1Breath = findViewById(R.id.btnOpen1Breath);
 
         btnOpen3Breath = findViewById(R.id.btnOpen3Breath);
@@ -118,6 +124,16 @@ public class TherapyActivity extends AppCompatActivity {
         if (btnOpenNatureSound != null) {
             btnOpenNatureSound.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, NatureSoundActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    private void setupDiaryButton() {
+        if (btnOpenDiary != null) {
+            btnOpenDiary.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, DiaryActivity.class);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });

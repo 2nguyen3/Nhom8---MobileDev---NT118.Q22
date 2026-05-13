@@ -6,13 +6,16 @@ import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
@@ -45,7 +48,10 @@ public class NatureSoundActivity extends AppCompatActivity {
             "Sóng biển rì rào", "Tiếng mưa rơi", "Chuông xoay thiền", "Dế mèn đêm hè"
     };
 
-    private MediaPlayer mediaPlayer;
+    // Kết nối với NatureService thay vì dùng MediaPlayer trực tiếp
+    private NatureService natureService;
+    private boolean isBound = false;
+
     private ImageButton btnPlayPause, btnNext, btnPrev, btnList, btnShuffle, btnRepeat, btnLike;
     private TextView tvSongTitle, tvStatus, tvTimeTotal, tvTimeCurrent, tvTimerStatusMain;
     private SeekBar sbProgress;
@@ -58,7 +64,7 @@ public class NatureSoundActivity extends AppCompatActivity {
     private AnimatorSet pulseSet;
 
     private int currentIndex = 4;
-    private boolean isPlaying = false, isShuffle = false, isRepeat = false, isLiked = false;
+    private boolean isShuffle = false, isRepeat = false, isLiked = false;
     private long timeLeftInMillis = 0;
     private int selectedTimerMinutes = -1;
 
@@ -75,8 +81,90 @@ public class NatureSoundActivity extends AppCompatActivity {
 
         initViews();
         setupAnimations();
-        initMediaPlayer();
         setupListeners();
+
+        // Khởi động Service ngầm
+        Intent intent = new Intent(this, NatureService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, NatureService.class);
+        if (!isBound) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            NatureService.NatureBinder binder = (NatureService.NatureBinder) service;
+            natureService = binder.getService();
+            isBound = true;
+
+            syncIndexWithService();
+
+            natureService.setOnCompletionListener(mp -> {
+                if (!isRepeat) changeSound(true);
+            });
+
+            if (natureService.isPlaying()) {
+                updateUIPlaying();
+            } else {
+                updateUIPaused();
+            }
+            startSeekBarUpdate();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false;
+        }
+    };
+
+    private void syncIndexWithService() {
+        if (natureService != null) {
+            int realRawId = natureService.getCurrentPlayingRawId();
+            for (int i = 0; i < natureSounds.length; i++) {
+                if (natureSounds[i] == realRawId) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+            tvSongTitle.setText(natureTitles[currentIndex]);
+        }
+    }
+
+    private void sendCommandToService(String action) {
+        Intent intent = new Intent(this, NatureService.class);
+        intent.setAction(action);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+    }
+
+    private void sendPlayNewCommand(int songRawId) {
+        Intent intent = new Intent(this, NatureService.class);
+        intent.setAction(NatureService.ACTION_PLAY_NEW);
+        intent.putExtra(NatureService.EXTRA_SONG_ID, songRawId);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
     }
 
     private void initViews() {
@@ -103,7 +191,6 @@ public class NatureSoundActivity extends AppCompatActivity {
         tvTimerStatusMain = findViewById(R.id.tvTimerTextMain);
         imgTimerIconMain = findViewById(R.id.imgTimerIconMain);
 
-        // FIX: Không set progress(100) ở đây nữa để tránh bị đầy lúc mới vào
         sbProgress.getProgressDrawable().setColorFilter(Color.parseColor("#81C784"), PorterDuff.Mode.SRC_IN);
         sbProgress.getThumb().setColorFilter(Color.parseColor("#FFFFFF"), PorterDuff.Mode.SRC_IN);
     }
@@ -141,26 +228,6 @@ public class NatureSoundActivity extends AppCompatActivity {
         }
     }
 
-    private void initMediaPlayer() {
-        if (mediaPlayer != null) mediaPlayer.release();
-        mediaPlayer = MediaPlayer.create(this, natureSounds[currentIndex]);
-        mediaPlayer.setLooping(isRepeat);
-
-        tvSongTitle.setText(natureTitles[currentIndex]);
-
-        // FIX: Cập nhật Max và Progress về 0 khi khởi tạo bài mới
-        int duration = mediaPlayer.getDuration();
-        sbProgress.setMax(duration);
-        sbProgress.setProgress(0);
-
-        if (tvTimeCurrent != null) tvTimeCurrent.setText("00:00");
-        if (tvTimeTotal != null) tvTimeTotal.setText(formatTime(duration));
-
-        mediaPlayer.setOnCompletionListener(mp -> {
-            if (!isRepeat) changeSound(true);
-        });
-    }
-
     private void setupListeners() {
         findViewById(R.id.btnMinimize).setOnClickListener(v -> finish());
         btnPlayPause.setOnClickListener(v -> { applyClickAnimation(v); toggleSound(); });
@@ -177,7 +244,9 @@ public class NatureSoundActivity extends AppCompatActivity {
         btnRepeat.setOnClickListener(v -> {
             applyClickAnimation(v);
             isRepeat = !isRepeat;
-            if (mediaPlayer != null) mediaPlayer.setLooping(isRepeat);
+            if (isBound && natureService != null) {
+                natureService.setLooping(isRepeat);
+            }
             updateToggleButtonStyle(btnRepeat, isRepeat);
         });
 
@@ -191,12 +260,11 @@ public class NatureSoundActivity extends AppCompatActivity {
         if (layoutTimerOpen != null) layoutTimerOpen.setOnClickListener(v -> showTimerBottomSheet());
         if (layoutShareOpen != null) layoutShareOpen.setOnClickListener(v -> showShareBottomSheet());
 
-        // FIX: Thay đổi logic từ Volume sang SeekTo (Tua nhạc)
         sbProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && mediaPlayer != null) {
-                    mediaPlayer.seekTo(progress);
+                if (fromUser && isBound && natureService != null) {
+                    natureService.seekTo(progress);
                     if (tvTimeCurrent != null) tvTimeCurrent.setText(formatTime(progress));
                 }
             }
@@ -210,60 +278,119 @@ public class NatureSoundActivity extends AppCompatActivity {
         updateSeekBarTask = new Runnable() {
             @Override
             public void run() {
-                if (mediaPlayer != null && isPlaying) {
-                    int currentPos = mediaPlayer.getCurrentPosition();
-                    sbProgress.setProgress(currentPos); // Chạy SeekBar theo nhạc
+                if (isBound && natureService != null) {
+                    int currentPos = natureService.getCurrentPosition();
+                    int totalDuration = natureService.getDuration();
+                    sbProgress.setMax(totalDuration);
+                    sbProgress.setProgress(currentPos);
                     if (tvTimeCurrent != null) tvTimeCurrent.setText(formatTime(currentPos));
-                    seekBarHandler.postDelayed(this, 1000);
+                    if (tvTimeTotal != null) tvTimeTotal.setText(formatTime(totalDuration));
                 }
+                seekBarHandler.postDelayed(this, 1000);
             }
         };
         seekBarHandler.post(updateSeekBarTask);
     }
 
-    private void playMusic() {
-        if (mediaPlayer != null) {
-            mediaPlayer.start();
-            isPlaying = true;
-            btnPlayPause.setImageResource(R.drawable.ic_playing);
-            tvStatus.setText("Đang nghe");
-            tvStatus.setTextColor(Color.parseColor("#81C784"));
+    private void toggleSound() {
+        if (!isBound || natureService == null) return;
 
-            statusAnimator.start();
-            if (discAnimator.isPaused()) discAnimator.resume(); else discAnimator.start();
+        syncIndexWithService();
 
-            if (viewPulseGlow != null) {
-                viewPulseGlow.setVisibility(View.VISIBLE);
-                pulseSet.start();
-            }
-            if (viewDiscRing != null) {
-                viewDiscRing.setVisibility(View.VISIBLE);
-                discRingAnimator.start();
-            }
-
-            imgTonearm.animate().rotation(5f).setDuration(500).start();
-            startSeekBarUpdate();
+        if (natureService.isPlaying()) {
+            sendCommandToService(NatureService.ACTION_PAUSE);
+            updateUIPaused();
+        } else {
+            sendCommandToService(NatureService.ACTION_START);
+            updateUIPlaying();
         }
     }
 
-    private void pauseMusic() {
-        if (mediaPlayer != null) {
-            mediaPlayer.pause();
-            isPlaying = false;
-            btnPlayPause.setImageResource(R.drawable.ic_pause);
-            tvStatus.setText("Đã dừng");
-            tvStatus.setTextColor(Color.WHITE);
+    private void updateUIPlaying() {
+        btnPlayPause.setImageResource(R.drawable.ic_playing);
+        tvStatus.setText("Đang nghe");
+        tvStatus.setTextColor(Color.parseColor("#81C784"));
 
-            statusAnimator.cancel();
-            tvStatus.setScaleX(1f); tvStatus.setScaleY(1f);
-            discAnimator.pause();
-
-            if (viewPulseGlow != null) { pulseSet.end(); viewPulseGlow.setVisibility(View.INVISIBLE); }
-            if (viewDiscRing != null) { discRingAnimator.end(); viewDiscRing.setVisibility(View.INVISIBLE); }
-
-            imgTonearm.animate().rotation(-45).setDuration(500).start();
-            seekBarHandler.removeCallbacks(updateSeekBarTask);
+        if (statusAnimator != null && !statusAnimator.isRunning()) statusAnimator.start();
+        if (discAnimator != null) {
+            if (discAnimator.isPaused()) discAnimator.resume();
+            else if (!discAnimator.isRunning()) discAnimator.start();
         }
+
+        if (viewPulseGlow != null) {
+            viewPulseGlow.setVisibility(View.VISIBLE);
+            if (pulseSet != null && !pulseSet.isRunning()) pulseSet.start();
+        }
+        if (viewDiscRing != null) {
+            viewDiscRing.setVisibility(View.VISIBLE);
+            if (discRingAnimator != null && !discRingAnimator.isRunning()) discRingAnimator.start();
+        }
+        if (imgTonearm != null) imgTonearm.animate().rotation(5f).setDuration(500).start();
+    }
+
+    private void updateUIPaused() {
+        btnPlayPause.setImageResource(R.drawable.ic_pause);
+        tvStatus.setText("Đã dừng");
+        tvStatus.setTextColor(Color.WHITE);
+
+        if (statusAnimator != null) statusAnimator.cancel();
+        if (tvStatus != null) { tvStatus.setScaleX(1f); tvStatus.setScaleY(1f); }
+        if (discAnimator != null && discAnimator.isRunning()) discAnimator.pause();
+
+        if (viewPulseGlow != null) { if (pulseSet != null) pulseSet.end(); viewPulseGlow.setVisibility(View.INVISIBLE); }
+        if (viewDiscRing != null) { if (discRingAnimator != null) discRingAnimator.end(); viewDiscRing.setVisibility(View.INVISIBLE); }
+        if (imgTonearm != null) imgTonearm.animate().rotation(-45).setDuration(500).start();
+    }
+
+    private void changeSound(boolean next) {
+        if (!isBound || natureService == null) return;
+
+        syncIndexWithService();
+
+        if (isShuffle && next) {
+            currentIndex = new Random().nextInt(natureSounds.length);
+        } else {
+            if (next) currentIndex = (currentIndex + 1) % natureSounds.length;
+            else currentIndex = (currentIndex - 1 + natureSounds.length) % natureSounds.length;
+        }
+
+        tvSongTitle.setText(natureTitles[currentIndex]);
+        sendPlayNewCommand(natureSounds[currentIndex]);
+        updateUIPlaying();
+    }
+
+    private void startSleepTimer(int minutes, BottomSheetDialog dialog) {
+        if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
+        timeLeftInMillis = minutes * 60 * 1000L;
+        tvTimerStatusMain.setTextColor(Color.parseColor("#81C784"));
+        imgTimerIconMain.setColorFilter(Color.parseColor("#81C784"));
+
+        timerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isBound && natureService != null && natureService.isPlaying() && timeLeftInMillis > 0) {
+                    timeLeftInMillis -= 1000;
+                    int mins = (int) (timeLeftInMillis / 1000) / 60;
+                    int secs = (int) (timeLeftInMillis / 1000) % 60;
+                    tvTimerStatusMain.setText(String.format(Locale.getDefault(), "Tắt sau %02d:%02d", mins, secs));
+                    timerHandler.postDelayed(this, 1000);
+                } else if (timeLeftInMillis <= 0) {
+                    sendCommandToService(NatureService.ACTION_PAUSE);
+                    updateUIPaused();
+                    cancelSleepTimer();
+                }
+            }
+        };
+        timerHandler.post(timerRunnable);
+        dialog.dismiss();
+    }
+
+    private void cancelSleepTimer() {
+        if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
+        timeLeftInMillis = 0;
+        tvTimerStatusMain.setText("Hẹn giờ tắt");
+        tvTimerStatusMain.setTextColor(Color.WHITE);
+        imgTimerIconMain.clearColorFilter();
     }
 
     private void updateToggleButtonStyle(ImageButton btn, boolean isActive) {
@@ -284,44 +411,10 @@ public class NatureSoundActivity extends AppCompatActivity {
         ).start();
     }
 
-    private void startSleepTimer(int minutes, BottomSheetDialog dialog) {
-        if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
-        timeLeftInMillis = minutes * 60 * 1000L;
-        tvTimerStatusMain.setTextColor(Color.parseColor("#81C784"));
-        imgTimerIconMain.setColorFilter(Color.parseColor("#81C784"));
-
-        timerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (isPlaying && timeLeftInMillis > 0) {
-                    timeLeftInMillis -= 1000;
-                    int mins = (int) (timeLeftInMillis / 1000) / 60;
-                    int secs = (int) (timeLeftInMillis / 1000) % 60;
-                    tvTimerStatusMain.setText(String.format(Locale.getDefault(), "Tắt sau %02d:%02d", mins, secs));
-                    timerHandler.postDelayed(this, 1000);
-                } else if (timeLeftInMillis <= 0) {
-                    pauseMusic();
-                    cancelSleepTimer();
-                }
-            }
-        };
-        timerHandler.post(timerRunnable);
-        dialog.dismiss();
-    }
-
-    private void cancelSleepTimer() {
-        if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
-        timeLeftInMillis = 0;
-        tvTimerStatusMain.setText("Hẹn giờ tắt");
-        tvTimerStatusMain.setTextColor(Color.WHITE);
-        imgTimerIconMain.clearColorFilter();
-    }
-
     private void showTimerBottomSheet() {
         BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
         View view = getLayoutInflater().inflate(R.layout.layout_timer_bottom_sheet, null);
         dialog.setContentView(view);
-
         LinearLayout btn5 = view.findViewById(R.id.btnTimer5);
         LinearLayout btn15 = view.findViewById(R.id.btnTimer15);
         LinearLayout btn30 = view.findViewById(R.id.btnTimer30);
@@ -414,28 +507,16 @@ public class NatureSoundActivity extends AppCompatActivity {
         String shareMsg = "Đang nghe nhạc cực chill trên HEAMI! Nghe cùng mình nhé.";
 
         if (view.findViewById(R.id.bg_social_zalo) != null) {
-            view.findViewById(R.id.bg_social_zalo).setOnClickListener(v -> {
-                shareToApp("com.zing.zalo", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_zalo).setOnClickListener(v -> { shareToApp("com.zing.zalo", shareMsg); dialog.dismiss(); });
         }
         if (view.findViewById(R.id.bg_social_mess) != null) {
-            view.findViewById(R.id.bg_social_mess).setOnClickListener(v -> {
-                shareToApp("com.facebook.orca", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_mess).setOnClickListener(v -> { shareToApp("com.facebook.orca", shareMsg); dialog.dismiss(); });
         }
         if (view.findViewById(R.id.bg_social_insta) != null) {
-            view.findViewById(R.id.bg_social_insta).setOnClickListener(v -> {
-                shareToApp("com.instagram.android", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_insta).setOnClickListener(v -> { shareToApp("com.instagram.android", shareMsg); dialog.dismiss(); });
         }
         if (view.findViewById(R.id.bg_social_threads) != null) {
-            view.findViewById(R.id.bg_social_threads).setOnClickListener(v -> {
-                shareToApp("com.instagram.barcelona", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_threads).setOnClickListener(v -> { shareToApp("com.instagram.barcelona", shareMsg); dialog.dismiss(); });
         }
 
         View copy = view.findViewById(R.id.btnCopyContent);
@@ -447,12 +528,9 @@ public class NatureSoundActivity extends AppCompatActivity {
                 dialog.dismiss();
             });
         }
-
-        View close = view.findViewById(R.id.btnCloseShare);
-        if (close != null) {
-            close.setOnClickListener(v -> dialog.dismiss());
+        if (view.findViewById(R.id.btnCloseShare) != null) {
+            view.findViewById(R.id.btnCloseShare).setOnClickListener(v -> dialog.dismiss());
         }
-
         dialog.show();
     }
 
@@ -474,39 +552,46 @@ public class NatureSoundActivity extends AppCompatActivity {
         return String.format(Locale.getDefault(), "%02d:%02d", m, s);
     }
 
-    private void toggleSound() { if (isPlaying) pauseMusic(); else playMusic(); }
-
-    private void changeSound(boolean next) {
-        if (isShuffle && next) currentIndex = new Random().nextInt(natureSounds.length);
-        else {
-            if (next) currentIndex = (currentIndex + 1) % natureSounds.length;
-            else currentIndex = (currentIndex - 1 + natureSounds.length) % natureSounds.length;
-        }
-        initMediaPlayer();
-        if (isPlaying) playMusic();
-    }
-
     private void showNatureList() {
         BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
         View view = getLayoutInflater().inflate(R.layout.layout_nature_list, null);
         RecyclerView rv = view.findViewById(R.id.rvNatureSounds);
-        rv.setLayoutManager(new LinearLayoutManager(this));
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        rv.setLayoutManager(layoutManager);
+
         NatureAdapter adapter = new NatureAdapter(natureTitles, currentIndex, position -> {
             currentIndex = position;
-            initMediaPlayer();
-            playMusic();
+            tvSongTitle.setText(natureTitles[currentIndex]);
+
+            if (isBound && natureService != null) {
+                sendPlayNewCommand(natureSounds[currentIndex]);
+                updateUIPlaying();
+            }
             dialog.dismiss();
         });
+
         rv.setAdapter(adapter);
+        if (currentIndex > 0) layoutManager.scrollToPositionWithOffset(currentIndex, 200);
+
         dialog.setContentView(view);
         dialog.show();
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        if (isBound) {
+            unbindService(serviceConnection);
+            isBound = false;
+        }
+        seekBarHandler.removeCallbacks(updateSeekBarTask);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) mediaPlayer.release();
-        timerHandler.removeCallbacks(timerRunnable);
-        seekBarHandler.removeCallbacks(updateSeekBarTask);
+        seekBarHandler.removeCallbacksAndMessages(null);
+        timerHandler.removeCallbacksAndMessages(null);
     }
 }

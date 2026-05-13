@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
@@ -84,6 +82,7 @@ dependencies {
 
     // MediaPipe Face Landmarker
     implementation("com.google.mediapipe:tasks-vision:latest.release")
+    implementation("androidx.media:media:1.7.0")
 
     // Lifecycle Process
     implementation("androidx.lifecycle:lifecycle-process:2.8.4")

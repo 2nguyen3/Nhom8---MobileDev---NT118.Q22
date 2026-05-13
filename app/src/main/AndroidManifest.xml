@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <queries>
         <package android:name="com.google.android.gms" />
@@ -40,6 +42,14 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+            <receiver
+                android:name=".utils.DailyCheckInReceiver"
+                android:enabled="true"
+                android:exported="false" />
+            <receiver
+                android:name=".utils.AppointmentNotificationReceiver"
+                android:enabled="true"
+                android:exported="false" />
 
         <activity
             android:name=".ui.auth.LoginActivity"
@@ -90,6 +100,7 @@
             android:exported="false" />
             <activity
                 android:name=".ui.therapy.MusicPlayerActivity"
+                android:launchMode="singleTop"
                 android:exported="false" />
             <activity
                 android:name=".ui.therapy.NatureSoundActivity"
@@ -103,6 +114,24 @@
             <activity
                 android:name=".ui.therapy.BinauralPlayerActivity"
                 android:exported="false" />
+            <activity
+            android:name=".ui.therapy.DiaryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+            <service
+                android:name=".ui.therapy.MusicService"
+                android:foregroundServiceType="mediaPlayback"
+                android:exported="false" />
+            <service
+                android:name=".ui.therapy.NatureService"
+                android:enabled="true"
+                android:exported="false"
+                android:foregroundServiceType="mediaPlayback" />
+            <service
+                android:name=".ui.therapy.PodcastService"
+                android:enabled="true"
+                android:exported="false"
+                android:foregroundServiceType="mediaPlayback" />
 
 
         <activity
@@ -171,16 +200,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
-        <receiver
-            android:name=".utils.DailyCheckInReceiver"
-            android:enabled="true"
-            android:exported="false" />
-
-        <receiver
-            android:name=".utils.AppointmentNotificationReceiver"
-            android:enabled="true"
-            android:exported="false" />
 
         <activity
             android:name=".ui.doctor.DoctorHomeActivity"

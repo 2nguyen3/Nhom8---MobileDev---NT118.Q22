@@ -1,15 +1,20 @@
 package com.example.heami.ui.therapy;
 
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
-import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.widget.ImageView;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -32,8 +37,8 @@ public class PodcastActivity extends AppCompatActivity {
     private SeekBar sbPodcast;
     private TextView tvTitle, tvAuthor, tvCurrentTime, tvTotalTime, tvStatusPlay, tvQuote, tvSkipFeedback, btnSpeed;
 
-    private View[] visualizerBars = new View[5];
-    private Handler visualizerHandler = new Handler();
+    private final View[] visualizerBars = new View[5];
+    private final Handler visualizerHandler = new Handler(Looper.getMainLooper());
     private boolean isVisualizerRunning = false;
 
     private final String COLOR_ORANGE = "#FFB74D";
@@ -42,11 +47,12 @@ public class PodcastActivity extends AppCompatActivity {
     private long timeLeftInMillis = 0;
     private int selectedMinutes = 0;
     private Runnable timerRunnable;
-    private Handler timerHandler = new Handler();
+    private final Handler timerHandler = new Handler(Looper.getMainLooper());
 
-    private MediaPlayer mediaPlayer;
-    private Handler handler = new Handler();
-    private BottomSheetDialog bottomSheetDialog;
+    private PodcastService podcastService;
+    private boolean isBound = false;
+    private final Handler seekBarHandler = new Handler(Looper.getMainLooper());
+    private Runnable updateSeekBarTask;
 
     private float currentSpeed = 1.0f;
     private int currentIndex = 4;
@@ -81,67 +87,127 @@ public class PodcastActivity extends AppCompatActivity {
         setContentView(R.layout.activity_podcast_player);
 
         initViews();
-        setupPlayer(currentIndex);
+        setupListeners();
 
-        btnMinimize.setOnClickListener(v -> finish());
+        Intent intent = new Intent(this, PodcastService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+    }
 
-        btnPlayPause.setOnClickListener(v -> {
-            applyClickAnimation(cardPlayPause);
-            if (mediaPlayer != null && mediaPlayer.isPlaying()) pausePodcast();
-            else playPodcast();
-        });
-
-        btnForward15.setOnClickListener(v -> {
-            applyClickAnimation(v);
-            showSkipFeedback("+15s");
-            if (mediaPlayer != null) {
-                int target = mediaPlayer.getCurrentPosition() + 15000;
-                mediaPlayer.seekTo(Math.min(target, mediaPlayer.getDuration()));
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, PodcastService.class);
+        if (!isBound) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
             }
-        });
+            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
 
-        btnReplay15.setOnClickListener(v -> {
-            applyClickAnimation(v);
-            showSkipFeedback("-15s");
-            if (mediaPlayer != null) {
-                int target = mediaPlayer.getCurrentPosition() - 15000;
-                mediaPlayer.seekTo(Math.max(target, 0));
-            }
-        });
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            PodcastService.PodcastBinder binder = (PodcastService.PodcastBinder) service;
+            podcastService = binder.getService();
+            isBound = true;
 
-        btnSpeed.setOnClickListener(v -> {
-            applyClickAnimation(v);
-            changePlayerSpeed();
-        });
+            syncWithServiceState();
 
-        btnTimer.setOnClickListener(v -> {
-            applyClickAnimation(v);
-            showTimerBottomSheet();
-        });
+            podcastService.setOnCompletionListener(mp -> {
+                currentIndex = (currentIndex + 1) % songs.length;
+                sendPlayNewCommand(songs[currentIndex]);
+                updateUIByTrack(currentIndex);
+            });
 
-        btnPlaylist.setOnClickListener(v -> {
-            applyClickAnimation(v);
-            showPlaylistDialog();
-        });
+            startSeekBarUpdate();
+        }
 
-        sbPodcast.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && mediaPlayer != null) {
-                    mediaPlayer.seekTo(progress);
-                    tvCurrentTime.setText(formatTime(progress));
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false;
+        }
+    };
+
+    private void syncWithServiceState() {
+        if (podcastService != null) {
+            int realRawId = podcastService.getCurrentPlayingRawId();
+            boolean found = false;
+
+            // 1. Tìm xem bài hát Service đang phát ngầm là bài nào trong danh sách
+            for (int i = 0; i < songs.length; i++) {
+                if (songs[i] == realRawId) {
+                    currentIndex = i;
+                    found = true;
+                    break;
                 }
             }
 
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            // 2. Cập nhật thông tin bài hát (Tiêu đề, Quote) dựa theo currentIndex chuẩn vừa tìm được
+            updateUIByTrack(currentIndex);
 
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
+            // 3. Kiểm tra trạng thái thực tế của Service để ép giao diện hiển thị đúng
+            if (podcastService.isPlaying()) {
+                // Nếu thực sự đang phát ngầm -> Ép giao diện hiển thị "Đang phát" và hiện nút PAUSE
+                updateUIPlaying();
 
-        mediaPlayer.setOnCompletionListener(mp -> {
-            currentIndex = (currentIndex + 1) % songs.length;
-            setupPlayer(currentIndex);
-        });
+                // Lấy thời lượng thực tế từ bài đang phát ngầm gán cho SeekBar
+                int totalDuration = podcastService.getDuration();
+                if (totalDuration > 0) {
+                    sbPodcast.setMax(totalDuration);
+                    tvTotalTime.setText(formatTime(totalDuration));
+                }
+            } else {
+                // Nếu thực sự đang dừng -> Hiện chữ "Đã dừng" và hiện nút PLAY
+                updateUIPaused();
+
+                // Nếu chưa chạy bài nào bao giờ, khởi tạo thông số của bài mặc định ban đầu
+                if (!found && podcastService.getDuration() == 0) {
+                    android.media.MediaPlayer tempMp = android.media.MediaPlayer.create(this, songs[currentIndex]);
+                    if (tempMp != null) {
+                        tvTotalTime.setText(formatTime(tempMp.getDuration()));
+                        sbPodcast.setMax(tempMp.getDuration());
+                        tempMp.release();
+                    }
+                }
+            }
+        }
+    }
+
+    private void updateUIByTrack(int index) {
+        tvTitle.setText(titles[index]);
+        tvQuote.setText(quotes[index]);
+        if (podcastService != null) {
+            tvTotalTime.setText(formatTime(podcastService.getDuration()));
+            sbPodcast.setMax(podcastService.getDuration());
+        }
+    }
+
+    private void sendCommandToService(String action) {
+        Intent intent = new Intent(this, PodcastService.class);
+        intent.setAction(action);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+    }
+
+    private void sendPlayNewCommand(int songRawId) {
+        Intent intent = new Intent(this, PodcastService.class);
+        intent.setAction(PodcastService.ACTION_PLAY_NEW);
+        intent.putExtra(PodcastService.EXTRA_SONG_ID, songRawId);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
     }
 
     private void initViews() {
@@ -170,6 +236,153 @@ public class PodcastActivity extends AppCompatActivity {
         visualizerBars[4] = findViewById(R.id.bar5);
     }
 
+    private void setupListeners() {
+        btnMinimize.setOnClickListener(v -> finish());
+
+        btnPlayPause.setOnClickListener(v -> {
+            applyClickAnimation(cardPlayPause);
+
+            if (!isBound || podcastService == null) return;
+
+            // Lần đầu chưa có MediaPlayer -> phát bài hiện tại
+            if (podcastService.getCurrentPlayingRawId() == -1) {
+                sendPlayNewCommand(songs[currentIndex]);
+                updateUIByTrack(currentIndex);
+                updateUIPlaying();
+                return;
+            }
+
+            // Đã có MediaPlayer
+            if (podcastService.isPlaying()) {
+                sendCommandToService(PodcastService.ACTION_PAUSE);
+                updateUIPaused();
+            } else {
+                sendCommandToService(PodcastService.ACTION_START);
+                updateUIPlaying();
+            }
+        });
+
+        btnForward15.setOnClickListener(v -> {
+            applyClickAnimation(v);
+            showSkipFeedback("+15s");
+            if (isBound && podcastService != null) {
+                int target = podcastService.getCurrentPosition() + 15000;
+                podcastService.seekTo(Math.min(target, podcastService.getDuration()));
+            }
+        });
+
+        btnReplay15.setOnClickListener(v -> {
+            applyClickAnimation(v);
+            showSkipFeedback("-15s");
+            if (isBound && podcastService != null) {
+                int target = podcastService.getCurrentPosition() - 15000;
+                podcastService.seekTo(Math.max(target, 0));
+            }
+        });
+
+        btnSpeed.setOnClickListener(v -> {
+            applyClickAnimation(v);
+            changePlayerSpeed();
+        });
+
+        btnTimer.setOnClickListener(v -> {
+            applyClickAnimation(v);
+            showTimerBottomSheet();
+        });
+
+        btnPlaylist.setOnClickListener(v -> {
+            applyClickAnimation(v);
+            showPlaylistDialog();
+        });
+
+        sbPodcast.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && isBound && podcastService != null) {
+                    podcastService.seekTo(progress);
+                    tvCurrentTime.setText(formatTime(progress));
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+    }
+
+    private void updateUIPlaying() {
+        btnPlayPause.setImageResource(R.drawable.ic_playing);
+        tvStatusPlay.setText("Đang phát...");
+        tvStatusPlay.setTextColor(Color.parseColor(COLOR_ORANGE));
+        startBlinkAnimation(tvStatusPlay);
+        startVisualizer();
+    }
+
+    private void updateUIPaused() {
+        btnPlayPause.setImageResource(R.drawable.ic_pause);
+        tvStatusPlay.setText("Đã dừng");
+        tvStatusPlay.setTextColor(Color.WHITE);
+        tvStatusPlay.clearAnimation();
+        stopVisualizer();
+    }
+
+    private void startSeekBarUpdate() {
+        seekBarHandler.removeCallbacks(updateSeekBarTask);
+        updateSeekBarTask = new Runnable() {
+            @Override
+            public void run() {
+                if (isBound && podcastService != null) {
+                    int currentPos = podcastService.getCurrentPosition();
+                    int totalDuration = podcastService.getDuration();
+                    sbPodcast.setMax(totalDuration);
+                    sbPodcast.setProgress(currentPos);
+                    tvCurrentTime.setText(formatTime(currentPos));
+                    tvTotalTime.setText(formatTime(totalDuration));
+                }
+                seekBarHandler.postDelayed(this, 1000);
+            }
+        };
+        seekBarHandler.post(updateSeekBarTask);
+    }
+
+    private void changePlayerSpeed() {
+        if (currentSpeed == 1.0f) currentSpeed = 1.5f;
+        else if (currentSpeed == 1.5f) currentSpeed = 2.0f;
+        else currentSpeed = 1.0f;
+
+        btnSpeed.setText(currentSpeed + "x");
+
+        if (isBound && podcastService != null) {
+            podcastService.setSpeed(currentSpeed);
+        }
+    }
+
+    private void startSleepTimer(int minutes) {
+        stopTimerHandler();
+        timeLeftInMillis = (long) minutes * 60 * SECOND_MS;
+
+        btnTimer.setColorFilter(Color.parseColor(COLOR_ORANGE));
+        btnTimer.setAlpha(1.0f);
+
+        timerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isBound && podcastService != null && podcastService.isPlaying() && timeLeftInMillis > 0) {
+                    timeLeftInMillis -= SECOND_MS;
+                    timerHandler.postDelayed(this, SECOND_MS);
+                }
+
+                if (timeLeftInMillis <= 0) {
+                    sendCommandToService(PodcastService.ACTION_PAUSE);
+                    updateUIPaused();
+                    cancelSleepTimer();
+                    selectedMinutes = 0;
+                }
+            }
+        };
+
+        timerHandler.postDelayed(timerRunnable, SECOND_MS);
+        Toast.makeText(this, "Hẹn giờ tắt sau " + minutes + " phút", Toast.LENGTH_SHORT).show();
+    }
+
     private void showTimerBottomSheet() {
         BottomSheetDialog timerDialog = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.layout_timer_bottom_sheet, null);
@@ -190,7 +403,7 @@ public class PodcastActivity extends AppCompatActivity {
             else if (selectedMinutes == 30) highlightTimerItem(btn30);
             else if (selectedMinutes == 60) highlightTimerItem(btn60);
 
-            final Handler dialogHandler = new Handler();
+            final Handler dialogHandler = new Handler(Looper.getMainLooper());
             dialogHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -220,49 +433,14 @@ public class PodcastActivity extends AppCompatActivity {
         timerDialog.show();
     }
 
-    private void startSleepTimer(int minutes) {
-        stopTimerHandler();
-        timeLeftInMillis = (long) minutes * 60 * SECOND_MS;
-
-        btnTimer.setColorFilter(Color.parseColor(COLOR_ORANGE));
-        btnTimer.setAlpha(1.0f);
-
-        timerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (mediaPlayer != null && mediaPlayer.isPlaying() && timeLeftInMillis > 0) {
-                    timeLeftInMillis -= SECOND_MS;
-                    timerHandler.postDelayed(this, SECOND_MS);
-                }
-
-                if (timeLeftInMillis <= 0) {
-                    pausePodcast();
-                    cancelSleepTimer();
-                    selectedMinutes = 0;
-                }
-            }
-        };
-
-        timerHandler.postDelayed(timerRunnable, SECOND_MS);
-        Toast.makeText(this, "Hẹn giờ tắt sau " + minutes + " phút", Toast.LENGTH_SHORT).show();
-    }
-
     private void highlightTimerItem(View view) {
         view.setBackgroundResource(R.drawable.bg_timer_item_selected);
-
         if (view instanceof LinearLayout) {
             LinearLayout l = (LinearLayout) view;
-
             for (int i = 0; i < l.getChildCount(); i++) {
                 View child = l.getChildAt(i);
-
-                if (child instanceof TextView) {
-                    ((TextView) child).setTextColor(Color.WHITE);
-                }
-
-                if (child instanceof ImageView) {
-                    ((ImageView) child).setColorFilter(Color.WHITE);
-                }
+                if (child instanceof TextView) ((TextView) child).setTextColor(Color.WHITE);
+                if (child instanceof ImageView) ((ImageView) child).setColorFilter(Color.WHITE);
             }
         }
     }
@@ -275,80 +453,21 @@ public class PodcastActivity extends AppCompatActivity {
     }
 
     private void stopTimerHandler() {
-        if (timerRunnable != null) {
-            timerHandler.removeCallbacks(timerRunnable);
-        }
-    }
-
-    private void setupPlayer(int index) {
-        if (mediaPlayer != null) mediaPlayer.release();
-
-        mediaPlayer = MediaPlayer.create(this, songs[index]);
-
-        tvTitle.setText(titles[index]);
-        tvQuote.setText(quotes[index]);
-        tvTotalTime.setText(formatTime(mediaPlayer.getDuration()));
-
-        sbPodcast.setMax(mediaPlayer.getDuration());
-        sbPodcast.setProgress(0);
-        tvCurrentTime.setText("00:00");
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            mediaPlayer.setPlaybackParams(
-                    mediaPlayer.getPlaybackParams().setSpeed(currentSpeed)
-            );
-        }
-
-        playPodcast();
-    }
-
-    private void playPodcast() {
-        if (mediaPlayer != null) {
-            mediaPlayer.start();
-
-            btnPlayPause.setImageResource(R.drawable.ic_playing);
-            tvStatusPlay.setText("Đang phát...");
-            tvStatusPlay.setTextColor(Color.parseColor(COLOR_ORANGE));
-
-            startBlinkAnimation(tvStatusPlay);
-            startVisualizer();
-            updateSeekBar();
-        }
-    }
-
-    private void pausePodcast() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-
-            btnPlayPause.setImageResource(R.drawable.ic_pause);
-            tvStatusPlay.setText("Đã dừng");
-            tvStatusPlay.setTextColor(Color.WHITE);
-            tvStatusPlay.clearAnimation();
-
-            stopVisualizer();
-        }
+        if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
     }
 
     private void applyClickAnimation(View view) {
         view.animate().scaleX(0.88f).scaleY(0.88f).setDuration(100)
-                .withEndAction(() ->
-                        view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-                ).start();
+                .withEndAction(() -> view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()).start();
     }
 
     private void showSkipFeedback(String text) {
         tvSkipFeedback.setText(text);
         tvSkipFeedback.setVisibility(View.VISIBLE);
-
         tvSkipFeedback.setAlpha(1f);
         tvSkipFeedback.setTranslationY(0f);
-
-        tvSkipFeedback.animate()
-                .translationY(-120f)
-                .alpha(0f)
-                .setDuration(600)
-                .withEndAction(() -> tvSkipFeedback.setVisibility(View.INVISIBLE))
-                .start();
+        tvSkipFeedback.animate().translationY(-120f).alpha(0f).setDuration(600)
+                .withEndAction(() -> tvSkipFeedback.setVisibility(View.INVISIBLE)).start();
     }
 
     private void startVisualizer() {
@@ -360,7 +479,7 @@ public class PodcastActivity extends AppCompatActivity {
     private final Runnable visualizerRunnable = new Runnable() {
         @Override
         public void run() {
-            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            if (isBound && podcastService != null && podcastService.isPlaying()) {
                 for (View bar : visualizerBars) {
                     float scale = 0.4f + (float) Math.random() * 0.7f;
                     bar.animate().scaleY(scale).setDuration(150).start();
@@ -375,53 +494,25 @@ public class PodcastActivity extends AppCompatActivity {
     private void stopVisualizer() {
         isVisualizerRunning = false;
         visualizerHandler.removeCallbacks(visualizerRunnable);
-
         for (View bar : visualizerBars) {
             bar.animate().scaleY(1f).setDuration(300).start();
         }
     }
 
-    private void changePlayerSpeed() {
-        if (currentSpeed == 1.0f) currentSpeed = 1.5f;
-        else if (currentSpeed == 1.5f) currentSpeed = 2.0f;
-        else currentSpeed = 1.0f;
-
-        btnSpeed.setText(currentSpeed + "x");
-
-        if (mediaPlayer != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            mediaPlayer.setPlaybackParams(
-                    mediaPlayer.getPlaybackParams().setSpeed(currentSpeed)
-            );
-        }
-    }
-
-    private void updateSeekBar() {
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                    sbPodcast.setProgress(mediaPlayer.getCurrentPosition());
-                    tvCurrentTime.setText(formatTime(mediaPlayer.getCurrentPosition()));
-                    handler.postDelayed(this, 1000);
-                }
-            }
-        }, 1000);
-    }
-
     private void showPlaylistDialog() {
-        bottomSheetDialog = new BottomSheetDialog(this);
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.layout_nature_list, null);
-
         bottomSheetDialog.setContentView(view);
 
         RecyclerView rv = view.findViewById(R.id.rvNatureSounds);
-        view.findViewById(R.id.btnCloseList)
-                .setOnClickListener(v -> bottomSheetDialog.dismiss());
+        view.findViewById(R.id.btnCloseList).setOnClickListener(v -> bottomSheetDialog.dismiss());
 
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(new PodcastAdapter(titles, currentIndex, position -> {
             currentIndex = position;
-            setupPlayer(currentIndex);
+            sendPlayNewCommand(songs[currentIndex]);
+            updateUIByTrack(currentIndex);
+            updateUIPlaying();
             bottomSheetDialog.dismiss();
         }));
 
@@ -443,16 +534,20 @@ public class PodcastActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        if (isBound) {
+            unbindService(serviceConnection);
+            isBound = false;
+        }
+        seekBarHandler.removeCallbacks(updateSeekBarTask);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-
         stopTimerHandler();
-        handler.removeCallbacksAndMessages(null);
+        seekBarHandler.removeCallbacksAndMessages(null);
         visualizerHandler.removeCallbacksAndMessages(null);
     }
 }

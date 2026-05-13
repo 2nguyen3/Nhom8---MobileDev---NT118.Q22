@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_diary_bottom_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="24dp">
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:background="#E5E8ED"
+            android:layout_marginBottom="18dp" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@id/btn_close"
+                android:layout_alignParentStart="true"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✨ Ghi nhật ký hôm nay"
+                    android:textColor="@color/text_main_dark"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Thứ 2, 10 Tháng 3 · 2026"
+                    android:textColor="@color/text_sub_gray"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btn_close"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerInParent="true"
+                android:background="@drawable/bg_close_button"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                app:tint="@color/icon_close_btn" />
+        </RelativeLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="CẢM XÚC HÔM NAY"
+            android:textColor="@color/text_sub_gray"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_mood"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="4dp"
+            app:singleSelection="true"
+            app:selectionRequired="true"> <com.google.android.material.chip.Chip
+            android:id="@+id/chip_happy"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="😊 Vui vẻ" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_peaceful"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😌 Bình yên"
+                android:checked="true" /> <com.google.android.material.chip.Chip
+                android:id="@+id/chip_sad"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😢 Buồn" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_stressed"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😤 Căng thẳng" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_tired"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🥳 Mệt mỏi" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="GHI CHÚ"
+            android:textColor="@color/text_sub_gray"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+
+        <EditText
+            android:id="@+id/edt_content"
+            android:layout_width="match_parent"
+            android:layout_height="130dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_edit_text_diary"
+            android:gravity="top|start"
+            android:hint="Hôm nay bạn cảm thấy thế nào? Heami lắng nghe bạn nhé... 🌸"
+            android:textColorHint="@color/text_hint_color"
+            android:textColor="@color/text_main_dark"
+            android:inputType="textMultiLine"
+            android:lineSpacingExtra="4dp"
+            android:padding="16dp"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="NHÃN"
+            android:textColor="@color/text_sub_gray"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_tags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="4dp">
+
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#CôngViệc"
+                android:textColor="@color/text_main_dark"
+                app:chipBackgroundColor="@color/chip_unselected_bg"
+                app:chipStrokeWidth="0dp"/>
+
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#GiaĐình"
+                android:textColor="@color/text_main_dark"
+                app:chipBackgroundColor="@color/chip_unselected_bg"
+                app:chipStrokeWidth="0dp"/>
+
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#TìnhYêu"
+                android:textColor="@color/text_main_dark"
+                app:chipBackgroundColor="@color/chip_unselected_bg"
+                app:chipStrokeWidth="0dp"/>
+
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#SứcKhỏe"
+                android:textColor="@color/text_main_dark"
+                app:chipBackgroundColor="@color/chip_unselected_bg"
+                app:chipStrokeWidth="0dp"/>
+
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#ThờiGian"
+                android:textColor="@color/text_main_dark"
+                app:chipBackgroundColor="@color/chip_unselected_bg"
+                app:chipStrokeWidth="0dp"/>
+
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#KỷNiệm"
+                android:textColor="@color/text_main_dark"
+                app:chipBackgroundColor="@color/chip_unselected_bg"
+                app:chipStrokeWidth="0dp"/>
+        </com.google.android.material.chip.ChipGroup>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_save"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="28dp"
+            android:background="@drawable/bg_btn_save_selector"
+            android:enabled="false"
+            android:text="Hãy viết gì đó nhé..."
+            android:textColor="@color/text_disabled_button"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

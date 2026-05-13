@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_close_button"
+    android:backgroundTint="#FFFFFF"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:background="#E2E8F0" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Chọn thời gian hiển thị"
+            android:textColor="#1A202C"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseSheet"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/bg_close_button"
+            android:backgroundTint="#F7FAFC"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="#718096" />
+    </RelativeLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EDF2F7"
+        android:layout_marginBottom="24dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:layout_marginBottom="24dp">
+
+        <ImageButton
+            android:id="@+id/btnPrevYear"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_close_button"
+            android:backgroundTint="#FFF5F7"
+            android:src="@drawable/ic_chevron_left"
+            app:tint="#E86FA0" />
+
+        <TextView
+            android:id="@+id/tvSelectedYear"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="2026"
+            android:textColor="#1A202C"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnNextYear"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_close_button"
+            android:backgroundTint="#FFF5F7"
+            android:src="@drawable/ic_chevron_right"
+            app:tint="#E86FA0" />
+    </LinearLayout>
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="4"
+        android:rowCount="3"
+        android:useDefaultMargins="true"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/m1"
+            style="@style/MonthPickerItemStyle"
+            android:text="T1" />
+
+        <TextView
+            android:id="@+id/m2"
+            style="@style/MonthPickerItemStyle"
+            android:text="T2" />
+
+        <TextView
+            android:id="@+id/m3"
+            style="@style/MonthPickerItemStyle"
+            android:text="T3" />
+
+        <TextView
+            android:id="@+id/m4"
+            style="@style/MonthPickerItemStyle"
+            android:text="T4" />
+
+        <TextView
+            android:id="@+id/m5"
+            style="@style/MonthPickerItemStyle"
+            android:text="T5" />
+
+        <TextView
+            android:id="@+id/m6"
+            style="@style/MonthPickerItemStyle"
+            android:text="T6" />
+
+        <TextView
+            android:id="@+id/m7"
+            style="@style/MonthPickerItemStyle"
+            android:text="T7" />
+
+        <TextView
+            android:id="@+id/m8"
+            style="@style/MonthPickerItemStyle"
+            android:text="T8" />
+
+        <TextView
+            android:id="@+id/m9"
+            style="@style/MonthPickerItemStyle"
+            android:text="T9" />
+
+        <TextView
+            android:id="@+id/m10"
+            style="@style/MonthPickerItemStyle"
+            android:text="T10" />
+
+        <TextView
+            android:id="@+id/m11"
+            style="@style/MonthPickerItemStyle"
+            android:text="T11" />
+
+        <TextView
+            android:id="@+id/m12"
+            style="@style/MonthPickerItemStyle"
+            android:text="T12" />
+    </GridLayout>
+
+</LinearLayout>
