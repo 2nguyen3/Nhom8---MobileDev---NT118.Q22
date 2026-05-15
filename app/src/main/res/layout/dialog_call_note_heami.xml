@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingTop="20dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="24dp"
+    android:background="@drawable/bg_dialog_glass">
+
+    <TextView
+        android:id="@+id/txtCallNoteTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Note cuộc gọi"
+        android:textColor="#1B2A35"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtCallNoteSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Ghi chú riêng tư trên thiết bị này"
+        android:textColor="#6F7E8D"
+        android:textSize="13sp" />
+
+    <EditText
+        android:id="@+id/edtCallNote"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_input_soft"
+        android:gravity="top|start"
+        android:hint="Viết note của bạn tại đây..."
+        android:inputType="textMultiLine"
+        android:padding="14dp"
+        android:textColor="#1B2A35"
+        android:textColorHint="#93A1AF"
+        android:textSize="15sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btnDeleteCallNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="14dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="10dp"
+            android:text="Xóa"
+            android:textColor="#E05270"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnCloseCallNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:paddingStart="14dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="10dp"
+            android:text="Đóng"
+            android:textColor="#6F7E8D"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnSaveCallNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_ombre_pink_blue"
+            android:paddingStart="16dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="10dp"
+            android:text="Lưu note"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>

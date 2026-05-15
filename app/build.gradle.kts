@@ -93,4 +93,7 @@ dependencies {
 
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Agora Video SDK
+    implementation("io.agora.rtc:full-rtc-basic:4.6.3")
 }

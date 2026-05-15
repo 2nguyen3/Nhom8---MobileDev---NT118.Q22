@@ -170,6 +170,22 @@
             android:text="Khi phiên chat bắt đầu, tin nhắn giữa bạn và bác sĩ sẽ xuất hiện tại đây."
             android:textColor="#8B83A6"
             android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btnViewCallNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_ombre_pink_blue"
+            android:paddingStart="16dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="10dp"
+            android:text="Xem note"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
 
     <!-- Input bar -->

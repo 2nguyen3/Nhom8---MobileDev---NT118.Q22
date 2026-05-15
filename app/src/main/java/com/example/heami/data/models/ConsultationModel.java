@@ -48,6 +48,21 @@ public class ConsultationModel implements Serializable {
     @PropertyName("doctor_online")
     private boolean doctor_online;
 
+    @PropertyName("call_channel_id")
+    private String callChannelId;
+
+    @PropertyName("call_status")
+    private String callStatus;
+
+    @PropertyName("call_started_at")
+    private Timestamp callStartedAt;
+
+    @PropertyName("call_started_by")
+    private String callStartedBy;
+
+    @PropertyName("call_ended_at")
+    private Timestamp callEndedAt;
+
     public ConsultationModel() { }
 
     @PropertyName("session_id")
@@ -149,4 +164,29 @@ public class ConsultationModel implements Serializable {
     public boolean isDoctor_online() { return doctor_online; }
     @PropertyName("doctor_online")
     public void setDoctor_online(boolean doctor_online) { this.doctor_online = doctor_online; }
+
+    @PropertyName("call_channel_id")
+    public String getCallChannelId() { return callChannelId; }
+    @PropertyName("call_channel_id")
+    public void setCallChannelId(String callChannelId) { this.callChannelId = callChannelId; }
+
+    @PropertyName("call_status")
+    public String getCallStatus() { return callStatus; }
+    @PropertyName("call_status")
+    public void setCallStatus(String callStatus) { this.callStatus = callStatus; }
+
+    @PropertyName("call_started_at")
+    public Timestamp getCallStartedAt() { return callStartedAt; }
+    @PropertyName("call_started_at")
+    public void setCallStartedAt(Timestamp callStartedAt) { this.callStartedAt = callStartedAt; }
+
+    @PropertyName("call_started_by")
+    public String getCallStartedBy() { return callStartedBy; }
+    @PropertyName("call_started_by")
+    public void setCallStartedBy(String callStartedBy) { this.callStartedBy = callStartedBy; }
+
+    @PropertyName("call_ended_at")
+    public Timestamp getCallEndedAt() { return callEndedAt; }
+    @PropertyName("call_ended_at")
+    public void setCallEndedAt(Timestamp callEndedAt) { this.callEndedAt = callEndedAt; }
 }

@@ -1,5 +1,8 @@
 package com.example.heami.ui.doctor;
 
+import android.content.Intent;
+import com.example.heami.ui.consultation.ConsultationCallActivity;
+
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -160,11 +163,7 @@ public class DoctorChatDetailActivity extends AppCompatActivity {
                 return;
             }
 
-            Toast.makeText(
-                    this,
-                    "Batch sau sẽ nối logic gọi video consultation thật.",
-                    Toast.LENGTH_SHORT
-            ).show();
+            openConsultationCallScreen();
         });
 
         txtChatDetailEndSession.setOnClickListener(v -> {
@@ -251,6 +250,30 @@ public class DoctorChatDetailActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) { }
         });
+    }
+
+    private void openConsultationCallScreen() {
+        Intent intent = new Intent(this, ConsultationCallActivity.class);
+        intent.putExtra(ConsultationCallActivity.EXTRA_SESSION_ID, sessionId);
+        intent.putExtra(ConsultationCallActivity.EXTRA_ROLE, ConsultationCallActivity.ROLE_DOCTOR);
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_PARTNER_NAME,
+                partnerName.isEmpty() ? "Người dùng Heami" : partnerName
+        );
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_PARTNER_AVATAR,
+                partnerAvatar
+        );
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_FORMAT_TYPE,
+                formatType.isEmpty() ? "CALL" : formatType
+        );
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_CALL_CHANNEL_ID,
+                ""
+        );
+
+        startActivity(intent);
     }
 
     private void bindStaticFallbackInfo() {

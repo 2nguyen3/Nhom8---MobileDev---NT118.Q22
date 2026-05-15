@@ -1,5 +1,8 @@
 package com.example.heami.ui.consultation;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
+
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -30,6 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConsultationSessionActivity extends AppCompatActivity {
+
+    private TextView btnViewCallNote;
+    private static final String CALL_NOTE_PREFS = "HeamiCallNotes";
 
     public static final String EXTRA_SESSION_ID = "extra_session_id";
     public static final String EXTRA_FORMAT_TYPE = "extra_format_type";
@@ -79,6 +85,7 @@ public class ConsultationSessionActivity extends AppCompatActivity {
         setupRecyclerView();
         bindStaticSessionInfo();
         applyModeUi(sessionMode);
+        renderViewCallNoteButton(sessionId, sessionMode);
         refreshTextInputState();
         refreshCallButtonState();
         refreshSendButtonState();
@@ -125,6 +132,8 @@ public class ConsultationSessionActivity extends AppCompatActivity {
 
         rvSessionMessages = findViewById(R.id.rvSessionMessages);
         layoutSessionEmptyState = findViewById(R.id.layoutSessionEmptyState);
+
+        btnViewCallNote = findViewById(R.id.btnViewCallNote);
     }
 
     private void readIntentData() {
@@ -261,6 +270,7 @@ public class ConsultationSessionActivity extends AppCompatActivity {
         refreshTextInputState();
         refreshCallButtonState();
         refreshSendButtonState();
+        renderViewCallNoteButton(sessionId, sessionMode);
     }
 
     private void bindMessages(@Nullable List<ChatMessageModel> messages) {
@@ -331,9 +341,7 @@ public class ConsultationSessionActivity extends AppCompatActivity {
                 return;
             }
 
-            if (viewModel != null) {
-                viewModel.onCallClicked();
-            }
+            openConsultationCallScreen();
         });
 
         btnSessionSend.setOnClickListener(v -> {
@@ -365,6 +373,35 @@ public class ConsultationSessionActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) { }
         });
+    }
+
+    private void openConsultationCallScreen() {
+        if (!isCallActionAllowed) {
+            Toast.makeText(this, "Phiên này chưa sẵn sàng để gọi", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(this, ConsultationCallActivity.class);
+        intent.putExtra(ConsultationCallActivity.EXTRA_SESSION_ID, sessionId);
+        intent.putExtra(ConsultationCallActivity.EXTRA_ROLE, ConsultationCallActivity.ROLE_USER);
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_PARTNER_NAME,
+                doctorName.isEmpty() ? "Bác sĩ tư vấn Heami" : doctorName
+        );
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_PARTNER_AVATAR,
+                doctorAvatar
+        );
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_FORMAT_TYPE,
+                MODE_CALL.equals(sessionMode) ? "CALL" : sessionMode
+        );
+        intent.putExtra(
+                ConsultationCallActivity.EXTRA_CALL_CHANNEL_ID,
+                ""
+        );
+
+        startActivity(intent);
     }
 
     private void refreshTextInputState() {
@@ -440,6 +477,45 @@ public class ConsultationSessionActivity extends AppCompatActivity {
             return "";
         }
         return safeText(FirebaseAuth.getInstance().getCurrentUser().getUid());
+    }
+
+    private boolean hasLocalCallNote(@NonNull String sessionId) {
+        SharedPreferences prefs = getSharedPreferences(CALL_NOTE_PREFS, MODE_PRIVATE);
+        String key = "call_note_" + sessionId + "_USER";
+        String raw = prefs.getString(key, "");
+        return raw != null && !raw.trim().isEmpty();
+    }
+
+    private boolean isCallFormat(@Nullable String rawFormatType) {
+        if (rawFormatType == null) return false;
+
+        String normalized = rawFormatType.trim().toLowerCase();
+        return normalized.contains("call")
+                || normalized.contains("gọi")
+                || normalized.contains("video");
+    }
+
+    private void openCallNoteDetail(@NonNull String sessionId) {
+        Intent intent = new Intent(this, CallNoteDetailActivity.class);
+        intent.putExtra(CallNoteDetailActivity.EXTRA_SESSION_ID, sessionId);
+        intent.putExtra(CallNoteDetailActivity.EXTRA_ROLE, "USER");
+        startActivity(intent);
+    }
+
+    private void renderViewCallNoteButton(@NonNull String sessionId, @Nullable String formatType) {
+        if (btnViewCallNote == null) {
+            return;
+        }
+
+        boolean shouldShow = isCallFormat(formatType) && hasLocalCallNote(sessionId);
+
+        btnViewCallNote.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+
+        if (shouldShow) {
+            btnViewCallNote.setOnClickListener(v -> openCallNoteDetail(sessionId));
+        } else {
+            btnViewCallNote.setOnClickListener(null);
+        }
     }
 
     private String safeText(String value) {
