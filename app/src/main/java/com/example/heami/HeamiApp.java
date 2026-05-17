@@ -40,9 +40,11 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
     private DatabaseReference userStatusRef;
     private DatabaseReference myConnectionsRef;
     private DatabaseReference lastOnlineRef;
-    private DatabaseReference foregroundRef;
-    private DatabaseReference lastHeartbeatRef;
     private DatabaseReference currentConnectionRef;
+
+    private DatabaseReference currentConnectionForegroundRef;
+    private DatabaseReference currentConnectionHeartbeatRef;
+    private DatabaseReference currentConnectionConnectedAtRef;
 
     private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
 
@@ -51,7 +53,7 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         public void run() {
             syncHeartbeatNow();
 
-            if (isAppForeground && lastHeartbeatRef != null) {
+            if (isAppForeground && currentConnectionHeartbeatRef != null) {
                 heartbeatHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS);
             }
         }
@@ -107,12 +109,12 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         appForegroundStatic = true;
         Log.d(TAG, "App foreground");
 
-        if (foregroundRef != null) {
-            foregroundRef.setValue(true, (error, ref) -> {
+        if (currentConnectionForegroundRef != null) {
+            currentConnectionForegroundRef.setValue(true, (error, ref) -> {
                 if (error != null) {
-                    Log.e(TAG, "Failed to set isForeground=true", error.toException());
+                    Log.e(TAG, "Failed to set connection isForeground=true", error.toException());
                 } else {
-                    Log.d(TAG, "isForeground=true");
+                    Log.d(TAG, "connection isForeground=true");
                 }
             });
         }
@@ -129,12 +131,12 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
 
         stopHeartbeatLoop();
 
-        if (foregroundRef != null) {
-            foregroundRef.setValue(false, (error, ref) -> {
+        if (currentConnectionForegroundRef != null) {
+            currentConnectionForegroundRef.setValue(false, (error, ref) -> {
                 if (error != null) {
-                    Log.e(TAG, "Failed to set isForeground=false", error.toException());
+                    Log.e(TAG, "Failed to set connection isForeground=false", error.toException());
                 } else {
-                    Log.d(TAG, "isForeground=false");
+                    Log.d(TAG, "connection isForeground=false");
                 }
             });
         }
@@ -157,8 +159,6 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         userStatusRef = realtimeDb.getReference("status").child(uid);
         myConnectionsRef = userStatusRef.child("connections");
         lastOnlineRef = userStatusRef.child("lastOnline");
-        foregroundRef = userStatusRef.child("isForeground");
-        lastHeartbeatRef = userStatusRef.child("heartbeat_at");
 
         connectedListener = new ValueEventListener() {
             @Override
@@ -172,6 +172,9 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
                 }
 
                 currentConnectionRef = myConnectionsRef.push();
+                currentConnectionForegroundRef = currentConnectionRef.child("isForeground");
+                currentConnectionHeartbeatRef = currentConnectionRef.child("heartbeat_at");
+                currentConnectionConnectedAtRef = currentConnectionRef.child("connected_at");
 
                 OnDisconnect removeConnectionOnDisconnect = currentConnectionRef.onDisconnect();
                 removeConnectionOnDisconnect.removeValue((error, ref) -> {
@@ -191,28 +194,19 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
                     }
                 });
 
-                OnDisconnect setForegroundFalseOnDisconnect = foregroundRef.onDisconnect();
-                setForegroundFalseOnDisconnect.setValue(false, (error, ref) -> {
+                currentConnectionConnectedAtRef.setValue(ServerValue.TIMESTAMP, (error, ref) -> {
                     if (error != null) {
-                        Log.e(TAG, "onDisconnect isForeground=false failed", error.toException());
+                        Log.e(TAG, "Failed to set connected_at", error.toException());
                     } else {
-                        Log.d(TAG, "onDisconnect isForeground=false registered");
+                        Log.d(TAG, "connected_at set");
                     }
                 });
 
-                currentConnectionRef.setValue(true, (error, ref) -> {
+                currentConnectionForegroundRef.setValue(isAppForeground, (error, ref) -> {
                     if (error != null) {
-                        Log.e(TAG, "Failed to create connection node", error.toException());
+                        Log.e(TAG, "Failed to sync connection isForeground", error.toException());
                     } else {
-                        Log.d(TAG, "Connection node created");
-                    }
-                });
-
-                foregroundRef.setValue(isAppForeground, (error, ref) -> {
-                    if (error != null) {
-                        Log.e(TAG, "Failed to sync foreground state", error.toException());
-                    } else {
-                        Log.d(TAG, "Foreground synced = " + isAppForeground);
+                        Log.d(TAG, "connection isForeground synced = " + isAppForeground);
                     }
                 });
 
@@ -243,8 +237,8 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
             connectedRef.removeEventListener(connectedListener);
         }
 
-        if (foregroundRef != null) {
-            foregroundRef.setValue(false);
+        if (currentConnectionForegroundRef != null) {
+            currentConnectionForegroundRef.setValue(false);
         }
 
         if (currentConnectionRef != null) {
@@ -261,14 +255,16 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         userStatusRef = null;
         myConnectionsRef = null;
         lastOnlineRef = null;
-        foregroundRef = null;
-        lastHeartbeatRef = null;
+
+        currentConnectionForegroundRef = null;
+        currentConnectionHeartbeatRef = null;
+        currentConnectionConnectedAtRef = null;
     }
 
     private void startHeartbeatLoop() {
         heartbeatHandler.removeCallbacks(heartbeatRunnable);
 
-        if (isAppForeground && lastHeartbeatRef != null) {
+        if (isAppForeground && currentConnectionHeartbeatRef != null) {
             heartbeatHandler.post(heartbeatRunnable);
         }
     }
@@ -278,15 +274,15 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
     }
 
     private void syncHeartbeatNow() {
-        if (lastHeartbeatRef == null) {
+        if (currentConnectionHeartbeatRef == null) {
             return;
         }
 
-        lastHeartbeatRef.setValue(ServerValue.TIMESTAMP, (error, ref) -> {
+        currentConnectionHeartbeatRef.setValue(ServerValue.TIMESTAMP, (error, ref) -> {
             if (error != null) {
-                Log.e(TAG, "Failed to sync heartbeat_at", error.toException());
+                Log.e(TAG, "Failed to sync connection heartbeat_at", error.toException());
             } else {
-                Log.d(TAG, "heartbeat_at synced");
+                Log.d(TAG, "connection heartbeat_at synced");
             }
         });
     }
@@ -308,7 +304,7 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         channel.setDescription("Thông báo tin nhắn mới từ Community và Mood Match");
         channel.enableVibration(true);
         channel.setShowBadge(true);
-        channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PRIVATE);
+        channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
 
         android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
         if (manager != null) {

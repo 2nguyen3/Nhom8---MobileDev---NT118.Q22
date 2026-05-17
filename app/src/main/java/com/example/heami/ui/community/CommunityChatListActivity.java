@@ -1,5 +1,7 @@
 package com.example.heami.ui.community;
 
+import com.example.heami.utils.PresenceUtils;
+
 import com.example.heami.data.repositories.MoodMatchRepository;
 
 import android.content.Intent;
@@ -24,6 +26,7 @@ import com.example.heami.data.models.ChatRoomModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
@@ -280,7 +283,13 @@ public class CommunityChatListActivity extends AppCompatActivity {
     }
 
     private void startPartnerOnlineListener() {
-        statusRootRef = realtimeDb.getReference("status");
+        if (currentUserId.isEmpty()) {
+            return;
+        }
+
+        if (statusRootRef == null) {
+            statusRootRef = realtimeDb.getReference("status");
+        }
 
         if (partnerOnlineListener != null) {
             statusRootRef.removeEventListener(partnerOnlineListener);
@@ -290,6 +299,7 @@ public class CommunityChatListActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 onlineUserIds.clear();
+                long now = System.currentTimeMillis();
 
                 for (DataSnapshot userSnapshot : snapshot.getChildren()) {
                     String uid = userSnapshot.getKey();
@@ -297,24 +307,18 @@ public class CommunityChatListActivity extends AppCompatActivity {
                         continue;
                     }
 
-                    DataSnapshot connectionsSnapshot = userSnapshot.child("connections");
-                    Boolean isForeground = userSnapshot.child("isForeground").getValue(Boolean.class);
-
-                    boolean hasConnections =
-                            connectionsSnapshot.exists() && connectionsSnapshot.getChildrenCount() > 0;
-
-                    if (hasConnections && Boolean.TRUE.equals(isForeground)) {
+                    if (PresenceUtils.isUserOnlineFromConnections(userSnapshot, now)) {
                         onlineUserIds.add(uid);
                     }
                 }
 
-                if (adapter != null) {
-                    adapter.setOnlineUserIds(new HashSet<>(onlineUserIds));
-                }
+                applyFilters();
             }
 
             @Override
-            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+            public void onCancelled(@NonNull DatabaseError error) {
+                onlineUserIds.clear();
+                applyFilters();
             }
         };
 

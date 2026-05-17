@@ -72,11 +72,18 @@ module.exports = async (req, res) => {
     }
 
     const memberNames = Array.isArray(room.member_names) ? room.member_names : [];
+    const memberAvatars = Array.isArray(room.member_avatars) ? room.member_avatars : [];
     const senderIndex = memberIds.indexOf(senderUid);
+
     const senderName =
       senderIndex >= 0 && senderIndex < memberNames.length
-        ? safeText(memberNames[senderIndex], "Người bạn ẩn danh")
-        : "Người bạn ẩn danh";
+        ? safeText(memberNames[senderIndex], "Người dùng Heami")
+        : "Người dùng Heami";
+
+    const senderAvatar =
+      senderIndex >= 0 && senderIndex < memberAvatars.length
+        ? safeText(memberAvatars[senderIndex], "")
+        : "";
 
     const receiverAccountSnap = await db.collection("accounts").doc(receiverUid).get();
     if (!receiverAccountSnap.exists) {
@@ -89,6 +96,22 @@ module.exports = async (req, res) => {
     }
 
     const preview = truncatePreview(messageText);
+    const roomType = safeText(room.type, "MOOD_MATCH").toUpperCase();
+    const relatedId = safeText(room.related_id, "");
+
+    const isConsultationChat = roomType === "CONSULTATION";
+    const pushType = isConsultationChat ? "CONSULTATION_CHAT" : "COMMUNITY_CHAT";
+
+    let consultationFormatType = "Chat";
+    let consultationStatus = "ONGOING";
+
+    if (isConsultationChat && relatedId) {
+      const consultationSnap = await db.collection("consultations").doc(relatedId).get();
+      if (consultationSnap.exists) {
+        consultationFormatType = safeText(consultationSnap.get("format_type"), "Chat");
+        consultationStatus = safeText(consultationSnap.get("status"), "ONGOING");
+      }
+    }
 
     const payload = {
       token: receiverToken,
@@ -97,22 +120,28 @@ module.exports = async (req, res) => {
         body: preview
       },
       data: {
-        type: "COMMUNITY_CHAT",
+        type: pushType,
         room_id: roomId,
-        match_id: safeText(room.related_id, ""),
-        matched_user_id: senderUid,
+        session_id: isConsultationChat ? relatedId : "",
+        match_id: isConsultationChat ? "" : relatedId,
         sender_id: senderUid,
         sender_name: senderName,
+        sender_avatar: senderAvatar,
         preview_text: preview,
         message_id: safeText(messageId, ""),
-        mood_tag: safeText(room.match_mood_tag, "stress")
+        mood_tag: safeText(room.match_mood_tag, "stress"),
+        format_type: consultationFormatType,
+        room_status: safeText(room.status, "ACTIVE"),
+        consultation_status: consultationStatus
       },
       android: {
         priority: "high",
         notification: {
           channelId: "heami_chat_messages",
           sound: "default",
-          tag: roomId
+          tag: roomId,
+          visibility: "PUBLIC",
+          defaultSound: true
         }
       }
     };
@@ -121,6 +150,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       sent: true,
+      pushType,
       messageId: result
     });
   } catch (error) {

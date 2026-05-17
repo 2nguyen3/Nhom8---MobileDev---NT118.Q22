@@ -14,6 +14,22 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.WriteBatch;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GetTokenResult;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import org.json.JSONObject;
+
+import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -52,9 +68,14 @@ public class DoctorConsultationSessionRepository {
     }
 
     private final FirebaseFirestore firestore;
+    private final FirebaseAuth auth;
+
+    private static final String PUSH_API_URL = "https://heami-push-server.vercel.app/api/chat-push";
+    private final OkHttpClient pushHttpClient = new OkHttpClient();
 
     public DoctorConsultationSessionRepository() {
         this.firestore = FirebaseFirestore.getInstance();
+        this.auth = FirebaseAuth.getInstance();
     }
 
     public void getConsultationById(
@@ -257,7 +278,10 @@ public class DoctorConsultationSessionRepository {
                     batch.update(roomRef, roomUpdates);
 
                     batch.commit()
-                            .addOnSuccessListener(unused -> listener.onSuccess())
+                            .addOnSuccessListener(unused -> {
+                                triggerConsultationChatPushNotification(trimmedRoomId, messageId, content);
+                                listener.onSuccess();
+                            })
                             .addOnFailureListener(e -> {
                                 String message = e.getMessage() != null
                                         ? e.getMessage()
@@ -502,6 +526,63 @@ public class DoctorConsultationSessionRepository {
 
         Long clientCreatedAt = message.getClient_created_at_ms();
         return clientCreatedAt != null ? clientCreatedAt : 0L;
+    }
+
+    private void triggerConsultationChatPushNotification(
+            @NonNull String roomId,
+            @NonNull String messageId,
+            @NonNull String messageText
+    ) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+        if (firebaseUser == null) {
+            return;
+        }
+
+        firebaseUser.getIdToken(false)
+                .addOnSuccessListener(result -> callPushApi(roomId, result, messageId, messageText))
+                .addOnFailureListener(e -> {
+                    // Push chỉ là side-effect
+                });
+    }
+
+    private void callPushApi(
+            @NonNull String roomId,
+            @NonNull GetTokenResult tokenResult,
+            @NonNull String messageId,
+            @NonNull String messageText
+    ) {
+        String idToken = safeText(tokenResult.getToken(), "");
+        if (idToken.isEmpty()) {
+            return;
+        }
+
+        try {
+            JSONObject json = new JSONObject();
+            json.put("roomId", roomId);
+            json.put("messageId", messageId);
+            json.put("messageText", messageText);
+
+            Request request = new Request.Builder()
+                    .url(PUSH_API_URL)
+                    .addHeader("Authorization", "Bearer " + idToken)
+                    .post(RequestBody.create(
+                            json.toString(),
+                            MediaType.parse("application/json")
+                    ))
+                    .build();
+
+            pushHttpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    response.close();
+                }
+            });
+        } catch (Exception ignored) {
+        }
     }
 
     @NonNull

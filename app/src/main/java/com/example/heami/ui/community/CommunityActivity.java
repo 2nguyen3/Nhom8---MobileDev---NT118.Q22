@@ -1,5 +1,7 @@
 package com.example.heami.ui.community;
 
+import com.example.heami.utils.PresenceUtils;
+
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -72,7 +74,6 @@ public class CommunityActivity extends AppCompatActivity {
     private boolean isLoadingPosts = false;
 
     private static final int COLLAPSED_POST_MAX_LINES = 4;
-    private static final long ONLINE_HEARTBEAT_TIMEOUT_MS = 45_000L;
     private final Set<String> expandedPostIds = new HashSet<>();
 
     private TextView txtOnlineCount;
@@ -1896,22 +1897,7 @@ public class CommunityActivity extends AppCompatActivity {
                 long now = System.currentTimeMillis();
 
                 for (com.google.firebase.database.DataSnapshot userSnapshot : snapshot.getChildren()) {
-                    com.google.firebase.database.DataSnapshot connectionsSnapshot =
-                            userSnapshot.child("connections");
-
-                    Boolean isForeground = userSnapshot.child("isForeground").getValue(Boolean.class);
-                    Long heartbeatAt = userSnapshot.child("heartbeat_at").getValue(Long.class);
-
-                    boolean hasConnections =
-                            connectionsSnapshot.exists() && connectionsSnapshot.getChildrenCount() > 0;
-
-                    boolean heartbeatFresh = false;
-                    if (heartbeatAt != null) {
-                        long diff = now - heartbeatAt;
-                        heartbeatFresh = diff >= 0 && diff <= ONLINE_HEARTBEAT_TIMEOUT_MS;
-                    }
-
-                    if (hasConnections && Boolean.TRUE.equals(isForeground) && heartbeatFresh) {
+                    if (PresenceUtils.isUserOnlineFromConnections(userSnapshot, now)) {
                         onlineCount++;
                     }
                 }
