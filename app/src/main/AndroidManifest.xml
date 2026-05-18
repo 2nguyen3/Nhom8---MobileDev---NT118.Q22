@@ -234,6 +234,16 @@
                 android:name=".ui.doctor.DoctorPatientDetailActivity"
                 android:exported="false" />
 
+        <activity
+            android:name=".ui.admin.AdminHomeActivity"
+            android:exported="false" />
+            <activity
+                android:name=".ui.admin.AdminAccountsActivity"
+                android:exported="false" />
+            <activity
+                android:name=".ui.admin.AdminAccountDetailActivity"
+                android:exported="false" />
+
     </application>
 
 </manifest>

@@ -2,6 +2,7 @@ package com.example.heami.viewmodels;
 
 import android.app.Activity;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -25,10 +26,9 @@ import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,14 +39,30 @@ import java.util.concurrent.TimeUnit;
 public class AuthViewModel extends ViewModel {
 
     private static final String TAG = "AuthError";
+
+    private static final String DOCTOR_LOGIN_ACCOUNT = "doctor";
+    private static final String DOCTOR_LOGIN_PASS = "1234";
+    private static final String DOCTOR_ACCOUNT_DOC_ID = "doc_001";
+    private static final String DOCTOR_FIREBASE_EMAIL = "doctor_doc001@heami.vn";
+    private static final String DOCTOR_FIREBASE_PASS = "Heami@Doc001";
+
+    private static final String ADMIN_LOGIN_ACCOUNT = "admin";
+    private static final String ADMIN_LOGIN_PASS = "1234";
+    private static final String ADMIN_FIREBASE_EMAIL = "admin_root@heami.vn";
+    private static final String ADMIN_FIREBASE_PASS = "Heami@Admin001";
+
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     private final MutableLiveData<String> authStatus = new MutableLiveData<>();
-    public LiveData<String> getAuthStatus() { return authStatus; }
+    public LiveData<String> getAuthStatus() {
+        return authStatus;
+    }
 
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
-    public LiveData<Boolean> getIsLoading() { return isLoading; }
+    public LiveData<Boolean> getIsLoading() {
+        return isLoading;
+    }
 
     private String mVerificationId;
     private String pendingPhone, pendingPass, pendingNickname;
@@ -79,6 +95,34 @@ public class AuthViewModel extends ViewModel {
         return "Đã xảy ra sự cố hệ thống, vui lòng thử lại sau.";
     }
 
+    private String normalizeStatus(String status) {
+        return status == null ? "" : status.trim().toUpperCase();
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private boolean handleBlockedOrPendingStatus(String status) {
+        String normalized = normalizeStatus(status);
+
+        if ("BANNED".equals(normalized)) {
+            auth.signOut();
+            isLoading.setValue(false);
+            authStatus.setValue("ERROR:Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên.");
+            return true;
+        }
+
+        if ("PENDING_VERIFY".equals(normalized) || "PENDING".equals(normalized)) {
+            auth.signOut();
+            isLoading.setValue(false);
+            authStatus.setValue("ERROR:Tài khoản này chưa được kích hoạt.");
+            return true;
+        }
+
+        return false;
+    }
+
     private Task<Void> initUserData(String uid, String email, String nickname) {
         WriteBatch batch = db.batch();
         Timestamp now = Timestamp.now();
@@ -92,7 +136,6 @@ public class AuthViewModel extends ViewModel {
         batch.set(db.collection("users").document(uid), user);
 
         UserSettingsModel settings = new UserSettingsModel("LIGHT", true);
-        
         batch.set(db.collection("users").document(uid).collection("settings").document("default"), settings);
 
         return batch.commit();
@@ -102,114 +145,192 @@ public class AuthViewModel extends ViewModel {
         isLoading.setValue(false);
     }
 
-    // Email/password dùng cho Firebase Auth của tài khoản Doctor (nội bộ, không phải login credentials)
-    private static final String DOCTOR_FIREBASE_EMAIL = "doctor_doc001@heami.vn";
-    private static final String DOCTOR_FIREBASE_PASS  = "Heami@Doc001";
-
-    /**
-     * Đăng nhập vào Firebase Auth bằng tài khoản email/password nội bộ của Doctor.
-     * Nếu tài khoản chưa tồn tại → tự động tạo trước, rồi sign in.
-     * Giúp đảm bảo Firestore Rules (require auth) luôn được thỏa mãn.
-     */
-    private void signInDoctorFirebaseAuth(Runnable onSuccess) {
+    private void signInDoctorFirebaseAuth(@NonNull Runnable onSuccess) {
         auth.signInWithEmailAndPassword(DOCTOR_FIREBASE_EMAIL, DOCTOR_FIREBASE_PASS)
-            .addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    android.util.Log.d("AuthViewModel", "Doctor Firebase sign-in OK uid=" + auth.getUid());
-                    onSuccess.run();
-                } else {
-                    // Tài khoản chưa tồn tại → tạo mới
-                    android.util.Log.d("AuthViewModel", "Doctor sign-in failed, creating account...");
-                    auth.createUserWithEmailAndPassword(DOCTOR_FIREBASE_EMAIL, DOCTOR_FIREBASE_PASS)
-                        .addOnCompleteListener(createTask -> {
-                            if (createTask.isSuccessful()) {
-                                android.util.Log.d("AuthViewModel", "Doctor Firebase account created, uid=" + auth.getUid());
-                                onSuccess.run();
-                            } else {
-                                // Fallback cuối: thử ẩn danh
-                                android.util.Log.e("AuthViewModel", "Create failed: " + createTask.getException());
-                                auth.signInAnonymously().addOnCompleteListener(anonTask -> {
-                                    android.util.Log.d("AuthViewModel", "Anon fallback uid=" + auth.getUid());
-                                    onSuccess.run();
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("AuthViewModel", "Doctor Firebase sign-in OK uid=" + auth.getUid());
+                        onSuccess.run();
+                    } else {
+                        Log.d("AuthViewModel", "Doctor sign-in failed, trying create account...");
+                        auth.createUserWithEmailAndPassword(DOCTOR_FIREBASE_EMAIL, DOCTOR_FIREBASE_PASS)
+                                .addOnCompleteListener(createTask -> {
+                                    if (createTask.isSuccessful()) {
+                                        Log.d("AuthViewModel", "Doctor Firebase account created uid=" + auth.getUid());
+                                        onSuccess.run();
+                                    } else {
+                                        Exception e = createTask.getException();
+                                        Log.e("AuthViewModel", "Doctor internal auth failed", e);
+                                        auth.signOut();
+                                        isLoading.setValue(false);
+                                        authStatus.setValue("ERROR:Không thể đăng nhập tài khoản nội bộ của bác sĩ.");
+                                    }
                                 });
-                            }
-                        });
-                }
-            });
+                    }
+                });
+    }
+
+    private void signInAdminFirebaseAuth(@NonNull Runnable onSuccess) {
+        auth.signInWithEmailAndPassword(ADMIN_FIREBASE_EMAIL, ADMIN_FIREBASE_PASS)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("AuthViewModel", "Admin Firebase sign-in OK uid=" + auth.getUid());
+                        onSuccess.run();
+                    } else {
+                        Log.d("AuthViewModel", "Admin sign-in failed, trying create account...");
+                        auth.createUserWithEmailAndPassword(ADMIN_FIREBASE_EMAIL, ADMIN_FIREBASE_PASS)
+                                .addOnCompleteListener(createTask -> {
+                                    if (createTask.isSuccessful()) {
+                                        Log.d("AuthViewModel", "Admin Firebase account created uid=" + auth.getUid());
+                                        onSuccess.run();
+                                    } else {
+                                        Exception e = createTask.getException();
+                                        Log.e("AuthViewModel", "Admin internal auth failed", e);
+                                        auth.signOut();
+                                        isLoading.setValue(false);
+                                        authStatus.setValue("ERROR:Không thể đăng nhập tài khoản nội bộ của admin.");
+                                    }
+                                });
+                    }
+                });
+    }
+
+    private Task<Void> ensureAdminData() {
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) {
+            return com.google.android.gms.tasks.Tasks.forException(
+                    new IllegalStateException("Admin chưa đăng nhập Firebase Auth")
+            );
+        }
+
+        String uid = currentUser.getUid();
+        WriteBatch batch = db.batch();
+        Timestamp now = Timestamp.now();
+
+        Map<String, Object> adminAccount = new HashMap<>();
+        adminAccount.put("account_id", uid);
+        adminAccount.put("email", ADMIN_LOGIN_ACCOUNT);
+        adminAccount.put("role", "ADMIN");
+        adminAccount.put("password", ADMIN_LOGIN_PASS);
+        adminAccount.put("status", "ACTIVE");
+        adminAccount.put("created_at", now);
+        adminAccount.put("last_sign_in_at", now);
+        adminAccount.put("active_session_id", UUID.randomUUID().toString());
+
+        Map<String, Object> permissions = new HashMap<>();
+        permissions.put("manage_accounts", true);
+        permissions.put("moderate_community", true);
+        permissions.put("view_analytics", true);
+
+        Map<String, Object> adminProfile = new HashMap<>();
+        adminProfile.put("admin_id", uid);
+        adminProfile.put("full_name", "Heami Admin");
+        adminProfile.put("email", ADMIN_LOGIN_ACCOUNT);
+        adminProfile.put("avatar_url", "");
+        adminProfile.put("status", "ACTIVE");
+        adminProfile.put("permissions", permissions);
+        adminProfile.put("created_at", now);
+        adminProfile.put("updated_at", now);
+        adminProfile.put("last_sign_in_at", now);
+
+        batch.set(db.collection("accounts").document(uid), adminAccount);
+        batch.set(db.collection("admins").document(uid), adminProfile);
+
+        return batch.commit();
+    }
+
+    private void validateDoctorAccountAfterInternalSignIn(String inputPassword, boolean requirePasswordCheck) {
+        db.collection("accounts")
+                .document(DOCTOR_ACCOUNT_DOC_ID)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (!(task.isSuccessful() && task.getResult() != null && task.getResult().exists())) {
+                        auth.signOut();
+                        isLoading.setValue(false);
+                        authStatus.setValue("ERROR:Không tìm thấy tài khoản bác sĩ.");
+                        return;
+                    }
+
+                    DocumentSnapshot doc = task.getResult();
+
+                    String role = safeTrim(doc.getString("role"));
+                    if (!"DOCTOR".equalsIgnoreCase(role)) {
+                        auth.signOut();
+                        isLoading.setValue(false);
+                        authStatus.setValue("ERROR:Tài khoản bác sĩ không hợp lệ.");
+                        return;
+                    }
+
+                    String dbStatus = doc.getString("status");
+                    if (handleBlockedOrPendingStatus(dbStatus)) {
+                        return;
+                    }
+
+                    if (requirePasswordCheck) {
+                        String dbPassword = safeTrim(doc.getString("password"));
+                        if (!safeTrim(inputPassword).equals(dbPassword)) {
+                            auth.signOut();
+                            isLoading.setValue(false);
+                            authStatus.setValue("ERROR:Mật khẩu bác sĩ không chính xác!");
+                            return;
+                        }
+                    }
+
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("last_sign_in_at", Timestamp.now());
+                    updates.put("active_session_id", UUID.randomUUID().toString());
+
+                    db.collection("accounts")
+                            .document(DOCTOR_ACCOUNT_DOC_ID)
+                            .update(updates)
+                            .addOnCompleteListener(updateTask -> {
+                                isLoading.setValue(false);
+                                authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    auth.signOut();
+                    isLoading.setValue(false);
+                    authStatus.setValue("ERROR:Không thể kiểm tra tài khoản bác sĩ.");
+                });
     }
 
     public void login(String account, String pass) {
         isLoading.setValue(true);
 
-        db.collection("accounts")
-            .whereEqualTo("email", account)
-            .whereEqualTo("role", "DOCTOR")
-            .get()
-            .addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                    DocumentSnapshot doc = task.getResult().getDocuments().get(0);
-                    String dbPassword = doc.getString("password");
-                    if (pass != null && pass.equals(dbPassword)) {
-                        // Đăng nhập Firebase Auth bằng tài khoản email cố định của Doctor
-                        signInDoctorFirebaseAuth(() -> {
+        String normalizedAccount = account != null ? account.trim() : "";
+        String normalizedPass = pass != null ? pass.trim() : "";
+
+        if (ADMIN_LOGIN_ACCOUNT.equalsIgnoreCase(normalizedAccount)) {
+            if (!ADMIN_LOGIN_PASS.equals(normalizedPass)) {
+                isLoading.setValue(false);
+                authStatus.setValue("ERROR:Mật khẩu admin không chính xác!");
+                return;
+            }
+
+            signInAdminFirebaseAuth(() -> {
+                ensureAdminData()
+                        .addOnSuccessListener(unused -> {
                             isLoading.setValue(false);
-                            authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                            authStatus.setValue("SUCCESS_ADMIN:Đăng nhập admin thành công!");
+                        })
+                        .addOnFailureListener(e -> {
+                            isLoading.setValue(false);
+                            authStatus.setValue("ERROR:Không thể khởi tạo dữ liệu admin!");
                         });
-                    } else {
-                        isLoading.setValue(false);
-                        authStatus.setValue("ERROR: Mật khẩu bác sĩ không chính xác!");
-                    }
-                } else {
-                    if ("doctor".equals(account) && "1234".equals(pass)) {
-                        Map<String, Object> doctorAcc = new HashMap<>();
-                        doctorAcc.put("account_id", "doc_001");
-                        doctorAcc.put("email", "doctor");
-                        doctorAcc.put("role", "DOCTOR");
-                        doctorAcc.put("password", "1234");
-                        doctorAcc.put("status", "ACTIVE");
-                        doctorAcc.put("created_at", Timestamp.now());
-                        doctorAcc.put("last_sign_in_at", Timestamp.now());
-                        doctorAcc.put("active_session_id", UUID.randomUUID().toString());
-
-                        Map<String, Object> doctorInfo = new HashMap<>();
-                        doctorInfo.put("doctor_id", "doc_001");
-                        doctorInfo.put("category_id", "clinical");
-                        doctorInfo.put("min_price", 450000);
-                        doctorInfo.put("is_online", true);
-                        doctorInfo.put("full_name", "ThS. BS. Nguyễn Hoài Thu");
-                        doctorInfo.put("location", "Hà Nội");
-                        doctorInfo.put("avatar_url", "https://res.cloudinary.com/dqnyi6ubx/image/upload/v1776499589/doc_001.jpg");
-                        doctorInfo.put("rating_avg", 4.9);
-                        doctorInfo.put("review_count", 128);
-
-                        java.util.List<String> specs = new java.util.ArrayList<>();
-                        specs.add("Trầm cảm");
-                        specs.add("Rối loạn lo âu");
-                        specs.add("Stress công việc");
-                        doctorInfo.put("specialization", specs);
-
-                        doctorInfo.put("degree", "Thạc sĩ");
-                        doctorInfo.put("experience_years", 8);
-                        doctorInfo.put("total_sessions", 520);
-                        doctorInfo.put("bio", "Thạc sĩ Hoài Thu có kinh nghiệm chuyên sâu trong việc trị liệu nhận thức hành vi (CBT). Bà đã giúp nhiều người trẻ vượt qua áp lực đồng trang lứa và cân bằng cuộc sống công việc - gia đình.");
-
-                        WriteBatch batch = db.batch();
-                        batch.set(db.collection("accounts").document("doc_001"), doctorAcc);
-                        batch.set(db.collection("doctors").document("doc_001"), doctorInfo, SetOptions.merge());
-
-                        batch.commit().addOnCompleteListener(commitTask -> {
-                            signInDoctorFirebaseAuth(() -> {
-                                isLoading.setValue(false);
-                                authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
-                            });
-                        });
-                    } else {
-                        loginNormalUser(account, pass);
-                    }
-                }
             });
-    }
+            return;
+        }
 
+        if (DOCTOR_LOGIN_ACCOUNT.equalsIgnoreCase(normalizedAccount)) {
+            signInDoctorFirebaseAuth(() ->
+                    validateDoctorAccountAfterInternalSignIn(normalizedPass, true)
+            );
+            return;
+        }
+
+        loginNormalUser(account, pass);
+    }
 
     private void loginNormalUser(String account, String pass) {
         String finalAccount = formatInput(account);
@@ -218,14 +339,26 @@ public class AuthViewModel extends ViewModel {
             if (task.isSuccessful()) {
                 FirebaseUser user = auth.getCurrentUser();
                 if (user != null && (isPhoneNumber(account) || user.isEmailVerified())) {
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("last_sign_in_at", Timestamp.now());
-                    updates.put("active_session_id", UUID.randomUUID().toString());
+                    db.collection("accounts").document(user.getUid()).get().addOnCompleteListener(accTask -> {
+                        if (accTask.isSuccessful() && accTask.getResult() != null && accTask.getResult().exists()) {
+                            String dbStatus = accTask.getResult().getString("status");
+                            if (handleBlockedOrPendingStatus(dbStatus)) {
+                                return;
+                            }
 
-                    db.collection("accounts").document(user.getUid())
-                            .update(updates);
-                    
-                    checkUserProfile(user.getUid());
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put("last_sign_in_at", Timestamp.now());
+                            updates.put("active_session_id", UUID.randomUUID().toString());
+
+                            db.collection("accounts").document(user.getUid())
+                                    .update(updates)
+                                    .addOnCompleteListener(updateTask -> checkUserProfile(user.getUid()));
+                        } else {
+                            auth.signOut();
+                            isLoading.setValue(false);
+                            authStatus.setValue("ERROR:Không tìm thấy hồ sơ tài khoản.");
+                        }
+                    });
                 } else {
                     isLoading.setValue(false);
                     auth.signOut();
@@ -242,18 +375,28 @@ public class AuthViewModel extends ViewModel {
         isLoading.setValue(true);
         db.collection("accounts").document(uid).get().addOnCompleteListener(accTask -> {
             if (accTask.isSuccessful() && accTask.getResult() != null && accTask.getResult().exists()) {
+                String status = accTask.getResult().getString("status");
+                if (handleBlockedOrPendingStatus(status)) {
+                    return;
+                }
+
                 String role = accTask.getResult().getString("role");
+
+                if ("ADMIN".equals(role)) {
+                    isLoading.setValue(false);
+                    authStatus.setValue("SUCCESS_ADMIN:Đăng nhập thành công!");
+                    return;
+                }
+
                 if ("DOCTOR".equals(role)) {
                     isLoading.setValue(false);
                     authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
                     return;
                 }
-            }
-
-            // Nếu uid là doc_001 (Doctor mặc định), bỏ qua bước check user profile của người dùng
-            if ("doc_001".equals(uid)) {
+            } else {
+                auth.signOut();
                 isLoading.setValue(false);
-                authStatus.setValue("SUCCESS_DOCTOR:Đăng nhập thành công!");
+                authStatus.setValue("ERROR:Không tìm thấy hồ sơ tài khoản.");
                 return;
             }
 
@@ -271,6 +414,13 @@ public class AuthViewModel extends ViewModel {
                 }
             });
         });
+    }
+
+    public void checkLegacyDoctorAccess() {
+        isLoading.setValue(true);
+        signInDoctorFirebaseAuth(() ->
+                validateDoctorAccountAfterInternalSignIn(null, false)
+        );
     }
 
     public void register(String account, String pass, String nickname, boolean isTermsAccepted, Activity activity) {
@@ -352,12 +502,14 @@ public class AuthViewModel extends ViewModel {
                     public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
                         verifyAndCreateAccount(credential);
                     }
+
                     @Override
                     public void onVerificationFailed(@NonNull FirebaseException e) {
                         isLoading.setValue(false);
                         Log.e(TAG, "Gửi OTP thất bại: ", e);
                         authStatus.setValue("ERROR:Không thể gửi mã OTP, vui lòng thử lại sau.");
                     }
+
                     @Override
                     public void onCodeSent(@NonNull String verificationId, @NonNull PhoneAuthProvider.ForceResendingToken token) {
                         isLoading.setValue(false);
@@ -387,12 +539,14 @@ public class AuthViewModel extends ViewModel {
                     public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
                         verifyAndCreateAccount(credential);
                     }
+
                     @Override
                     public void onVerificationFailed(@NonNull FirebaseException e) {
                         isLoading.setValue(false);
                         Log.e(TAG, "Gửi lại OTP thất bại: ", e);
                         authStatus.setValue("ERROR:Gửi lại mã thất bại!");
                     }
+
                     @Override
                     public void onCodeSent(@NonNull String verificationId, @NonNull PhoneAuthProvider.ForceResendingToken token) {
                         isLoading.setValue(false);
@@ -448,15 +602,16 @@ public class AuthViewModel extends ViewModel {
                 if (user != null) {
                     db.collection("accounts").document(user.getUid()).get().addOnCompleteListener(dbTask -> {
                         if (dbTask.isSuccessful() && !dbTask.getResult().exists()) {
-                            initUserData(user.getUid(), user.getEmail(), user.getDisplayName()).addOnCompleteListener(t -> checkUserProfile(user.getUid()));
+                            initUserData(user.getUid(), user.getEmail(), user.getDisplayName())
+                                    .addOnCompleteListener(t -> checkUserProfile(user.getUid()));
                         } else {
                             Map<String, Object> updates = new HashMap<>();
                             updates.put("last_sign_in_at", Timestamp.now());
                             updates.put("active_session_id", UUID.randomUUID().toString());
 
                             db.collection("accounts").document(user.getUid())
-                                    .update(updates);
-                            checkUserProfile(user.getUid());
+                                    .update(updates)
+                                    .addOnCompleteListener(updateTask -> checkUserProfile(user.getUid()));
                         }
                     });
                 }

@@ -139,7 +139,8 @@
                         android:text="SOS"
                         android:textColor="#FFFFFF"
                         android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:visibility="gone" />
 
                     <FrameLayout
                         android:id="@+id/layoutBell"

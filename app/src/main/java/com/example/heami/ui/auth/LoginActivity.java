@@ -77,20 +77,35 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Kiểm tra nếu là Doctor đã lưu trong SharedPreferences thì đi thẳng vào DoctorHomeActivity
+
         android.content.SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+        boolean isAdmin = prefs.getBoolean("is_admin", false);
         boolean isDoctor = prefs.getBoolean("is_doctor", false);
+
         if (isDoctor) {
-            startActivity(new Intent(LoginActivity.this, com.example.heami.ui.doctor.DoctorHomeActivity.class));
-            finish();
+            if (authViewModel != null) {
+                authViewModel.checkLegacyDoctorAccess();
+            }
             return;
         }
 
-        // Kiểm tra auto-login cho User
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
         if (currentUser != null) {
             if (authViewModel != null) {
                 authViewModel.checkUserProfile(currentUser.getUid());
+            }
+            return;
+        }
+
+        if (isAdmin) {
+            if (authViewModel != null && FirebaseAuth.getInstance().getCurrentUser() != null) {
+                authViewModel.checkUserProfile(FirebaseAuth.getInstance().getCurrentUser().getUid());
+            } else {
+                prefs.edit()
+                        .putBoolean("is_doctor", false)
+                        .putBoolean("is_admin", false)
+                        .apply();
             }
         }
     }
@@ -136,24 +151,50 @@ public class LoginActivity extends AppCompatActivity {
 
             if (status.startsWith("SUCCESS_HOME")) {
                 getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
-                    .putBoolean("is_doctor", false)
-                    .apply();
+                        .putBoolean("is_doctor", false)
+                        .putBoolean("is_admin", false)
+                        .apply();
+
                 startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                 finish();
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+
             } else if (status.startsWith("SUCCESS_DOCTOR")) {
                 getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
-                    .putBoolean("is_doctor", true)
-                    .putString("doctor_id", "doc_001")
-                    .apply();
-                startActivity(new Intent(LoginActivity.this, DoctorHomeActivity.class));
+                        .putBoolean("is_doctor", true)
+                        .putBoolean("is_admin", false)
+                        .apply();
+
+                startActivity(new Intent(LoginActivity.this, com.example.heami.ui.doctor.DoctorHomeActivity.class));
                 finish();
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-            } else if (status.startsWith("SUCCESS_SETUP")) {
+
+            } else if (status.startsWith("SUCCESS_ADMIN")) {
+                getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
+                        .putBoolean("is_doctor", false)
+                        .putBoolean("is_admin", true)
+                        .apply();
+
+                startActivity(new Intent(LoginActivity.this, com.example.heami.ui.admin.AdminHomeActivity.class));
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+
+            }else if (status.startsWith("SUCCESS_SETUP")) {
+                getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
+                        .putBoolean("is_doctor", false)
+                        .putBoolean("is_admin", false)
+                        .apply();
+
                 startActivity(new Intent(LoginActivity.this, OnboardingActivity.class));
                 finish();
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+
             } else if (status.startsWith("ERROR:")) {
+                getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
+                        .putBoolean("is_doctor", false)
+                        .putBoolean("is_admin", false)
+                        .apply();
+
                 layoutLoading.setVisibility(View.GONE);
                 btnLogin.setEnabled(true);
                 Toast.makeText(this, status.replace("ERROR:", ""), Toast.LENGTH_SHORT).show();
