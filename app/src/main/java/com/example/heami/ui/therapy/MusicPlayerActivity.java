@@ -2,15 +2,20 @@ package com.example.heami.ui.therapy;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
-import android.graphics.Typeface;
+import android.graphics.PorterDuff;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
@@ -22,94 +27,471 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.heami.R;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.Locale;
+import java.util.Random;
 
 public class MusicPlayerActivity extends AppCompatActivity {
 
-    private ImageButton btnPlayPause, btnLike;
-    private View imgRotatingDisc, viewPulseGlow, viewDiscRing;
+    private final int[] musicSounds = {
+            R.raw.cortis_acai, R.raw.cortis_blue_lips, R.raw.cortis_joyride,
+            R.raw.cortis_lullaby, R.raw.neu_nhu_ta_chang_con
+    };
+
+    private final String[] musicTitles = {
+            "ACAI", "BLUE LIPS", "JOYRIDE",
+            "LULLABY", "Nếu như ta chẳng còn"
+    };
+
+    private MusicService musicService;
+    private boolean isBound = false;
+
+    private ImageButton btnPlayPause, btnNext, btnPrev, btnList, btnShuffle, btnRepeat, btnLike;
+    private TextView tvSongTitle, tvStatus, tvTimeTotal, tvTimeCurrent, tvTimerStatusMain;
+    private SeekBar sbProgress;
+
+    private View imgDisc, viewPulseGlow, viewDiscRing;
     private ImageView imgTonearm, imgTimerIconMain;
-    private SeekBar seekBar;
-    private TextView tvStatus, tvTimerStatusMain;
     private LinearLayout layoutTimerOpen, layoutShareOpen;
 
-    private ObjectAnimator discAnimator, discRingAnimator, statusTextAnimator;
+    private ObjectAnimator discAnimator, discRingAnimator, statusAnimator;
     private AnimatorSet pulseSet;
 
-    private boolean isPlaying = false;
-    private boolean isLiked = false;
+    private int currentIndex = 0;
+    private boolean isShuffle = false, isRepeat = false, isLiked = false;
     private long timeLeftInMillis = 0;
-
     private int selectedTimerMinutes = -1;
 
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
-    private final Handler seekBarHandler = new Handler(Looper.getMainLooper());
     private Runnable timerRunnable;
 
-    private static final String COLOR_TEAL = "#00E5FF";
-    private static final String COLOR_PINK = "#F48FB1";
-    private static final long SECOND_MS = 1000L;
+    private final Handler seekBarHandler = new Handler(Looper.getMainLooper());
+    private Runnable updateSeekBarTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_music_player);
+        setContentView(R.layout.activity_nature_sound);
 
         initViews();
         setupAnimations();
         setupListeners();
+
+        Intent intent = new Intent(this, MusicService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, MusicService.class);
+        if (!isBound) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
+            musicService = binder.getService();
+            isBound = true;
+
+            syncIndexWithService();
+
+            musicService.setOnCompletionListener(mp -> {
+                if (!isRepeat) changeSound(true);
+            });
+
+            if (musicService.isPlaying()) {
+                updateUIPlaying();
+            } else {
+                updateUIPaused();
+            }
+            startSeekBarUpdate();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false;
+        }
+    };
+
+    private void syncIndexWithService() {
+        if (musicService != null) {
+            int realRawId = musicService.getCurrentPlayingRawId();
+            for (int i = 0; i < musicSounds.length; i++) {
+                if (musicSounds[i] == realRawId) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+            tvSongTitle.setText(musicTitles[currentIndex]);
+        }
+    }
+
+    private void sendCommandToService(String action) {
+        Intent intent = new Intent(this, MusicService.class);
+        intent.setAction(action);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+    }
+
+    private void sendPlayNewCommand(int songRawId) {
+        Intent intent = new Intent(this, MusicService.class);
+        intent.setAction(MusicService.ACTION_PLAY_NEW);
+        intent.putExtra(MusicService.EXTRA_SONG_ID, songRawId);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
     }
 
     private void initViews() {
         btnPlayPause = findViewById(R.id.btnPlayPause);
+        btnNext = findViewById(R.id.btnNext);
+        btnPrev = findViewById(R.id.btnPrev);
+        btnList = findViewById(R.id.btnList);
+        btnShuffle = findViewById(R.id.btnShuffle);
+        btnRepeat = findViewById(R.id.btnRepeat);
         btnLike = findViewById(R.id.btnLike);
-        imgRotatingDisc = findViewById(R.id.viewRotatingDisc);
-        viewPulseGlow = findViewById(R.id.viewPulseGlow);
-        viewDiscRing = findViewById(R.id.viewDiscRing);
-        imgTonearm = findViewById(R.id.imgTonearm);
-        seekBar = findViewById(R.id.seekBar);
+        tvSongTitle = findViewById(R.id.tvSongTitle);
         tvStatus = findViewById(R.id.tvStatusPlay);
+        tvTimeTotal = findViewById(R.id.tvTimeTotal);
+        tvTimeCurrent = findViewById(R.id.tvTimeCurrent);
+        sbProgress = findViewById(R.id.seekBar);
+
+        imgDisc = findViewById(R.id.viewRotatingDisc);
+        viewPulseGlow = findViewById(R.id.viewPulseGlowNature);
+        viewDiscRing = findViewById(R.id.viewDiscRing);
+
+        imgTonearm = findViewById(R.id.imgTonearm);
         layoutTimerOpen = findViewById(R.id.layoutTimerAction);
         layoutShareOpen = findViewById(R.id.layoutShareAction);
         tvTimerStatusMain = findViewById(R.id.tvTimerTextMain);
         imgTimerIconMain = findViewById(R.id.imgTimerIconMain);
 
-        findViewById(R.id.btnMinimize).setOnClickListener(v -> finish());
+        sbProgress.getProgressDrawable().setColorFilter(Color.parseColor("#81C784"), PorterDuff.Mode.SRC_IN);
+        sbProgress.getThumb().setColorFilter(Color.parseColor("#FFFFFF"), PorterDuff.Mode.SRC_IN);
+    }
+
+    private void setupAnimations() {
+        discAnimator = ObjectAnimator.ofFloat(imgDisc, "rotation", 0f, 360f);
+        discAnimator.setDuration(15000);
+        discAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        discAnimator.setInterpolator(new LinearInterpolator());
+
+        statusAnimator = ObjectAnimator.ofPropertyValuesHolder(tvStatus,
+                PropertyValuesHolder.ofFloat("scaleX", 1f, 1.1f),
+                PropertyValuesHolder.ofFloat("scaleY", 1f, 1.1f));
+        statusAnimator.setDuration(800);
+        statusAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        statusAnimator.setRepeatMode(ValueAnimator.REVERSE);
+
+        if (viewPulseGlow != null) {
+            ObjectAnimator sx = ObjectAnimator.ofFloat(viewPulseGlow, "scaleX", 1f, 1.5f);
+            ObjectAnimator sy = ObjectAnimator.ofFloat(viewPulseGlow, "scaleY", 1f, 1.5f);
+            ObjectAnimator al = ObjectAnimator.ofFloat(viewPulseGlow, "alpha", 0.6f, 0f);
+            sx.setRepeatCount(ValueAnimator.INFINITE); sx.setRepeatMode(ValueAnimator.REVERSE);
+            sy.setRepeatCount(ValueAnimator.INFINITE); sy.setRepeatMode(ValueAnimator.REVERSE);
+            al.setRepeatCount(ValueAnimator.INFINITE); al.setRepeatMode(ValueAnimator.REVERSE);
+            pulseSet = new AnimatorSet();
+            pulseSet.playTogether(sx, sy, al);
+            pulseSet.setDuration(1200);
+        }
+
+        if (viewDiscRing != null) {
+            discRingAnimator = ObjectAnimator.ofFloat(viewDiscRing, "alpha", 1f, 0.2f);
+            discRingAnimator.setDuration(1500);
+            discRingAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            discRingAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        }
     }
 
     private void setupListeners() {
-        btnPlayPause.setOnClickListener(v -> {
-            if (isPlaying) {
-                pauseMusic();
-            } else {
-                playMusic();
-            }
+        findViewById(R.id.btnMinimize).setOnClickListener(v -> finish());
+        btnPlayPause.setOnClickListener(v -> { applyClickAnimation(v); toggleSound(); });
+        btnNext.setOnClickListener(v -> { applyClickAnimation(v); changeSound(true); });
+        btnPrev.setOnClickListener(v -> { applyClickAnimation(v); changeSound(false); });
+        btnList.setOnClickListener(v -> { applyClickAnimation(v); showMusicList(); });
+
+        btnShuffle.setOnClickListener(v -> {
+            applyClickAnimation(v);
+            isShuffle = !isShuffle;
+            updateToggleButtonStyle(btnShuffle, isShuffle);
         });
 
-        if (layoutTimerOpen != null) {
-            layoutTimerOpen.setOnClickListener(v -> showTimerBottomSheet());
-        }
-
-        if (layoutShareOpen != null) {
-            layoutShareOpen.setOnClickListener(v -> showShareBottomSheet());
-        }
+        btnRepeat.setOnClickListener(v -> {
+            applyClickAnimation(v);
+            isRepeat = !isRepeat;
+            updateToggleButtonStyle(btnRepeat, isRepeat);
+        });
 
         btnLike.setOnClickListener(v -> {
+            applyClickAnimation(v);
             isLiked = !isLiked;
-            if (isLiked) {
-                btnLike.setImageResource(R.drawable.ic_heart_filled);
-                btnLike.setColorFilter(Color.parseColor(COLOR_PINK));
-                btnLike.setBackgroundResource(R.drawable.bg_music_control_sub_pink);
-            } else {
-                btnLike.setImageResource(R.drawable.ic_heart_outline);
-                btnLike.clearColorFilter();
-                btnLike.setBackgroundResource(R.drawable.bg_music_control_sub);
-            }
+            btnLike.setImageResource(isLiked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+            btnLike.setColorFilter(isLiked ? Color.parseColor("#F48FB1") : Color.WHITE);
         });
+
+        if (layoutTimerOpen != null) layoutTimerOpen.setOnClickListener(v -> showTimerBottomSheet());
+        if (layoutShareOpen != null) layoutShareOpen.setOnClickListener(v -> showShareBottomSheet());
+
+        sbProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && isBound && musicService != null) {
+                    musicService.seekTo(progress);
+                    if (tvTimeCurrent != null) tvTimeCurrent.setText(formatTime(progress));
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+    }
+
+    private void startSeekBarUpdate() {
+        seekBarHandler.removeCallbacks(updateSeekBarTask);
+        updateSeekBarTask = new Runnable() {
+            @Override
+            public void run() {
+                if (isBound && musicService != null) {
+                    int currentPos = musicService.getCurrentPosition();
+                    int totalDuration = musicService.getDuration();
+                    sbProgress.setMax(totalDuration);
+                    sbProgress.setProgress(currentPos);
+                    if (tvTimeCurrent != null) tvTimeCurrent.setText(formatTime(currentPos));
+                    if (tvTimeTotal != null) tvTimeTotal.setText(formatTime(totalDuration));
+                }
+                seekBarHandler.postDelayed(this, 1000);
+            }
+        };
+        seekBarHandler.post(updateSeekBarTask);
+    }
+
+    private void toggleSound() {
+        if (!isBound || musicService == null) return;
+
+        syncIndexWithService();
+
+        if (musicService.isPlaying()) {
+            sendCommandToService(MusicService.ACTION_PAUSE);
+            updateUIPaused();
+        } else {
+            sendCommandToService(MusicService.ACTION_START);
+            updateUIPlaying();
+        }
+    }
+
+    private void updateUIPlaying() {
+        btnPlayPause.setImageResource(R.drawable.ic_playing);
+        tvStatus.setText("Đang nghe");
+        tvStatus.setTextColor(Color.parseColor("#81C784"));
+
+        if (statusAnimator != null && !statusAnimator.isRunning()) statusAnimator.start();
+        if (discAnimator != null) {
+            if (discAnimator.isPaused()) discAnimator.resume();
+            else if (!discAnimator.isRunning()) discAnimator.start();
+        }
+
+        if (viewPulseGlow != null) {
+            viewPulseGlow.setVisibility(View.VISIBLE);
+            if (pulseSet != null && !pulseSet.isRunning()) pulseSet.start();
+        }
+        if (viewDiscRing != null) {
+            viewDiscRing.setVisibility(View.VISIBLE);
+            if (discRingAnimator != null && !discRingAnimator.isRunning()) discRingAnimator.start();
+        }
+        if (imgTonearm != null) imgTonearm.animate().rotation(5f).setDuration(500).start();
+    }
+
+    private void updateUIPaused() {
+        btnPlayPause.setImageResource(R.drawable.ic_pause);
+        tvStatus.setText("Đã dừng");
+        tvStatus.setTextColor(Color.WHITE);
+
+        if (statusAnimator != null) statusAnimator.cancel();
+        if (tvStatus != null) { tvStatus.setScaleX(1f); tvStatus.setScaleY(1f); }
+        if (discAnimator != null && discAnimator.isRunning()) discAnimator.pause();
+
+        if (viewPulseGlow != null) { if (pulseSet != null) pulseSet.end(); viewPulseGlow.setVisibility(View.INVISIBLE); }
+        if (viewDiscRing != null) { if (discRingAnimator != null) discRingAnimator.end(); viewDiscRing.setVisibility(View.INVISIBLE); }
+        if (imgTonearm != null) imgTonearm.animate().rotation(-45).setDuration(500).start();
+    }
+
+    private void changeSound(boolean next) {
+        if (!isBound || musicService == null) return;
+
+        syncIndexWithService();
+
+        if (isShuffle && next) {
+            currentIndex = new Random().nextInt(musicSounds.length);
+        } else {
+            if (next) currentIndex = (currentIndex + 1) % musicSounds.length;
+            else currentIndex = (currentIndex - 1 + musicSounds.length) % musicSounds.length;
+        }
+
+        tvSongTitle.setText(musicTitles[currentIndex]);
+        sendPlayNewCommand(musicSounds[currentIndex]);
+        updateUIPlaying();
+    }
+
+    private void startSleepTimer(int minutes, BottomSheetDialog dialog) {
+        if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
+        timeLeftInMillis = minutes * 60 * 1000L;
+        tvTimerStatusMain.setTextColor(Color.parseColor("#81C784"));
+        imgTimerIconMain.setColorFilter(Color.parseColor("#81C784"));
+
+        timerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (isBound && musicService != null && musicService.isPlaying() && timeLeftInMillis > 0) {
+                    timeLeftInMillis -= 1000;
+                    int mins = (int) (timeLeftInMillis / 1000) / 60;
+                    int secs = (int) (timeLeftInMillis / 1000) % 60;
+                    tvTimerStatusMain.setText(String.format(Locale.getDefault(), "Tắt sau %02d:%02d", mins, secs));
+                    timerHandler.postDelayed(this, 1000);
+                } else if (timeLeftInMillis <= 0) {
+                    sendCommandToService(MusicService.ACTION_PAUSE);
+                    updateUIPaused();
+                    cancelSleepTimer();
+                }
+            }
+        };
+        timerHandler.post(timerRunnable);
+        dialog.dismiss();
+    }
+
+    private void cancelSleepTimer() {
+        if (timerRunnable != null) timerHandler.removeCallbacks(timerRunnable);
+        timeLeftInMillis = 0;
+        tvTimerStatusMain.setText("Hẹn giờ tắt");
+        tvTimerStatusMain.setTextColor(Color.WHITE);
+        imgTimerIconMain.clearColorFilter();
+    }
+
+    private void updateToggleButtonStyle(ImageButton btn, boolean isActive) {
+        if (isActive) {
+            btn.setBackgroundResource(R.drawable.bg_music_control_sub_active);
+            btn.setColorFilter(Color.WHITE);
+            btn.setAlpha(1.0f);
+        } else {
+            btn.setBackgroundResource(R.drawable.bg_music_control_sub);
+            btn.setColorFilter(Color.parseColor("#B3FFFFFF"));
+            btn.setAlpha(0.7f);
+        }
+    }
+
+    private void applyClickAnimation(View view) {
+        view.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() ->
+                view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+        ).start();
+    }
+
+    private void showTimerBottomSheet() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
+        View view = getLayoutInflater().inflate(R.layout.layout_timer_bottom_sheet, null);
+        dialog.setContentView(view);
+        LinearLayout btn5 = view.findViewById(R.id.btnTimer5);
+        LinearLayout btn15 = view.findViewById(R.id.btnTimer15);
+        LinearLayout btn30 = view.findViewById(R.id.btnTimer30);
+        LinearLayout btn60 = view.findViewById(R.id.btnTimer60);
+        LinearLayout btnInf = view.findViewById(R.id.btnTimerInfinite);
+        LinearLayout btnCancel = view.findViewById(R.id.btnCancelTimer);
+
+        LinearLayout[] allBtns = {btn5, btn15, btn30, btn60, btnInf};
+
+        if (timeLeftInMillis > 0 || selectedTimerMinutes == 0) applyHighlight(allBtns, selectedTimerMinutes);
+
+        if (btnCancel != null) {
+            btnCancel.setVisibility(timeLeftInMillis > 0 ? View.VISIBLE : View.GONE);
+            btnCancel.setOnClickListener(v -> {
+                cancelSleepTimer();
+                selectedTimerMinutes = -1;
+                dialog.dismiss();
+            });
+        }
+
+        setupTimerItemClick(btn5, 5, allBtns, dialog);
+        setupTimerItemClick(btn15, 15, allBtns, dialog);
+        setupTimerItemClick(btn30, 30, allBtns, dialog);
+        setupTimerItemClick(btn60, 60, allBtns, dialog);
+
+        if (btnInf != null) {
+            btnInf.setOnClickListener(v -> {
+                applyHighlight(allBtns, 0);
+                selectedTimerMinutes = 0;
+                new Handler().postDelayed(() -> {
+                    cancelSleepTimer();
+                    tvTimerStatusMain.setText("Vô cực");
+                    dialog.dismiss();
+                }, 200);
+            });
+        }
+        view.findViewById(R.id.btnCloseSheet).setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void setupTimerItemClick(LinearLayout btn, int mins, LinearLayout[] all, BottomSheetDialog dialog) {
+        if (btn == null) return;
+        btn.setOnClickListener(v -> {
+            applyHighlight(all, mins);
+            selectedTimerMinutes = mins;
+            new Handler().postDelayed(() -> startSleepTimer(mins, dialog), 200);
+        });
+    }
+
+    private void applyHighlight(LinearLayout[] all, int minutes) {
+        for (LinearLayout btn : all) {
+            if (btn == null) continue;
+            btn.setBackgroundResource(R.drawable.bg_music_control_sub);
+            updateItemUI(btn, Color.parseColor("#B3FFFFFF"), false);
+        }
+        for (LinearLayout btn : all) {
+            if (btn == null) continue;
+            boolean match = false;
+            int id = btn.getId();
+            if (minutes == 5 && id == R.id.btnTimer5) match = true;
+            else if (minutes == 15 && id == R.id.btnTimer15) match = true;
+            else if (minutes == 30 && id == R.id.btnTimer30) match = true;
+            else if (minutes == 60 && id == R.id.btnTimer60) match = true;
+            else if (minutes == 0 && id == R.id.btnTimerInfinite) match = true;
+
+            if (match) {
+                btn.setBackgroundResource(R.drawable.bg_timer_item_selected_green);
+                updateItemUI(btn, Color.parseColor("#81C784"), true);
+            }
+        }
+    }
+
+    private void updateItemUI(LinearLayout layout, int color, boolean isBold) {
+        for (int i = 0; i < layout.getChildCount(); i++) {
+            View v = layout.getChildAt(i);
+            if (v instanceof TextView) {
+                ((TextView) v).setTextColor(color);
+                ((TextView) v).setTypeface(null, isBold ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            } else if (v instanceof ImageView) {
+                ((ImageView) v).setColorFilter(color);
+            }
+        }
     }
 
     private void showShareBottomSheet() {
@@ -120,28 +502,16 @@ public class MusicPlayerActivity extends AppCompatActivity {
         String shareMsg = "Đang nghe nhạc cực chill trên HEAMI! Nghe cùng mình nhé.";
 
         if (view.findViewById(R.id.bg_social_zalo) != null) {
-            view.findViewById(R.id.bg_social_zalo).setOnClickListener(v -> {
-                shareToApp("com.zing.zalo", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_zalo).setOnClickListener(v -> { shareToApp("com.zing.zalo", shareMsg); dialog.dismiss(); });
         }
         if (view.findViewById(R.id.bg_social_mess) != null) {
-            view.findViewById(R.id.bg_social_mess).setOnClickListener(v -> {
-                shareToApp("com.facebook.orca", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_mess).setOnClickListener(v -> { shareToApp("com.facebook.orca", shareMsg); dialog.dismiss(); });
         }
         if (view.findViewById(R.id.bg_social_insta) != null) {
-            view.findViewById(R.id.bg_social_insta).setOnClickListener(v -> {
-                shareToApp("com.instagram.android", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_insta).setOnClickListener(v -> { shareToApp("com.instagram.android", shareMsg); dialog.dismiss(); });
         }
         if (view.findViewById(R.id.bg_social_threads) != null) {
-            view.findViewById(R.id.bg_social_threads).setOnClickListener(v -> {
-                shareToApp("com.instagram.barcelona", shareMsg);
-                dialog.dismiss();
-            });
+            view.findViewById(R.id.bg_social_threads).setOnClickListener(v -> { shareToApp("com.instagram.barcelona", shareMsg); dialog.dismiss(); });
         }
 
         View copy = view.findViewById(R.id.btnCopyContent);
@@ -153,12 +523,9 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 dialog.dismiss();
             });
         }
-
-        View close = view.findViewById(R.id.btnCloseShare);
-        if (close != null) {
-            close.setOnClickListener(v -> dialog.dismiss());
+        if (view.findViewById(R.id.btnCloseShare) != null) {
+            view.findViewById(R.id.btnCloseShare).setOnClickListener(v -> dialog.dismiss());
         }
-
         dialog.show();
     }
 
@@ -174,241 +541,52 @@ public class MusicPlayerActivity extends AppCompatActivity {
         }
     }
 
-    private void showTimerBottomSheet() {
+    private String formatTime(int ms) {
+        int m = (ms / 1000) / 60;
+        int s = (ms / 1000) % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d", m, s);
+    }
+
+    private void showMusicList() {
         BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
-        View view = getLayoutInflater().inflate(R.layout.layout_timer_bottom_sheet, null);
+        View view = getLayoutInflater().inflate(R.layout.layout_nature_list, null);
+        RecyclerView rv = view.findViewById(R.id.rvNatureSounds);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        rv.setLayoutManager(layoutManager);
+
+        MusicAdapter adapter = new MusicAdapter(currentIndex, position -> {
+            currentIndex = position;
+            tvSongTitle.setText(musicTitles[currentIndex]);
+
+            if (isBound && musicService != null) {
+                sendPlayNewCommand(musicSounds[currentIndex]);
+                updateUIPlaying();
+            }
+            dialog.dismiss();
+        });
+
+        rv.setAdapter(adapter);
+        if (currentIndex > 0) layoutManager.scrollToPositionWithOffset(currentIndex, 200);
+
         dialog.setContentView(view);
-
-        LinearLayout btn5 = view.findViewById(R.id.btnTimer5);
-        LinearLayout btn15 = view.findViewById(R.id.btnTimer15);
-        LinearLayout btn30 = view.findViewById(R.id.btnTimer30);
-        LinearLayout btn60 = view.findViewById(R.id.btnTimer60);
-        LinearLayout btnInf = view.findViewById(R.id.btnTimerInfinite);
-        LinearLayout btnCancel = view.findViewById(R.id.btnCancelTimer);
-
-        // Đưa vào mảng để dễ quản lý trạng thái sáng/tối
-        LinearLayout[] timerButtons = {btn5, btn15, btn30, btn60, btnInf};
-
-        // Nếu đang có timer chạy, làm sáng ô đó ngay khi mở lên
-        if (timeLeftInMillis > 0 || selectedTimerMinutes == 0) {
-            applyHighlightToSelected(timerButtons, selectedTimerMinutes);
-        }
-
-        if (btnCancel != null) {
-            btnCancel.setVisibility(timeLeftInMillis > 0 ? View.VISIBLE : View.GONE);
-            btnCancel.setOnClickListener(v -> {
-                cancelSleepTimer();
-                selectedTimerMinutes = -1;
-                dialog.dismiss();
-            });
-        }
-
-        // Thiết lập sự kiện click cho các ô thời gian
-        setupTimerItemClick(btn5, 5, timerButtons, dialog);
-        setupTimerItemClick(btn15, 15, timerButtons, dialog);
-        setupTimerItemClick(btn30, 30, timerButtons, dialog);
-        setupTimerItemClick(btn60, 60, timerButtons, dialog);
-
-        if (btnInf != null) {
-            btnInf.setOnClickListener(v -> {
-                applyHighlightToSelected(timerButtons, 0); // Vô cực là 0
-                selectedTimerMinutes = 0;
-                new Handler().postDelayed(() -> {
-                    cancelSleepTimer();
-                    tvTimerStatusMain.setText("Vô cực");
-                    dialog.dismiss();
-                }, 200);
-            });
-        }
-
-        View close = view.findViewById(R.id.btnCloseSheet);
-        if (close != null) close.setOnClickListener(v -> dialog.dismiss());
-
         dialog.show();
     }
 
-    private void setupTimerItemClick(LinearLayout btn, int mins, LinearLayout[] all, BottomSheetDialog dialog) {
-        if (btn == null) return;
-        btn.setOnClickListener(v -> {
-            applyHighlightToSelected(all, mins); // Làm sáng ô vừa chọn
-            selectedTimerMinutes = mins;         // Lưu lại lựa chọn
-
-            new Handler().postDelayed(() -> {
-                startSleepTimer(mins, dialog);
-            }, 200);
-        });
-    }
-
-    private void applyHighlightToSelected(LinearLayout[] all, int minutes) {
-        for (LinearLayout btn : all) {
-            if (btn == null) continue;
-            // Reset về nền mặc định
-            btn.setBackgroundResource(R.drawable.bg_music_control_sub);
-            updateItemContentUI(btn, Color.WHITE, false);
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (isBound) {
+            unbindService(serviceConnection);
+            isBound = false;
         }
-
-        // Tìm ô khớp với số phút để highlight
-        for (LinearLayout btn : all) {
-            if (btn == null) continue;
-            boolean match = false;
-            int id = btn.getId();
-            if (minutes == 5 && id == R.id.btnTimer5) match = true;
-            else if (minutes == 15 && id == R.id.btnTimer15) match = true;
-            else if (minutes == 30 && id == R.id.btnTimer30) match = true;
-            else if (minutes == 60 && id == R.id.btnTimer60) match = true;
-            else if (minutes == 0 && id == R.id.btnTimerInfinite) match = true;
-
-            if (match) {
-                btn.setBackgroundResource(R.drawable.bg_timer_item_selected_teal);
-                updateItemContentUI(btn, Color.parseColor(COLOR_TEAL), true);
-            }
-        }
-    }
-
-    private void updateItemContentUI(LinearLayout layout, int color, boolean isBold) {
-        for (int i = 0; i < layout.getChildCount(); i++) {
-            View child = layout.getChildAt(i);
-            if (child instanceof TextView) {
-                ((TextView) child).setTextColor(color);
-                ((TextView) child).setTypeface(null, isBold ? Typeface.BOLD : Typeface.NORMAL);
-            } else if (child instanceof ImageView) {
-                ((ImageView) child).setColorFilter(color);
-            }
-        }
-    }
-
-    private void startSleepTimer(int minutes, BottomSheetDialog dialog) {
-        stopTimerHandler();
-        timeLeftInMillis = minutes * 60 * SECOND_MS;
-        tvTimerStatusMain.setTextColor(Color.parseColor(COLOR_TEAL));
-        imgTimerIconMain.setColorFilter(Color.parseColor(COLOR_TEAL));
-
-        timerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (isPlaying && timeLeftInMillis > 0) {
-                    timeLeftInMillis -= SECOND_MS;
-                    int mins = (int) (timeLeftInMillis / 1000) / 60;
-                    int secs = (int) (timeLeftInMillis / 1000) % 60;
-                    tvTimerStatusMain.setText(String.format(Locale.getDefault(), "Tắt sau %02d:%02d", mins, secs));
-                }
-                if (timeLeftInMillis <= 0) {
-                    pauseMusic();
-                    cancelSleepTimer();
-                } else {
-                    timerHandler.postDelayed(this, SECOND_MS);
-                }
-            }
-        };
-        timerHandler.postDelayed(timerRunnable, SECOND_MS);
-        dialog.dismiss();
-    }
-
-    private void stopTimerHandler() {
-        if (timerRunnable != null) {
-            timerHandler.removeCallbacks(timerRunnable);
-        }
-    }
-
-    private void cancelSleepTimer() {
-        stopTimerHandler();
-        timeLeftInMillis = 0;
-        tvTimerStatusMain.setText("Hẹn giờ tắt");
-        tvTimerStatusMain.setTextColor(Color.WHITE);
-        imgTimerIconMain.clearColorFilter();
-    }
-
-    private void playMusic() {
-        isPlaying = true;
-        tvStatus.setText("Đang phát");
-        tvStatus.setTextColor(Color.parseColor(COLOR_TEAL));
-        btnPlayPause.setImageResource(R.drawable.ic_playing);
-        if (viewPulseGlow != null) {
-            viewPulseGlow.setVisibility(View.VISIBLE);
-            pulseSet.start();
-        }
-        if (viewDiscRing != null) {
-            viewDiscRing.setVisibility(View.VISIBLE);
-            discRingAnimator.start();
-        }
-        imgTonearm.animate().rotation(5f).setDuration(500).start();
-        if (discAnimator.isPaused()) {
-            discAnimator.resume();
-        } else {
-            discAnimator.start();
-        }
-        startSeekBarUpdate();
-    }
-
-    private void pauseMusic() {
-        isPlaying = false;
-        tvStatus.setText("Đã dừng");
-        tvStatus.setTextColor(Color.WHITE);
-        btnPlayPause.setImageResource(R.drawable.ic_pause);
-        if (viewPulseGlow != null) {
-            pulseSet.end();
-            viewPulseGlow.setVisibility(View.INVISIBLE);
-        }
-        if (viewDiscRing != null) {
-            discRingAnimator.end();
-            viewDiscRing.setVisibility(View.INVISIBLE);
-        }
-        imgTonearm.animate().rotation(-45f).setDuration(500).start();
-        discAnimator.pause();
         seekBarHandler.removeCallbacks(updateSeekBarTask);
     }
-
-    private void setupAnimations() {
-        discAnimator = ObjectAnimator.ofFloat(imgRotatingDisc, "rotation", 0f, 360f);
-        discAnimator.setDuration(10000);
-        discAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        discAnimator.setInterpolator(new LinearInterpolator());
-
-        if (viewPulseGlow != null) {
-            ObjectAnimator sx = ObjectAnimator.ofFloat(viewPulseGlow, "scaleX", 1f, 1.5f);
-            ObjectAnimator sy = ObjectAnimator.ofFloat(viewPulseGlow, "scaleY", 1f, 1.5f);
-            ObjectAnimator al = ObjectAnimator.ofFloat(viewPulseGlow, "alpha", 0.6f, 0f);
-            sx.setRepeatCount(ValueAnimator.INFINITE);
-            sx.setRepeatMode(ValueAnimator.REVERSE);
-            sy.setRepeatCount(ValueAnimator.INFINITE);
-            sy.setRepeatMode(ValueAnimator.REVERSE);
-            al.setRepeatCount(ValueAnimator.INFINITE);
-            al.setRepeatMode(ValueAnimator.REVERSE);
-            pulseSet = new AnimatorSet();
-            pulseSet.playTogether(sx, sy, al);
-            pulseSet.setDuration(1200);
-        }
-
-        if (viewDiscRing != null) {
-            discRingAnimator = ObjectAnimator.ofFloat(viewDiscRing, "alpha", 1f, 0.2f);
-            discRingAnimator.setDuration(1500);
-            discRingAnimator.setRepeatCount(ValueAnimator.INFINITE);
-            discRingAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        }
-    }
-
-    private void startSeekBarUpdate() {
-        seekBarHandler.removeCallbacks(updateSeekBarTask);
-        seekBarHandler.postDelayed(updateSeekBarTask, SECOND_MS);
-    }
-
-    private final Runnable updateSeekBarTask = new Runnable() {
-        @Override
-        public void run() {
-            if (isPlaying) {
-                int p = seekBar.getProgress();
-                if (p < seekBar.getMax()) {
-                    seekBar.setProgress(p + 1);
-                    seekBarHandler.postDelayed(this, SECOND_MS);
-                }
-            }
-        }
-    };
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopTimerHandler();
-        seekBarHandler.removeCallbacks(updateSeekBarTask);
+        seekBarHandler.removeCallbacksAndMessages(null);
+        timerHandler.removeCallbacksAndMessages(null);
     }
 }

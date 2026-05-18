@@ -52,4 +52,27 @@
     <!-- Booking Gradient -->
     <color name="booking_gradient_start">#FF96C5</color>
     <color name="booking_gradient_end">#BA99FF</color>
+
+    <color name="diary_primary">#D13E8D</color>
+    <color name="diary_primary_gradient_end">#BA307A</color>
+    <color name="diary_disabled_button">#E2E5E9</color>
+
+    <color name="text_main_dark">#242D42</color>
+    <color name="text_sub_gray">#9AA3B2</color>
+    <color name="text_hint_color">#A3AEC0</color>
+    <color name="text_disabled_button">#A7B3C3</color>
+
+    <color name="bg_dialog">#FFFFFF</color>
+    <color name="bg_input">#FFFFFF</color>
+    <color name="border_input">#FFEAEF</color> <color name="chip_unselected_bg">#F4F6F9</color>
+    <color name="chip_selected_bg">#E2F5F0</color> <color name="chip_selected_stroke">#3EC4A0</color> <color name="chip_selected_text">#1C705B</color>
+
+    <color name="bg_close_btn">#FFF0F3</color>
+    <color name="icon_close_btn">#FA6B86</color>
+
+    <color name="heami_bg_light_pink">#FFF0F5</color>
+    <color name="heami_text_primary">#2D3142</color>
+    <color name="heami_text_secondary">#7D8BB7</color>
+    <color name="pink_pastel_deep">#E86FA0</color>
+    <color name="heami_stroke_color">#FFD1DC</color>
 </resources>
