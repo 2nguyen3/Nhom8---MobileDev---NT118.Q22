@@ -19,6 +19,12 @@ public class CommunityPostModel {
     private int report_count;
     private String status;
 
+    private String moderation_status;
+    private String moderation_decision;
+    private String moderation_reason;
+    private String moderated_by;
+    private Timestamp moderated_at;
+
     public CommunityPostModel() {}
 
     public CommunityPostModel(
@@ -47,6 +53,11 @@ public class CommunityPostModel {
         this.empathy_count = 0;
         this.report_count = 0;
         this.status = "ACTIVE";
+        this.moderation_status = "VISIBLE";
+        this.moderation_decision = "";
+        this.moderation_reason = "";
+        this.moderated_by = "";
+        this.moderated_at = null;
     }
 
     public String getPost_id() {
@@ -168,4 +179,24 @@ public class CommunityPostModel {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public String getModeration_status() { return moderation_status; }
+
+    public void setModeration_status(String moderation_status) { this.moderation_status = moderation_status; }
+
+    public String getModeration_decision() { return moderation_decision; }
+
+    public void setModeration_decision(String moderation_decision) { this.moderation_decision = moderation_decision; }
+
+    public String getModeration_reason() { return moderation_reason; }
+
+    public void setModeration_reason(String moderation_reason) { this.moderation_reason = moderation_reason; }
+
+    public String getModerated_by() { return moderated_by; }
+
+    public void setModerated_by(String moderated_by) { this.moderated_by = moderated_by; }
+
+    public Timestamp getModerated_at() { return moderated_at; }
+
+    public void setModerated_at(Timestamp moderated_at) { this.moderated_at = moderated_at; }
 }

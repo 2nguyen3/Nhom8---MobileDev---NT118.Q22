@@ -243,6 +243,13 @@
             <activity
                 android:name=".ui.admin.AdminAccountDetailActivity"
                 android:exported="false" />
+            <activity
+                android:name=".ui.admin.AdminModerationActivity"
+                android:exported="false" />
+
+            <activity
+                android:name=".ui.admin.AdminReportDetailActivity"
+                android:exported="false" />
 
     </application>
 

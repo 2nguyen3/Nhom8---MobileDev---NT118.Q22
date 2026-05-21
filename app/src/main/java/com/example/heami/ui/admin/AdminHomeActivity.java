@@ -84,7 +84,10 @@ public class AdminHomeActivity extends AppCompatActivity {
                 ))
         );
         cardAdminModeration.setOnClickListener(v ->
-                Toast.makeText(this, "Batch C — Kiểm duyệt cộng đồng", Toast.LENGTH_SHORT).show()
+                startActivity(new android.content.Intent(
+                        AdminHomeActivity.this,
+                        AdminModerationActivity.class
+                ))
         );
 
         cardAdminAnalytics.setOnClickListener(v ->

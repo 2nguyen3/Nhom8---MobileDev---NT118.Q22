@@ -6,7 +6,7 @@
     android:background="@drawable/bg_admin_home_soft">
 
     <LinearLayout
-        android:id="@+id/headerAccounts"
+        android:id="@+id/headerModeration"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
@@ -14,12 +14,12 @@
         android:layout_marginEnd="20dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
-            android:id="@+id/btnBackAccounts"
+            android:id="@+id/btnBackModeration"
             android:layout_width="42dp"
             android:layout_height="42dp"
             android:background="@drawable/bg_admin_stat_card"
@@ -38,7 +38,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Quản lý tài khoản"
+                android:text="Kiểm duyệt cộng đồng"
                 android:textColor="#1B1730"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -47,23 +47,23 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Danh sách tài khoản trong hệ thống Heami"
+                android:text="Theo dõi report bài viết và bình luận"
                 android:textColor="#8B7D99"
                 android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/layoutStatsAccounts"
+        android:id="@+id/layoutModerationStats"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="18dp"
         android:layout_marginEnd="20dp"
         android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerModeration"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerAccounts">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -76,12 +76,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tổng"
+                android:text="Pending"
                 android:textColor="#8B7D99"
                 android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/txtStatTotal"
+                android:id="@+id/txtStatPendingReports"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -106,12 +106,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="User"
+                android:text="Post"
                 android:textColor="#8B7D99"
                 android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/txtStatUser"
+                android:id="@+id/txtStatPostReports"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -136,42 +136,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Doctor"
+                android:text="Comment"
                 android:textColor="#8B7D99"
                 android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/txtStatDoctor"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="--"
-                android:textColor="#1B1730"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="10dp"
-            android:layout_height="1dp" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="88dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_admin_stat_card"
-            android:orientation="vertical"
-            android:padding="14dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Admin"
-                android:textColor="#8B7D99"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/txtStatAdmin"
+                android:id="@+id/txtStatCommentReports"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -183,76 +153,23 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/layoutLoadingAccounts"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutSearchAndFilter">
-        <ProgressBar
-            android:layout_width="36dp"
-            android:layout_height="36dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Đang tải danh sách tài khoản..."
-            android:textColor="#8B7D99"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/txtEmptyAccounts"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Chưa có tài khoản nào"
-        android:textColor="#8B7D99"
-        android:textSize="14sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutSearchAndFilter" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvAccounts"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="16dp"
-        android:clipToPadding="false"
-        android:paddingBottom="8dp"
-        android:scrollbars="vertical"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutSearchAndFilter" />
-
-    <LinearLayout
-        android:id="@+id/layoutSearchAndFilter"
+        android:id="@+id/layoutModerationFilter"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="14dp"
         android:layout_marginEnd="20dp"
         android:orientation="vertical"
-        app:layout_constraintTop_toBottomOf="@id/layoutStatsAccounts"
+        app:layout_constraintTop_toBottomOf="@id/layoutModerationStats"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <EditText
-            android:id="@+id/edtSearchAccount"
+            android:id="@+id/edtSearchModeration"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:background="@drawable/bg_input_soft"
-            android:hint="Tìm theo tên, email hoặc ID"
+            android:hint="Tìm theo tác giả, nội dung hoặc post ID"
             android:imeOptions="actionDone"
             android:inputType="text"
             android:paddingStart="16dp"
@@ -273,7 +190,7 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/chipRoleAll"
+                    android:id="@+id/chipTypeAll"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_chip_active_purple"
@@ -281,13 +198,13 @@
                     android:paddingTop="8dp"
                     android:paddingEnd="14dp"
                     android:paddingBottom="8dp"
-                    android:text="Tất cả role"
+                    android:text="Tất cả"
                     android:textColor="#6A42C2"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/chipRoleUser"
+                    android:id="@+id/chipTypePost"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -296,12 +213,12 @@
                     android:paddingTop="8dp"
                     android:paddingEnd="14dp"
                     android:paddingBottom="8dp"
-                    android:text="User"
+                    android:text="Post"
                     android:textColor="#84788F"
                     android:textSize="13sp" />
 
                 <TextView
-                    android:id="@+id/chipRoleDoctor"
+                    android:id="@+id/chipTypeComment"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -310,21 +227,7 @@
                     android:paddingTop="8dp"
                     android:paddingEnd="14dp"
                     android:paddingBottom="8dp"
-                    android:text="Doctor"
-                    android:textColor="#84788F"
-                    android:textSize="13sp" />
-
-                <TextView
-                    android:id="@+id/chipRoleAdmin"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_chip_inactive"
-                    android:paddingStart="14dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="8dp"
-                    android:text="Admin"
+                    android:text="Comment"
                     android:textColor="#84788F"
                     android:textSize="13sp" />
             </LinearLayout>
@@ -342,7 +245,7 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/chipStatusAll"
+                    android:id="@+id/chipStatusAllModeration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_chip_active_teal"
@@ -356,21 +259,7 @@
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/chipStatusActive"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_chip_inactive"
-                    android:paddingStart="14dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="8dp"
-                    android:text="ACTIVE"
-                    android:textColor="#84788F"
-                    android:textSize="13sp" />
-
-                <TextView
-                    android:id="@+id/chipStatusPending"
+                    android:id="@+id/chipStatusPendingModeration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -384,7 +273,7 @@
                     android:textSize="13sp" />
 
                 <TextView
-                    android:id="@+id/chipStatusBanned"
+                    android:id="@+id/chipStatusResolvedModeration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -393,12 +282,66 @@
                     android:paddingTop="8dp"
                     android:paddingEnd="14dp"
                     android:paddingBottom="8dp"
-                    android:text="BANNED"
+                    android:text="RESOLVED"
                     android:textColor="#84788F"
                     android:textSize="13sp" />
             </LinearLayout>
         </HorizontalScrollView>
 
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutLoadingModeration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/layoutModerationFilter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ProgressBar
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Đang tải report..."
+            android:textColor="#8B7D99"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/txtEmptyModeration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chưa có report nào"
+        android:textColor="#8B7D99"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/layoutModerationFilter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvModerationReports"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:clipToPadding="false"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/layoutModerationFilter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

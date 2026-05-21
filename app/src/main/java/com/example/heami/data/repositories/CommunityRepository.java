@@ -1,6 +1,7 @@
 package com.example.heami.data.repositories;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.example.heami.data.models.CommunityPostModel;
 import com.example.heami.data.models.PostCommentModel;
@@ -29,8 +30,6 @@ import java.util.List;
 import java.util.Set;
 
 public class CommunityRepository {
-
-    private static final int AUTO_HIDE_REPORT_THRESHOLD = 5;
 
     public interface CreatePostListener {
         void onSuccess(@NonNull String postId);
@@ -227,6 +226,13 @@ public class CommunityRepository {
                             now
                     );
 
+                    post.setModeration_status("VISIBLE");
+                    post.setModeration_decision("");
+                    post.setModeration_reason("");
+                    post.setModerated_by("");
+                    post.setModerated_at(null);
+                    post.setStatus("ACTIVE");
+
                     firestore.collection("community_posts")
                             .document(postId)
                             .set(post)
@@ -299,10 +305,11 @@ public class CommunityRepository {
                             }
 
                             String postId = safeText(post.getPost_id(), "");
-                            String status = safeText(post.getStatus(), "ACTIVE");
+                            String status = safeUpper(post.getStatus(), "ACTIVE");
 
-                            if (!"ACTIVE".equals(status)) continue;
+                            if ("DELETED".equals(status)) continue;
                             if (hiddenPostIds.contains(postId)) continue;
+                            if (isGloballyHiddenPost(post)) continue;
 
                             posts.add(post);
                         }
@@ -909,9 +916,15 @@ public class CommunityRepository {
                         int currentReportCount = safeInt(postSnapshot.get("report_count"));
                         int newReportCount = currentReportCount + 1;
 
-                        String newPostStatus = newReportCount >= AUTO_HIDE_REPORT_THRESHOLD
-                                ? "AUTO_HIDDEN"
-                                : "ACTIVE";
+                        Object moderationStatusObj = postSnapshot.get("moderation_status");
+                        String currentModerationStatus = moderationStatusObj instanceof String
+                                ? ((String) moderationStatusObj).trim()
+                                : "VISIBLE";
+
+                        Object moderationDecisionObj = postSnapshot.get("moderation_decision");
+                        String currentModerationDecision = moderationDecisionObj instanceof String
+                                ? ((String) moderationDecisionObj).trim()
+                                : "";
 
                         PostReportModel reportModel = new PostReportModel(
                                 uid,
@@ -925,24 +938,36 @@ public class CommunityRepository {
                                 "PENDING"
                         );
 
+                        Map<String, Object> postUpdates = new HashMap<>();
+                        postUpdates.put("report_count", newReportCount);
+                        postUpdates.put("status", "ACTIVE");
+                        postUpdates.put("updated_at", now);
+
+                        if (currentModerationStatus.isEmpty()) {
+                            postUpdates.put("moderation_status", "VISIBLE");
+                        }
+                        if (currentModerationDecision.isEmpty()) {
+                            postUpdates.put("moderation_decision", "");
+                        }
+                        if (!(postSnapshot.get("moderation_reason") instanceof String)) {
+                            postUpdates.put("moderation_reason", "");
+                        }
+                        if (!(postSnapshot.get("moderated_by") instanceof String)) {
+                            postUpdates.put("moderated_by", "");
+                        }
+
                         transaction.set(reportRef, reportModel);
                         transaction.set(hiddenPostRef, hiddenPostData);
-                        transaction.update(
-                                postRef,
-                                "report_count", newReportCount,
-                                "status", newPostStatus,
-                                "updated_at", now
-                        );
+                        transaction.update(postRef, postUpdates);
 
-                        return newPostStatus;
+                        return "REPORTED";
                     }).addOnSuccessListener(result -> {
                         if ("ALREADY_REPORTED".equals(result)) {
                             listener.onAlreadyReported();
                             return;
                         }
 
-                        boolean autoHidden = "AUTO_HIDDEN".equals(result);
-                        listener.onSuccess(autoHidden);
+                        listener.onSuccess(false);
                     }).addOnFailureListener(e -> {
                         String message = e.getMessage() != null
                                 ? e.getMessage()
@@ -995,28 +1020,23 @@ public class CommunityRepository {
             int currentReportCount = safeInt(postSnapshot.get("report_count"));
             int newReportCount = Math.max(0, currentReportCount - 1);
 
-            String newPostStatus = newReportCount >= AUTO_HIDE_REPORT_THRESHOLD
-                    ? "AUTO_HIDDEN"
-                    : "ACTIVE";
+            Map<String, Object> postUpdates = new HashMap<>();
+            postUpdates.put("report_count", newReportCount);
+            postUpdates.put("status", "ACTIVE");
+            postUpdates.put("updated_at", now);
 
             transaction.delete(reportRef);
             transaction.delete(hiddenPostRef);
-            transaction.update(
-                    postRef,
-                    "report_count", newReportCount,
-                    "status", newPostStatus,
-                    "updated_at", now
-            );
+            transaction.update(postRef, postUpdates);
 
-            return newPostStatus;
+            return "UPDATED";
         }).addOnSuccessListener(result -> {
             if ("NO_REPORT".equals(result)) {
                 listener.onFailure("Không tìm thấy báo cáo để hoàn tác");
                 return;
             }
 
-            boolean postVisibleAgain = "ACTIVE".equals(result);
-            listener.onSuccess(postVisibleAgain);
+            listener.onSuccess(false);
         }).addOnFailureListener(e -> {
             String message = e.getMessage() != null
                     ? e.getMessage()
@@ -1320,6 +1340,28 @@ public class CommunityRepository {
             return false;
         }
         return expiresAt.toDate().getTime() <= System.currentTimeMillis();
+    }
+
+    @NonNull
+    private String safeUpper(@Nullable String value, @NonNull String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim().toUpperCase();
+    }
+
+    private boolean isGloballyHiddenPost(@NonNull DocumentSnapshot documentSnapshot) {
+        String moderationStatus = safeUpper(documentSnapshot.getString("moderation_status"), "VISIBLE");
+        String status = safeUpper(documentSnapshot.getString("status"), "ACTIVE");
+
+        return "HIDDEN".equals(moderationStatus) || "DELETED".equals(status);
+    }
+
+    private boolean isGloballyHiddenPost(@NonNull CommunityPostModel post) {
+        String moderationStatus = safeUpper(post.getModeration_status(), "VISIBLE");
+        String status = safeUpper(post.getStatus(), "ACTIVE");
+
+        return "HIDDEN".equals(moderationStatus) || "DELETED".equals(status);
     }
 
     @NonNull

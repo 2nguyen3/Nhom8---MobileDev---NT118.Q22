@@ -185,6 +185,7 @@ public class AdminAccountDetailActivity extends AppCompatActivity {
                     "Không thể tự khóa tài khoản admin đang đăng nhập",
                     Toast.LENGTH_SHORT
             ).show();
+            loadAccountDetail();
             return;
         }
 
@@ -274,7 +275,7 @@ public class AdminAccountDetailActivity extends AppCompatActivity {
 
                     bindAvatar(avatarUrl);
 
-                    txtRoleInfoTitle.setText("Thông tin user");
+                    txtRoleInfoTitle.setText("Hồ sơ người dùng");
                     txtRoleInfoBody.setText(
                             "Nickname: " + nickname + "\n"
                                     + "Motto: " + motto
@@ -283,7 +284,7 @@ public class AdminAccountDetailActivity extends AppCompatActivity {
                     showContent();
                 })
                 .addOnFailureListener(e -> showError(
-                        e.getMessage() != null ? e.getMessage() : "Không thể tải hồ sơ user"
+                        e.getMessage() != null ? e.getMessage() : "Không thể tải hồ sơ người dùng"
                 ));
     }
 
@@ -306,7 +307,7 @@ public class AdminAccountDetailActivity extends AppCompatActivity {
 
                     bindAvatar(avatarUrl);
 
-                    txtRoleInfoTitle.setText("Thông tin doctor");
+                    txtRoleInfoTitle.setText("Hồ sơ bác sĩ");
                     txtRoleInfoBody.setText(
                             "Họ tên: " + fullName + "\n"
                                     + "Chuyên môn: " + primarySpec + "\n"
@@ -316,7 +317,7 @@ public class AdminAccountDetailActivity extends AppCompatActivity {
                     showContent();
                 })
                 .addOnFailureListener(e -> showError(
-                        e.getMessage() != null ? e.getMessage() : "Không thể tải hồ sơ doctor"
+                        e.getMessage() != null ? e.getMessage() : "Không thể tải hồ sơ bác sĩ"
                 ));
     }
 
@@ -335,7 +336,7 @@ public class AdminAccountDetailActivity extends AppCompatActivity {
 
                     Object permissions = doc.get("permissions");
 
-                    txtRoleInfoTitle.setText("Thông tin admin");
+                    txtRoleInfoTitle.setText("Hồ sơ quản trị viên");
                     txtRoleInfoBody.setText(
                             "Họ tên: " + fullName + "\n"
                                     + "Quyền: " + (permissions != null ? permissions.toString() : "Chưa cấu hình")
@@ -344,7 +345,7 @@ public class AdminAccountDetailActivity extends AppCompatActivity {
                     showContent();
                 })
                 .addOnFailureListener(e -> showError(
-                        e.getMessage() != null ? e.getMessage() : "Không thể tải hồ sơ admin"
+                        e.getMessage() != null ? e.getMessage() : "Không thể tải hồ sơ quản trị viên"
                 ));
     }
 

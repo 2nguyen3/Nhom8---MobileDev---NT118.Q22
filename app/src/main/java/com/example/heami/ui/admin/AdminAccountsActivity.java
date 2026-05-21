@@ -303,6 +303,14 @@ public class AdminAccountsActivity extends AppCompatActivity {
     private void updateEmptyState(boolean isEmpty) {
         txtEmptyAccounts.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         rvAccounts.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+
+        if (isEmpty) {
+            txtEmptyAccounts.setText(
+                    currentSearchQuery != null && !currentSearchQuery.trim().isEmpty()
+                            ? "Không tìm thấy tài khoản phù hợp với bộ lọc hiện tại"
+                            : "Chưa có tài khoản nào"
+            );
+        }
     }
 
     private void updateStats(@NonNull List<AdminAccountListItem> items) {
