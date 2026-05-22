@@ -1,6 +1,7 @@
 package com.example.heami.ui.doctor;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.util.Log;
@@ -10,6 +11,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -43,7 +46,9 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
         TimeSlotsModel model = slotList.get(position);
         if (model == null) return;
 
+        // ========================================================================
         // 1. LẤY THỜI GIAN VÀ TRẠNG THÁI TỪ BẢNG LICH_HEN
+        // ========================================================================
         if (model.getStart_time() != null) {
             java.util.Date date = model.getStart_time().toDate();
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
@@ -68,8 +73,10 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
             holder.tvStatusBadge.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#EDF2F7")));
         }
 
-        // Đặt avatar mặc định là 🦋 theo đúng ý bạn
-        holder.imgAvatar.setText("🦋");
+        // Đặt avatar mặc định là 🦋
+        if (holder.imgAvatar != null) {
+            holder.imgAvatar.setText("🦋");
+        }
 
         // ========================================================================
         // 2. TỰ ĐỘNG ĐỒNG BỘ TRUY VẤN DỮ LIỆU THẬT TỪ "consultations"
@@ -83,7 +90,6 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
                     .get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
-                            // Đọc chính xác các trường bạn vừa nhập thủ công trên Firebase
                             String name = documentSnapshot.getString("customer_name");
                             String moodText = documentSnapshot.getString("mood_text");
                             String moodEmoji = documentSnapshot.getString("mood_emoji");
@@ -92,14 +98,12 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
                             String textColor = documentSnapshot.getString("mood_color");
                             String bgColor = documentSnapshot.getString("mood_bg_color");
 
-                            // Cập nhật text động lên card hiển thị
                             holder.tvUsername.setText(name != null ? name : "Khách hàng");
                             holder.tvMoodText.setText(moodText != null ? moodText : "Ổn định");
                             holder.tvMoodEmoji.setText(moodEmoji != null ? moodEmoji : "😊");
                             holder.tvDuration.setText(duration != null ? duration : "30 phút");
                             holder.tvMethodText.setText(method != null ? method : "Chat");
 
-                            // Đổi màu sắc tag cảm xúc động theo mã Hex trên Firebase (#2B6CB0, #EBF8FF)
                             try {
                                 int textHex = Color.parseColor(textColor != null ? textColor : "#2C7A7B");
                                 int bgHex = Color.parseColor(bgColor != null ? bgColor : "#E6FFFA");
@@ -109,15 +113,11 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
                                 Log.e("HEAMI_COLOR", "Mã màu Hex sai định dạng: " + e.getMessage());
                             }
 
-                            // Thay đổi icon phương thức tư vấn động
                             if ("Chat".equalsIgnoreCase(method)) {
-                                // Đổi thành icon bong bóng chat của Android
                                 holder.imgMethodIcon.setImageResource(android.R.drawable.stat_notify_chat);
                             } else if ("Cuộc gọi".equalsIgnoreCase(method) || "Call".equalsIgnoreCase(method)) {
-                                // Icon điện thoại cho cuộc gọi
                                 holder.imgMethodIcon.setImageResource(android.R.drawable.ic_menu_call);
                             } else {
-                                // Icon vị trí nếu là tư vấn Trực tiếp (Offline)
                                 holder.imgMethodIcon.setImageResource(android.R.drawable.ic_menu_mylocation);
                             }
                         } else {
@@ -128,9 +128,26 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
         } else {
             setFallbackUI(holder);
         }
+
+        // ========================================================================
+        // 3. LOGIC CLICK ITEM CHUYỂN QUA TRANG DETAIL TƯƠNG ỨNG
+        // ========================================================================
+        holder.itemView.setOnClickListener(v -> {
+            // Kiểm tra xem tài liệu này ưu tiên slot_id hay session_id để làm khóa chính sang trang detail
+            String targetId = (model.getSlot_id() != null && !model.getSlot_id().isEmpty())
+                    ? model.getSlot_id()
+                    : model.getSession_id();
+
+            if (targetId != null && !targetId.isEmpty()) {
+                Intent intent = new Intent(context, SessionDetailActivity.class);
+                intent.putExtra("session_id", targetId);
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(context, "Không tìm thấy mã phiên tư vấn này!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    // Giá trị dự phòng hiển thị tạm nếu mất kết nối hoặc sai ID liên kết
     private void setFallbackUI(ViewHolder holder) {
         holder.tvUsername.setText("Khách hàng");
         holder.tvMoodText.setText("Ổn định");

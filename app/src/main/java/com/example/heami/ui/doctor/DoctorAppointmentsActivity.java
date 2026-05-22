@@ -94,7 +94,6 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
         tabOngoing = findViewById(R.id.tab_ongoing);
         btnOpenScheduleSetup = findViewById(R.id.btn_open_schedule_setup);
 
-        // 🌟 ĐÃ CẬP NHẬT: Nhấn nút back điều hướng an toàn về DoctorHomeActivity
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> navigateToDoctorHome());
         }
@@ -104,7 +103,6 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
         }
     }
 
-    // ĐIỀU HƯỚNG VỀ HOME DOCTOR VÀ LÀM SẠCH STACK
     private void navigateToDoctorHome() {
         try {
             Intent intent = new Intent(this, DoctorHomeActivity.class);
@@ -153,13 +151,12 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
         tvDialogTitle.setText("Thiết lập ngày " + dateLabel);
 
         List<String> activeAvailableShifts = new ArrayList<>();
-        Map<String, String> shiftToDocIdMap = new HashMap<>(); // Lưu ID tài liệu hiện tại để xử lý nếu bị loại bỏ
+        Map<String, String> shiftToDocIdMap = new HashMap<>();
 
         SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm", Locale.getDefault());
         SimpleDateFormat dayFmt = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
         String selectedDayStr = dayFmt.format(selectedCal.getTime());
 
-        // Quét tìm các khung giờ trống đã được cấu hình từ trước
         for (TimeSlotsModel slot : allSlotsFromFirebase) {
             if (slot == null || slot.getStart_time() == null || slot.getEnd_time() == null) continue;
             String slotDayStr = dayFmt.format(slot.getStart_time().toDate());
@@ -168,7 +165,6 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
                 String rangeText = timeFmt.format(slot.getStart_time().toDate()) + " - " + timeFmt.format(slot.getEnd_time().toDate());
                 activeAvailableShifts.add(rangeText);
 
-                // Ghi nhớ slot_id/id tài liệu để xử lý đồng bộ
                 if (slot.getSlot_id() != null) {
                     shiftToDocIdMap.put(rangeText, slot.getSlot_id());
                 }
@@ -185,7 +181,6 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
         }
 
         btnSave.setOnClickListener(v -> {
-            // 🛠️ XỬ LÝ ĐỒNG BỘ: Quét dọn các ca đã bị BÁC SĨ BỎ CHỌN trực tiếp trên Firebase
             for (String fixedShift : fixedWorkingShifts) {
                 if (!activeAvailableShifts.contains(fixedShift) && shiftToDocIdMap.containsKey(fixedShift)) {
                     String targetSlotId = shiftToDocIdMap.get(fixedShift);
@@ -200,7 +195,6 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
                 }
             }
 
-            // LƯU THÊM MỚI các ca vừa được bác sĩ tích chọn thêm
             for (String shift : activeAvailableShifts) {
                 String[] times = shift.split(" - ");
                 String[] startParts = times[0].split(":");
@@ -297,6 +291,10 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
                             try {
                                 TimeSlotsModel slot = document.toObject(TimeSlotsModel.class);
                                 if (slot != null) {
+                                    // 🌟 ĐỒNG BỘ: Đảm bảo Model nhận luôn ID của Document từ Firestore làm slot_id nếu bị thiếu
+                                    if (slot.getSlot_id() == null || slot.getSlot_id().isEmpty()) {
+                                        slot.setSlot_id(document.getId());
+                                    }
                                     fullFirebaseList.add(slot);
                                     allSlotsFromFirebase.add(slot);
                                 }
