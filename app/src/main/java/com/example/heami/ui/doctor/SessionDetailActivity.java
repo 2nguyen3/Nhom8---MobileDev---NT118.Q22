@@ -144,7 +144,7 @@ public class SessionDetailActivity extends AppCompatActivity {
                         return;
                     }
 
-                    String name = doc.getString("customer_name");
+                    String name = doc.getString("patient_name");
                     String moodText = doc.getString("mood_text");
                     String moodEmoji = doc.getString("mood_emoji");
                     String duration = doc.getString("duration");

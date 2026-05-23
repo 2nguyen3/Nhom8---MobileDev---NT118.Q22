@@ -90,7 +90,7 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
                     .get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
-                            String name = documentSnapshot.getString("customer_name");
+                            String name = documentSnapshot.getString("patient_name");
                             String moodText = documentSnapshot.getString("mood_text");
                             String moodEmoji = documentSnapshot.getString("mood_emoji");
                             String duration = documentSnapshot.getString("duration");

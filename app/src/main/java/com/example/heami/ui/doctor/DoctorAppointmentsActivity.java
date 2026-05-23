@@ -129,12 +129,19 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
             dialogCalendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
                 calendarDialog.dismiss();
 
-                Calendar selectedCal = Calendar.getInstance();
-                selectedCal.set(year, month, dayOfMonth, 0, 0, 0);
-                selectedCal.set(Calendar.MILLISECOND, 0);
+                // 🌟 FIX CHỐT HẠ: Khóa cứng ngày được chọn từ lịch vào một đối tượng Calendar sạch
+                Calendar targetCal = Calendar.getInstance();
+                targetCal.clear();
+                targetCal.set(Calendar.YEAR, year);
+                targetCal.set(Calendar.MONTH, month);
+                targetCal.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                targetCal.set(Calendar.HOUR_OF_DAY, 0);
+                targetCal.set(Calendar.MINUTE, 0);
+                targetCal.set(Calendar.SECOND, 0);
+                targetCal.set(Calendar.MILLISECOND, 0);
 
                 String dateLabel = String.format(Locale.getDefault(), "%02d/%02d/%04d", dayOfMonth, (month + 1), year);
-                openSetupScheduleDialog(selectedCal, dateLabel);
+                openSetupScheduleDialog(targetCal, dateLabel);
             });
         }
 
@@ -155,7 +162,12 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
 
         SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm", Locale.getDefault());
         SimpleDateFormat dayFmt = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
-        String selectedDayStr = dayFmt.format(selectedCal.getTime());
+
+        // 🌟 BẢO VỆ DỮ LIỆU: Đóng gói ngày mùng 6/7 thành các hằng số final để ClickListener không làm lệch được
+        final int finalYear = selectedCal.get(Calendar.YEAR);
+        final int finalMonth = selectedCal.get(Calendar.MONTH);
+        final int finalDay = selectedCal.get(Calendar.DAY_OF_MONTH);
+        final String selectedDayStr = dayFmt.format(selectedCal.getTime());
 
         for (TimeSlotsModel slot : allSlotsFromFirebase) {
             if (slot == null || slot.getStart_time() == null || slot.getEnd_time() == null) continue;
@@ -181,6 +193,7 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
         }
 
         btnSave.setOnClickListener(v -> {
+            // 1. Đồng bộ xóa các ca cũ nếu bị hủy tích chọn
             for (String fixedShift : fixedWorkingShifts) {
                 if (!activeAvailableShifts.contains(fixedShift) && shiftToDocIdMap.containsKey(fixedShift)) {
                     String targetSlotId = shiftToDocIdMap.get(fixedShift);
@@ -195,16 +208,26 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
                 }
             }
 
+            // 2. Ép trực tiếp thông tin ngày mùng 6/7 vào chuỗi ghi lên Firestore Console
             for (String shift : activeAvailableShifts) {
                 String[] times = shift.split(" - ");
                 String[] startParts = times[0].split(":");
                 String[] endParts = times[1].split(":");
 
-                Calendar startCal = (Calendar) selectedCal.clone();
+                // Tạo mới đối tượng Calendar độc lập hoàn toàn, nạp biến hằng số vào
+                Calendar startCal = Calendar.getInstance();
+                startCal.clear();
+                startCal.set(Calendar.YEAR, finalYear);
+                startCal.set(Calendar.MONTH, finalMonth);
+                startCal.set(Calendar.DAY_OF_MONTH, finalDay);
                 startCal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(startParts[0]));
                 startCal.set(Calendar.MINUTE, Integer.parseInt(startParts[1]));
 
-                Calendar endCal = (Calendar) selectedCal.clone();
+                Calendar endCal = Calendar.getInstance();
+                endCal.clear();
+                endCal.set(Calendar.YEAR, finalYear);
+                endCal.set(Calendar.MONTH, finalMonth);
+                endCal.set(Calendar.DAY_OF_MONTH, finalDay);
                 endCal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endParts[0]));
                 endCal.set(Calendar.MINUTE, Integer.parseInt(endParts[1]));
 
@@ -222,11 +245,26 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
                     newSlot.put("doctor_id", currentDoctorId);
                     newSlot.put("status", "available");
                     newSlot.put("session_id", "");
-                    newSlot.put("slot_id", "slot_" + startCal.getTimeInMillis());
+
+                    // Mã slot định dạng rõ ràng: slot_20260706_0900
+                    String customSlotId = "slot_" + selectedDayStr + "_" + startParts[0] + startParts[1];
+                    newSlot.put("slot_id", customSlotId);
+
                     newSlot.put("start_time", new Timestamp(startCal.getTime()));
                     newSlot.put("end_time", new Timestamp(endCal.getTime()));
 
-                    db.collection("lich_hen").add(newSlot);
+                    Log.d("SAVE_DATE", "Ngày lưu: " + startCal.getTime());
+                    Log.d("SAVE_DATE", "Timestamp: " + startCal.getTimeInMillis());
+                    Log.d("SAVE_DATE", newSlot.toString());
+
+                    db.collection("lich_hen")
+                            .add(newSlot)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.d("FIREBASE_SAVE", "Lưu thành công: " + documentReference.getId());
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("FIREBASE_SAVE", "Lỗi: ", e);
+                            });
                 }
             }
 
@@ -291,7 +329,6 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
                             try {
                                 TimeSlotsModel slot = document.toObject(TimeSlotsModel.class);
                                 if (slot != null) {
-                                    // 🌟 ĐỒNG BỘ: Đảm bảo Model nhận luôn ID của Document từ Firestore làm slot_id nếu bị thiếu
                                     if (slot.getSlot_id() == null || slot.getSlot_id().isEmpty()) {
                                         slot.setSlot_id(document.getId());
                                     }
