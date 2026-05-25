@@ -75,10 +75,12 @@ public class HomeActivity extends AppCompatActivity {
 
     private TextView txtHelloTitle;
     private TextView txtHelloSub;
+    private TextView txtStreakCount;
 
     private TextView txtAiTitle;
     private TextView txtAiSubtitle;
     private TextView txtStartAi;
+
 
     private TextView txtSchedule1;
     private TextView txtSchedule2;
@@ -95,6 +97,10 @@ public class HomeActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
+    private boolean waterDone = false;
+    private boolean relaxDone = false;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,8 +166,10 @@ public class HomeActivity extends AppCompatActivity {
 
         txtHelloTitle = findViewById(R.id.txtHelloTitle);
         txtHelloSub = findViewById(R.id.txtHelloSub);
+        txtStreakCount = findViewById(R.id.txtStreakCount);
 
         txtAiTitle = findViewById(R.id.txtAiTitle);
+
         txtAiSubtitle = findViewById(R.id.txtAiSubtitle);
         txtStartAi = findViewById(R.id.txtStartAi);
 
@@ -184,17 +192,23 @@ public class HomeActivity extends AppCompatActivity {
     private void loadUserData() {
         FirebaseUser user = auth.getCurrentUser();
         if (user != null) {
-            firestore.collection("users")
-                    .document(user.getUid())
-                    .get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
-                            String nickname = documentSnapshot.getString("nickname");
-                            if (nickname != null && !nickname.trim().isEmpty()) {
-                                txtGreetingTitle.setText(nickname.trim() + " ơi!");
+            com.example.heami.utils.StreakManager.checkAndResetStreakIfMissed(user.getUid(), correctedStreak -> {
+                firestore.collection("users")
+                        .document(user.getUid())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                String nickname = documentSnapshot.getString("nickname");
+                                if (nickname != null && !nickname.trim().isEmpty()) {
+                                    txtGreetingTitle.setText(nickname.trim() + " ơi!");
+                                }
+                                Long currentStreak = documentSnapshot.getLong("current_streak");
+                                if (currentStreak != null && txtStreakCount != null) {
+                                    txtStreakCount.setText(String.valueOf(currentStreak));
+                                }
                             }
-                        }
-                    });
+                        });
+            });
         }
 
         updateGreetingLabel();
@@ -350,15 +364,32 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void applyTodaySchedule(boolean hasMoodCheckinToday) {
-        // Hiện tại chỉ có check-in cảm xúc là task có dữ liệu lưu thật.
-        boolean waterDone = false;
+        // Kiểm tra và reset trạng thái uống nước hàng ngày
+        android.content.SharedPreferences prefs = getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE);
+        String todayKey = new java.text.SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+        String savedDate = prefs.getString("last_checked_date", "");
+        
+        if (!todayKey.equals(savedDate)) {
+            // Ngày mới -> reset trạng thái uống nước & thư giãn
+            waterDone = false;
+            relaxDone = false;
+            prefs.edit()
+                 .putString("last_checked_date", todayKey)
+                 .putBoolean("water_done", false)
+                 .putBoolean("relax_done", false)
+                 .apply();
+        } else {
+            waterDone = prefs.getBoolean("water_done", false);
+            relaxDone = prefs.getBoolean("relax_done", false);
+        }
+
         boolean moodCheckinDone = hasMoodCheckinToday;
-        boolean breathDone = false;
-        boolean relaxDone = false;
+        boolean breathDone = prefs.getBoolean("breath_done", false);
+
 
         setScheduleTaskState(txtSchedule1, checkDone1, "Uống 1 ly nước", waterDone);
         setScheduleTaskState(txtSchedule2, checkEmpty2, "Check-in cảm xúc buổi sáng", moodCheckinDone);
-        setScheduleTaskState(txtSchedule3, checkEmpty3, "Thở sâu 3 phút", breathDone);
+        setScheduleTaskState(txtSchedule3, checkEmpty3, "Thở sâu 1 phút", breathDone);
         setScheduleTaskState(txtSchedule4, checkEmpty4, "Thư giãn giữa buổi", relaxDone);
 
         int doneSteps = 0;
@@ -494,11 +525,11 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (checkView != null) {
-            checkView.setBackgroundResource(done ? R.drawable.bg_check_done : R.drawable.bg_check_empty);
+            checkView.setBackgroundResource(done ? R.drawable.ic_check : R.drawable.bg_check_empty);
             checkView.setAlpha(1f);
 
             if (checkView instanceof TextView) {
-                ((TextView) checkView).setText(done ? "✓" : "");
+                ((TextView) checkView).setText("");
             }
         }
     }
@@ -879,6 +910,140 @@ public class HomeActivity extends AppCompatActivity {
             txtAppointmentsMore.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, ConsultationsActivity.class);
                 startActivity(intent);
+            });
+        }
+
+        // Section Healing (Therapy) actions
+        TextView txtHealingMore = findViewById(R.id.txtHealingMore);
+        if (txtHealingMore != null) {
+            txtHealingMore.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        View cardHealMusic = findViewById(R.id.cardHealMusic);
+        if (cardHealMusic != null) {
+            cardHealMusic.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "audio");
+                startActivity(intent);
+            });
+        }
+
+        View cardHealBreath = findViewById(R.id.cardHealBreath);
+        if (cardHealBreath != null) {
+            cardHealBreath.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "breath");
+                startActivity(intent);
+            });
+        }
+
+        View cardHealDiary = findViewById(R.id.cardHealDiary);
+        if (cardHealDiary != null) {
+            cardHealDiary.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "journal");
+                startActivity(intent);
+            });
+        }
+
+        View cardHealPodcast = findViewById(R.id.cardHealPodcast);
+        if (cardHealPodcast != null) {
+            cardHealPodcast.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "audio"); // Podcast cũng thuộc tab Âm thanh (layoutAmThanh)
+                startActivity(intent);
+            });
+        }
+
+        // Handle water click check
+        if (checkDone1 != null) {
+            checkDone1.setOnClickListener(v -> {
+                waterDone = !waterDone;
+                getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("water_done", waterDone)
+                    .apply();
+                
+                // Cộng dồn tasks_done trên Firestore nếu tích hoàn thành
+                FirebaseUser user = auth.getCurrentUser();
+                if (user != null && waterDone) {
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(1));
+                } else if (user != null && !waterDone) {
+                    // Nếu bỏ tích, trừ bớt 1 nhưng không để âm
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+                                if (snapshot.exists()) {
+                                    Long currentTasks = snapshot.getLong("tasks_done");
+                                    if (currentTasks != null && currentTasks > 0) {
+                                        firestore.collection("users")
+                                                .document(user.getUid())
+                                                .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(-1));
+                                    }
+                                }
+                            });
+                }
+                
+                loadTodayMoodState(); // reload schedule state
+            });
+        }
+
+        // Handle breathing task click
+        View itemBreathGroup = findViewById(R.id.checkEmpty3);
+        if (itemBreathGroup != null) {
+            itemBreathGroup.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "breath");
+                startActivity(intent);
+            });
+        }
+        if (txtSchedule3 != null) {
+            txtSchedule3.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "breath");
+                startActivity(intent);
+            });
+        }
+
+        // Handle relax click check
+        if (checkEmpty4 != null) {
+            checkEmpty4.setOnClickListener(v -> {
+                relaxDone = !relaxDone;
+                getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("relax_done", relaxDone)
+                    .apply();
+
+                // Cộng dồn tasks_done trên Firestore nếu tích hoàn thành
+                FirebaseUser user = auth.getCurrentUser();
+                if (user != null && relaxDone) {
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(1));
+                } else if (user != null && !relaxDone) {
+                    // Nếu bỏ tích, trừ bớt 1 nhưng không để âm
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+                                if (snapshot.exists()) {
+                                    Long currentTasks = snapshot.getLong("tasks_done");
+                                    if (currentTasks != null && currentTasks > 0) {
+                                        firestore.collection("users")
+                                                .document(user.getUid())
+                                                .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(-1));
+                                    }
+                                }
+                            });
+                }
+
+                loadTodayMoodState(); // reload schedule state
             });
         }
     }
