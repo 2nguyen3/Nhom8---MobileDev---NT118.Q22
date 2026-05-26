@@ -91,7 +91,10 @@ public class AdminHomeActivity extends AppCompatActivity {
         );
 
         cardAdminAnalytics.setOnClickListener(v ->
-                Toast.makeText(this, "Batch D — Phân tích thống kê", Toast.LENGTH_SHORT).show()
+                startActivity(new android.content.Intent(
+                        AdminHomeActivity.this,
+                        AdminAnalyticsActivity.class
+                ))
         );
 
         btnAdminLogout.setOnClickListener(v -> performLogout());

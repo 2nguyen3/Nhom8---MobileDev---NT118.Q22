@@ -250,6 +250,9 @@
             <activity
                 android:name=".ui.admin.AdminReportDetailActivity"
                 android:exported="false" />
+            <activity
+                android:name=".ui.admin.AdminAnalyticsActivity"
+                android:exported="false" />
 
     </application>
 
