@@ -25,6 +25,11 @@ public class AdminModerationRepository {
         void onFailure(@NonNull String errorMessage);
     }
 
+    public interface LoadPendingCountListener {
+        void onSuccess(int pendingCount);
+        void onFailure(@NonNull String errorMessage);
+    }
+
     public interface LogAdminActionListener {
         void onSuccess(@NonNull String actionId);
         void onFailure(@NonNull String errorMessage);
@@ -46,6 +51,20 @@ public class AdminModerationRepository {
                             : "Không thể tải danh sách bài viết bị report";
                     listener.onFailure(message);
                 });
+    }
+
+    public void loadPendingReportsCount(@NonNull LoadPendingCountListener listener) {
+        loadReports(new LoadReportsListener() {
+            @Override
+            public void onSuccess(@NonNull List<CommunityReportModel> reports) {
+                listener.onSuccess(countPending(reports));
+            }
+
+            @Override
+            public void onFailure(@NonNull String errorMessage) {
+                listener.onFailure(errorMessage);
+            }
+        });
     }
 
     public void logAdminAction(

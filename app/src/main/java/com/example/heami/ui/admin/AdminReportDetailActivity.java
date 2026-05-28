@@ -1,13 +1,12 @@
 package com.example.heami.ui.admin;
 
-import com.example.heami.data.repositories.AdminModerationRepository;
-
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.data.repositories.AdminModerationRepository;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -39,7 +39,6 @@ public class AdminReportDetailActivity extends AppCompatActivity {
 
     private TextView txtReportDetailId;
     private TextView txtDetailAuthor;
-    private TextView txtDetailPostId;
     private TextView txtDetailReportCount;
     private TextView txtDetailPostStatus;
     private TextView txtDetailModerationStatus;
@@ -48,20 +47,34 @@ public class AdminReportDetailActivity extends AppCompatActivity {
     private TextView txtDetailContent;
     private TextView txtDecisionHint;
 
-    private TextView btnHidePost;
-    private TextView btnKeepVisible;
-    private TextView btnDeletePost;
+    private TextView txtDecisionSectionTitle;
+    private TextView txtDecisionSectionDesc;
+
+    private LinearLayout cardDecisionPrimary;
+    private LinearLayout cardDecisionSecondary;
+    private TextView txtDecisionPrimaryTitle;
+    private TextView txtDecisionPrimaryDesc;
+    private TextView txtDecisionSecondaryTitle;
+    private TextView txtDecisionSecondaryDesc;
+    private TextView btnConfirmDecision;
+
+    private LinearLayout layoutDangerZone;
+    private LinearLayout cardDeletePost;
+    private TextView txtDeletePostTitle;
+    private TextView txtDeletePostDesc;
 
     private FirebaseFirestore firestore;
+    private AdminModerationRepository moderationRepository;
+
     private String postId = "";
     private boolean isUpdating = false;
-
-    private AdminModerationRepository moderationRepository;
 
     private String currentPostStatus = "ACTIVE";
     private String currentModerationStatus = "VISIBLE";
     private String currentModerationDecision = "";
     private long currentReportCount = 0L;
+
+    private String selectedDecision = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,7 +105,6 @@ public class AdminReportDetailActivity extends AppCompatActivity {
 
         txtReportDetailId = findViewById(R.id.txtReportDetailId);
         txtDetailAuthor = findViewById(R.id.txtDetailAuthor);
-        txtDetailPostId = findViewById(R.id.txtDetailPostId);
         txtDetailReportCount = findViewById(R.id.txtDetailReportCount);
         txtDetailPostStatus = findViewById(R.id.txtDetailPostStatus);
         txtDetailModerationStatus = findViewById(R.id.txtDetailModerationStatus);
@@ -101,24 +113,47 @@ public class AdminReportDetailActivity extends AppCompatActivity {
         txtDetailContent = findViewById(R.id.txtDetailContent);
         txtDecisionHint = findViewById(R.id.txtDecisionHint);
 
-        btnHidePost = findViewById(R.id.btnHidePost);
-        btnKeepVisible = findViewById(R.id.btnKeepVisible);
-        btnDeletePost = findViewById(R.id.btnDeletePost);
+        txtDecisionSectionTitle = findViewById(R.id.txtDecisionSectionTitle);
+        txtDecisionSectionDesc = findViewById(R.id.txtDecisionSectionDesc);
+
+        cardDecisionPrimary = findViewById(R.id.cardDecisionPrimary);
+        cardDecisionSecondary = findViewById(R.id.cardDecisionSecondary);
+        txtDecisionPrimaryTitle = findViewById(R.id.txtDecisionPrimaryTitle);
+        txtDecisionPrimaryDesc = findViewById(R.id.txtDecisionPrimaryDesc);
+        txtDecisionSecondaryTitle = findViewById(R.id.txtDecisionSecondaryTitle);
+        txtDecisionSecondaryDesc = findViewById(R.id.txtDecisionSecondaryDesc);
+        btnConfirmDecision = findViewById(R.id.btnConfirmDecision);
+
+        layoutDangerZone = findViewById(R.id.layoutDangerZone);
+        cardDeletePost = findViewById(R.id.cardDeletePost);
+        txtDeletePostTitle = findViewById(R.id.txtDeletePostTitle);
+        txtDeletePostDesc = findViewById(R.id.txtDeletePostDesc);
     }
 
     private void setupClicks() {
         btnBackReportDetail.setOnClickListener(v -> finish());
 
-        btnHidePost.setOnClickListener(v -> {
-            if ("HIDDEN".equals(currentModerationStatus)) {
-                updateModerationDecision("RESTORED");
-            } else {
-                updateModerationDecision("HIDDEN");
-            }
+        cardDecisionPrimary.setOnClickListener(v -> {
+            if (isUpdating || !cardDecisionPrimary.isEnabled()) return;
+            selectedDecision = getPrimaryDecision();
+            bindDecisionUi();
         });
 
-        btnKeepVisible.setOnClickListener(v -> updateModerationDecision("KEEP_VISIBLE"));
-        btnDeletePost.setOnClickListener(v -> updateModerationDecision("DELETED"));
+        cardDecisionSecondary.setOnClickListener(v -> {
+            if (isUpdating || !cardDecisionSecondary.isEnabled()) return;
+            selectedDecision = getSecondaryDecision();
+            bindDecisionUi();
+        });
+
+        btnConfirmDecision.setOnClickListener(v -> {
+            if (isUpdating || selectedDecision.trim().isEmpty()) return;
+            updateModerationDecision(selectedDecision);
+        });
+
+        cardDeletePost.setOnClickListener(v -> {
+            if (isUpdating || !cardDeletePost.isEnabled()) return;
+            updateModerationDecision("DELETED");
+        });
     }
 
     private void loadPostDetail() {
@@ -159,7 +194,6 @@ public class AdminReportDetailActivity extends AppCompatActivity {
 
         txtReportDetailId.setText(postId);
         txtDetailAuthor.setText(authorName);
-        txtDetailPostId.setText(postId);
         txtDetailReportCount.setText(String.valueOf(currentReportCount));
         txtDetailPostStatus.setText(currentPostStatus);
         txtDetailModerationStatus.setText(currentModerationStatus);
@@ -187,9 +221,225 @@ public class AdminReportDetailActivity extends AppCompatActivity {
 
         bindPostStatusChip(txtDetailPostStatus, currentPostStatus);
         bindModerationStatusChip(txtDetailModerationStatus, currentModerationStatus);
-        updateActionButtons();
+
+        selectedDecision = resolveInitialSelectedDecision();
+        bindDecisionUi();
 
         showContent();
+    }
+
+    @NonNull
+    private String resolveInitialSelectedDecision() {
+        if (isDeletedState()) {
+            return "RESTORED";
+        }
+
+        if (isHiddenState()) {
+            return "HIDDEN";
+        }
+
+        if ("KEEP_VISIBLE".equals(currentModerationDecision)) {
+            return "KEEP_VISIBLE";
+        }
+
+        if ("RESTORED".equals(currentModerationDecision)) {
+            return "KEEP_VISIBLE";
+        }
+
+        return "KEEP_VISIBLE";
+    }
+
+    private void bindDecisionUi() {
+        if (isDeletedState()) {
+            bindDeletedDecisionUi();
+            return;
+        }
+
+        if (isHiddenState()) {
+            bindHiddenDecisionUi();
+            return;
+        }
+
+        bindVisibleDecisionUi();
+    }
+
+    private void bindVisibleDecisionUi() {
+        txtDecisionSectionTitle.setText("Quyết định kiểm duyệt");
+        txtDecisionSectionDesc.setText("Bài viết đang hiển thị. Hãy chọn giữ nguyên hoặc ẩn khỏi feed.");
+
+        cardDecisionPrimary.setVisibility(View.VISIBLE);
+        cardDecisionPrimary.setEnabled(!isUpdating);
+        txtDecisionPrimaryTitle.setText("Giữ nguyên hiển thị");
+        txtDecisionPrimaryDesc.setText("Bài viết tiếp tục hiển thị trên feed cho người dùng.");
+
+        cardDecisionSecondary.setVisibility(View.VISIBLE);
+        cardDecisionSecondary.setEnabled(!isUpdating);
+        txtDecisionSecondaryTitle.setText("Ẩn khỏi feed");
+        txtDecisionSecondaryDesc.setText("Bài viết sẽ không còn xuất hiện trên feed nhưng vẫn còn dữ liệu moderation.");
+
+        styleDecisionCard(cardDecisionPrimary, txtDecisionPrimaryTitle, txtDecisionPrimaryDesc,
+                "KEEP_VISIBLE".equals(selectedDecision), true, !isUpdating);
+        styleDecisionCard(cardDecisionSecondary, txtDecisionSecondaryTitle, txtDecisionSecondaryDesc,
+                "HIDDEN".equals(selectedDecision), false, !isUpdating);
+
+        styleConfirmButton(selectedDecision);
+
+        layoutDangerZone.setAlpha(isUpdating ? 0.7f : 1f);
+        cardDeletePost.setEnabled(!isUpdating);
+        cardDeletePost.setBackgroundResource(R.drawable.bg_admin_stat_card);
+        txtDeletePostTitle.setText("Xóa bài viết");
+        txtDeletePostTitle.setTextColor(Color.parseColor("#C2516A"));
+        txtDeletePostDesc.setText("Bài viết sẽ bị đánh dấu đã xóa và không còn hiển thị trên feed.");
+        txtDeletePostDesc.setTextColor(Color.parseColor("#84788F"));
+    }
+
+    private void bindHiddenDecisionUi() {
+        txtDecisionSectionTitle.setText("Quyết định moderation");
+        txtDecisionSectionDesc.setText("Bài viết hiện đang bị ẩn. Hãy chọn tiếp tục ẩn hoặc khôi phục hiển thị.");
+
+        cardDecisionPrimary.setVisibility(View.VISIBLE);
+        cardDecisionPrimary.setEnabled(!isUpdating);
+        txtDecisionPrimaryTitle.setText("Tiếp tục ẩn khỏi feed");
+        txtDecisionPrimaryDesc.setText("Giữ bài viết ở trạng thái ẩn, người dùng sẽ không thấy trên feed.");
+
+        cardDecisionSecondary.setVisibility(View.VISIBLE);
+        cardDecisionSecondary.setEnabled(!isUpdating);
+        txtDecisionSecondaryTitle.setText("Khôi phục hiển thị");
+        txtDecisionSecondaryDesc.setText("Đưa bài viết trở lại feed cho người dùng.");
+
+        styleDecisionCard(cardDecisionPrimary, txtDecisionPrimaryTitle, txtDecisionPrimaryDesc,
+                "HIDDEN".equals(selectedDecision), false, !isUpdating);
+        styleDecisionCard(cardDecisionSecondary, txtDecisionSecondaryTitle, txtDecisionSecondaryDesc,
+                "RESTORED".equals(selectedDecision), true, !isUpdating);
+
+        styleConfirmButton(selectedDecision);
+
+        layoutDangerZone.setAlpha(isUpdating ? 0.7f : 1f);
+        cardDeletePost.setEnabled(!isUpdating);
+        cardDeletePost.setBackgroundResource(R.drawable.bg_admin_stat_card);
+        txtDeletePostTitle.setText("Xóa bài viết");
+        txtDeletePostTitle.setTextColor(Color.parseColor("#C2516A"));
+        txtDeletePostDesc.setText("Xóa là thao tác mạnh hơn ẩn. Bài viết sẽ được đánh dấu đã xóa.");
+        txtDeletePostDesc.setTextColor(Color.parseColor("#84788F"));
+    }
+
+    private void bindDeletedDecisionUi() {
+        txtDecisionSectionTitle.setText("Khôi phục sau khi xóa");
+        txtDecisionSectionDesc.setText("Bài viết đã bị xóa. Bạn chỉ có thể khôi phục lại trạng thái hiển thị.");
+
+        cardDecisionPrimary.setVisibility(View.VISIBLE);
+        cardDecisionPrimary.setEnabled(!isUpdating);
+        txtDecisionPrimaryTitle.setText("Khôi phục bài viết");
+        txtDecisionPrimaryDesc.setText("Khôi phục bài viết về trạng thái hiển thị để người dùng thấy lại trên feed.");
+
+        cardDecisionSecondary.setVisibility(View.GONE);
+
+        styleDecisionCard(cardDecisionPrimary, txtDecisionPrimaryTitle, txtDecisionPrimaryDesc,
+                true, true, !isUpdating);
+
+        btnConfirmDecision.setEnabled(!isUpdating);
+        btnConfirmDecision.setAlpha(isUpdating ? 0.7f : 1f);
+        btnConfirmDecision.setText(isUpdating ? "Đang cập nhật..." : "Khôi phục bài viết");
+        btnConfirmDecision.setBackgroundResource(R.drawable.bg_button_teal);
+        btnConfirmDecision.setTextColor(Color.WHITE);
+
+        layoutDangerZone.setAlpha(0.8f);
+        cardDeletePost.setEnabled(false);
+        cardDeletePost.setBackgroundResource(R.drawable.bg_chip_inactive);
+        txtDeletePostTitle.setText("Bài viết đã bị xóa");
+        txtDeletePostTitle.setTextColor(Color.parseColor("#C2516A"));
+        txtDeletePostDesc.setText("Không thể xóa thêm. Hãy dùng khôi phục nếu muốn đưa bài viết trở lại.");
+        txtDeletePostDesc.setTextColor(Color.parseColor("#84788F"));
+    }
+
+    private void styleDecisionCard(
+            @NonNull LinearLayout card,
+            @NonNull TextView title,
+            @NonNull TextView desc,
+            boolean selected,
+            boolean positive,
+            boolean enabled
+    ) {
+        if (!enabled) {
+            card.setBackgroundResource(R.drawable.bg_chip_inactive);
+            title.setTextColor(Color.parseColor("#A39AAF"));
+            desc.setTextColor(Color.parseColor("#A39AAF"));
+            return;
+        }
+
+        if (selected) {
+            if (positive) {
+                card.setBackgroundResource(R.drawable.bg_button_teal);
+            } else {
+                card.setBackgroundResource(R.drawable.bg_button_soft_red);
+            }
+            title.setTextColor(Color.WHITE);
+            desc.setTextColor(Color.WHITE);
+        } else {
+            card.setBackgroundResource(R.drawable.bg_admin_stat_card);
+            title.setTextColor(Color.parseColor("#1B1730"));
+            desc.setTextColor(Color.parseColor("#84788F"));
+        }
+    }
+
+    private void styleConfirmButton(@NonNull String decision) {
+        btnConfirmDecision.setEnabled(!isUpdating);
+        btnConfirmDecision.setAlpha(isUpdating ? 0.7f : 1f);
+
+        if (isUpdating) {
+            btnConfirmDecision.setText("Đang cập nhật...");
+            btnConfirmDecision.setBackgroundResource(R.drawable.bg_admin_stat_card);
+            btnConfirmDecision.setTextColor(Color.parseColor("#6E5F7F"));
+            return;
+        }
+
+        switch (decision) {
+            case "HIDDEN":
+                btnConfirmDecision.setText("Xác nhận ẩn bài viết");
+                btnConfirmDecision.setBackgroundResource(R.drawable.bg_button_soft_red);
+                btnConfirmDecision.setTextColor(Color.WHITE);
+                break;
+
+            case "RESTORED":
+                btnConfirmDecision.setText("Xác nhận khôi phục hiển thị");
+                btnConfirmDecision.setBackgroundResource(R.drawable.bg_button_teal);
+                btnConfirmDecision.setTextColor(Color.WHITE);
+                break;
+
+            case "KEEP_VISIBLE":
+            default:
+                btnConfirmDecision.setText("Xác nhận giữ nguyên hiển thị");
+                btnConfirmDecision.setBackgroundResource(R.drawable.bg_button_teal);
+                btnConfirmDecision.setTextColor(Color.WHITE);
+                break;
+        }
+    }
+
+    @NonNull
+    private String getPrimaryDecision() {
+        if (isDeletedState()) {
+            return "RESTORED";
+        }
+        if (isHiddenState()) {
+            return "HIDDEN";
+        }
+        return "KEEP_VISIBLE";
+    }
+
+    @NonNull
+    private String getSecondaryDecision() {
+        if (isHiddenState()) {
+            return "RESTORED";
+        }
+        return "HIDDEN";
+    }
+
+    private boolean isHiddenState() {
+        return "HIDDEN".equals(currentModerationStatus) && !isDeletedState();
+    }
+
+    private boolean isDeletedState() {
+        return "DELETED".equals(currentPostStatus) || "DELETED".equals(currentModerationDecision);
     }
 
     private void updateModerationDecision(@NonNull String decision) {
@@ -198,7 +448,7 @@ public class AdminReportDetailActivity extends AppCompatActivity {
         }
 
         isUpdating = true;
-        updateActionButtons();
+        bindDecisionUi();
 
         String adminId = safeText(FirebaseAuth.getInstance().getUid(), "");
 
@@ -241,7 +491,6 @@ public class AdminReportDetailActivity extends AppCompatActivity {
                 .document(postId)
                 .update(updates)
                 .addOnSuccessListener(unused -> {
-
                     if (adminId.isEmpty()) {
                         completeModerationSuccess(decision, false);
                         return;
@@ -269,7 +518,7 @@ public class AdminReportDetailActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     isUpdating = false;
-                    updateActionButtons();
+                    bindDecisionUi();
                     Toast.makeText(
                             this,
                             e.getMessage() != null ? e.getMessage() : "Không thể cập nhật moderation",
@@ -335,98 +584,6 @@ public class AdminReportDetailActivity extends AppCompatActivity {
         loadPostDetail();
     }
 
-    private void updateActionButtons() {
-        btnHidePost.setEnabled(!isUpdating);
-        btnKeepVisible.setEnabled(!isUpdating);
-        btnDeletePost.setEnabled(!isUpdating);
-
-        btnHidePost.setAlpha(isUpdating ? 0.7f : 1f);
-        btnKeepVisible.setAlpha(isUpdating ? 0.7f : 1f);
-        btnDeletePost.setAlpha(isUpdating ? 0.7f : 1f);
-
-        if (isUpdating) {
-            btnHidePost.setText("Đang cập nhật...");
-            btnKeepVisible.setText("Đang cập nhật...");
-            btnDeletePost.setText("Đang cập nhật...");
-            return;
-        }
-
-        // 1) Reset toàn bộ về trạng thái trung tính trước
-        btnHidePost.setTextColor(Color.parseColor("#6E5F7F"));
-        btnKeepVisible.setTextColor(Color.parseColor("#6E5F7F"));
-        btnDeletePost.setTextColor(Color.parseColor("#6E5F7F"));
-
-        btnHidePost.setBackgroundResource(R.drawable.bg_admin_stat_card);
-        btnKeepVisible.setBackgroundResource(R.drawable.bg_admin_stat_card);
-        btnDeletePost.setBackgroundResource(R.drawable.bg_admin_stat_card);
-
-        btnHidePost.setEnabled(true);
-        btnKeepVisible.setEnabled(true);
-        btnDeletePost.setEnabled(true);
-
-        // 2) Nếu đã xóa thì chỉ khóa nút Giữ nguyên hiển thị , chỉ hiện trạng thái đã xóa
-        if ("DELETED".equals(currentPostStatus) || "DELETED".equals(currentModerationDecision)) {
-            btnHidePost.setText("Khôi phục bài viết");
-            btnHidePost.setBackgroundResource(R.drawable.bg_button_teal);
-            btnHidePost.setTextColor(Color.WHITE);
-            btnHidePost.setEnabled(true);
-
-            btnKeepVisible.setText("Giữ nguyên hiển thị");
-            btnKeepVisible.setBackgroundResource(R.drawable.bg_admin_stat_card);
-            btnKeepVisible.setTextColor(Color.parseColor("#A39AAF"));
-            btnKeepVisible.setEnabled(false);
-
-            btnDeletePost.setText("Đã xóa bài viết");
-            btnDeletePost.setBackgroundResource(R.drawable.bg_chip_inactive);
-            btnDeletePost.setTextColor(Color.parseColor("#C2516A"));
-            btnDeletePost.setEnabled(false);
-            return;
-        }
-
-        // 3) Nếu đang bị ẩn -> nút đầu thành Khôi phục và lên màu xanh
-        if ("HIDDEN".equals(currentModerationStatus)) {
-            btnHidePost.setText("Khôi phục bài viết");
-            btnHidePost.setBackgroundResource(R.drawable.bg_button_teal);
-            btnHidePost.setTextColor(Color.WHITE);
-
-            // Khi đang hidden thì không cần cho bấm "Giữ nguyên hiển thị"
-            btnKeepVisible.setText("Giữ nguyên hiển thị");
-            btnKeepVisible.setEnabled(false);
-            btnKeepVisible.setTextColor(Color.parseColor("#A39AAF"));
-
-            btnDeletePost.setText("Xóa bài viết");
-            return;
-        }
-
-        // 4) Nếu admin đã quyết định giữ nguyên hiển thị -> chỉ nút đó màu xanh
-        if ("KEEP_VISIBLE".equals(currentModerationDecision)) {
-            btnHidePost.setText("Ẩn bài viết");
-
-            btnKeepVisible.setText("Giữ nguyên hiển thị");
-            btnKeepVisible.setBackgroundResource(R.drawable.bg_button_teal);
-            btnKeepVisible.setTextColor(Color.WHITE);
-
-            btnDeletePost.setText("Xóa bài viết");
-            return;
-        }
-
-        // 5) Nếu admin đã khôi phục -> nút khôi phục vẫn xanh để thể hiện quyết định gần nhất
-        if ("RESTORED".equals(currentModerationDecision)) {
-            btnHidePost.setText("Khôi phục bài viết");
-            btnHidePost.setBackgroundResource(R.drawable.bg_button_teal);
-            btnHidePost.setTextColor(Color.WHITE);
-
-            btnKeepVisible.setText("Giữ nguyên hiển thị");
-            btnDeletePost.setText("Xóa bài viết");
-            return;
-        }
-
-        // 6) Trạng thái mặc định chưa quyết định gì: tất cả trung tính
-        btnHidePost.setText("Ẩn bài viết");
-        btnKeepVisible.setText("Giữ nguyên hiển thị");
-        btnDeletePost.setText("Xóa bài viết");
-    }
-
     private void bindPostStatusChip(@NonNull TextView view, @NonNull String status) {
         if ("HIDDEN".equals(status) || "DELETED".equals(status)) {
             view.setBackgroundResource(R.drawable.bg_chip_inactive);
@@ -449,9 +606,8 @@ public class AdminReportDetailActivity extends AppCompatActivity {
 
     @NonNull
     private String buildDecisionHint() {
-
-        if ("DELETED".equals(currentPostStatus) || "DELETED".equals(currentModerationDecision)) {
-            return "Bài viết đã bị admin xóa khỏi hệ thống hiển thị.";
+        if (isDeletedState()) {
+            return "Bài viết đã bị admin xóa khỏi hệ thống hiển thị. Bạn có thể khôi phục nếu cần.";
         }
 
         if (currentReportCount >= 5) {
@@ -461,7 +617,7 @@ public class AdminReportDetailActivity extends AppCompatActivity {
             if ("KEEP_VISIBLE".equals(currentModerationDecision)) {
                 return "Bài viết đã vượt ngưỡng 5 report nhưng admin quyết định giữ nguyên hiển thị.";
             }
-            return "Bài viết đã vượt ngưỡng 5 report. Admin cần quyết định ẩn hoặc giữ nguyên hiển thị.";
+            return "Bài viết đã vượt ngưỡng 5 report. Hãy chọn ẩn khỏi feed hoặc giữ nguyên hiển thị.";
         }
 
         if ("HIDDEN".equals(currentModerationStatus)) {
