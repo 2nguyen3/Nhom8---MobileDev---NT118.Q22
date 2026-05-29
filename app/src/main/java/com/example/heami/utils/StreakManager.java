@@ -15,6 +15,83 @@ public class StreakManager {
         void onFailure(Exception e);
     }
 
+    public interface StreakResetCallback {
+        void onResult(int currentStreak);
+    }
+
+    /**
+     * Kiểm tra nếu user không check-in trong ngày hôm qua (hoặc lâu hơn) thì reset current_streak về 0.
+     * total_checkins KHÔNG bị ảnh hưởng - chỉ mất streak nếu bỏ lỡ ngày check-in.
+     * Nên gọi method này khi mở màn hình Profile để đồng bộ streak hiển thị.
+     */
+    public static void checkAndResetStreakIfMissed(String userId, StreakResetCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userRef = db.collection("users").document(userId);
+
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (!documentSnapshot.exists()) {
+                if (callback != null) callback.onResult(0);
+                return;
+            }
+
+            long currentStreak = 0;
+            if (documentSnapshot.contains("current_streak")) {
+                currentStreak = documentSnapshot.getLong("current_streak");
+            }
+
+            // Nếu streak đã là 0 thì không cần kiểm tra
+            if (currentStreak <= 0) {
+                if (callback != null) callback.onResult(0);
+                return;
+            }
+
+            Timestamp lastActivity = null;
+            if (documentSnapshot.contains("last_activity_date")) {
+                lastActivity = documentSnapshot.getTimestamp("last_activity_date");
+            }
+
+            // Nếu chưa từng check-in thì streak đã là 0
+            if (lastActivity == null) {
+                if (callback != null) callback.onResult(0);
+                return;
+            }
+
+            Calendar today = Calendar.getInstance();
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+
+            Calendar lastCheckIn = Calendar.getInstance();
+            lastCheckIn.setTime(lastActivity.toDate());
+            lastCheckIn.set(Calendar.HOUR_OF_DAY, 0);
+            lastCheckIn.set(Calendar.MINUTE, 0);
+            lastCheckIn.set(Calendar.SECOND, 0);
+            lastCheckIn.set(Calendar.MILLISECOND, 0);
+
+            long diffMs = today.getTimeInMillis() - lastCheckIn.getTimeInMillis();
+            long diffDays = diffMs / (24 * 60 * 60 * 1000);
+
+            // Nếu bỏ lỡ hơn 1 ngày (tức là hôm qua không check-in) thì reset streak về 0
+            if (diffDays > 1) {
+                final long resetStreak = 0;
+                Map<String, Object> updates = new HashMap<>();
+                updates.put("current_streak", resetStreak);
+                userRef.update(updates).addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onResult((int) resetStreak);
+                }).addOnFailureListener(e -> {
+                    // Nếu update thất bại, vẫn trả về 0 để UI hiển thị đúng
+                    if (callback != null) callback.onResult(0);
+                });
+            } else {
+                // Streak còn hợp lệ (check-in hôm nay hoặc hôm qua)
+                if (callback != null) callback.onResult((int) currentStreak);
+            }
+        }).addOnFailureListener(e -> {
+            if (callback != null) callback.onResult(-1); // -1 = không thể xác định
+        });
+    }
+
     public static void updateCheckInStreak(String userId, StreakUpdateCallback callback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference userRef = db.collection("users").document(userId);

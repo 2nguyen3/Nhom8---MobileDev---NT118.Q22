@@ -75,6 +75,31 @@ public class TherapyActivity extends AppCompatActivity {
 
 
         BottomNavManager.setup(this, BottomNavManager.TAB_THERAPY);
+
+        // Handle category navigation from Home
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("category")) {
+            String category = intent.getStringExtra("category");
+            if (category != null) {
+                switch (category) {
+                    case "audio":
+                        applyFilter("audio", btnAmThanh);
+                        break;
+                    case "breath":
+                        applyFilter("breath", btnHitTho);
+                        break;
+                    case "journal":
+                        applyFilter("journal", btnNhatKy);
+                        break;
+                    case "plan":
+                        applyFilter("plan", btnKeHoach);
+                        break;
+                    default:
+                        applyFilter("all", btnTatCa);
+                        break;
+                }
+            }
+        }
     }
 
     private void initViews() {

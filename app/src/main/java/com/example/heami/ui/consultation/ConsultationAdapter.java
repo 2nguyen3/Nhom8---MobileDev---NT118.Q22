@@ -309,6 +309,19 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         holder.layoutDetail.setVisibility(expanded ? View.VISIBLE : View.GONE);
         holder.imgChevron.setRotation(expanded ? 180f : 0f);
 
+        // Click xem lai cuoc tro chuyen
+        if (holder.btnReviewChat != null) {
+            holder.btnReviewChat.setOnClickListener(v -> {
+                android.content.Intent intent = new android.content.Intent(context, ConsultationSessionActivity.class);
+                intent.putExtra(ConsultationSessionActivity.EXTRA_SESSION_ID, model.getSessionId());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_FORMAT_TYPE, model.getFormatType());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_DOCTOR_NAME, model.getDoctorName());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_DOCTOR_AVATAR, model.getDoctorAvatar());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_STATUS, model.getStatus());
+                context.startActivity(intent);
+            });
+        }
+
         holder.itemView.setOnClickListener(v -> {
             boolean nextExpanded = !model.isIs_expanded();
             model.setIs_expanded(nextExpanded);
@@ -553,6 +566,7 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         TextView txtTotalPrice, txtUserComment, txtCancelMessage, txtPackageBadge;
         LinearLayout layoutDetail, layoutFeedbackContent;
         RatingBar ratingBar;
+        AppCompatButton btnReviewChat;
 
         public HistoryViewHolder(@NonNull View v) {
             super(v);
@@ -572,6 +586,7 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             layoutDetail          = v.findViewById(R.id.layoutDetail);
             layoutFeedbackContent = v.findViewById(R.id.layoutFeedbackContent);
             ratingBar             = v.findViewById(R.id.ratingBar);
+            btnReviewChat         = v.findViewById(R.id.btnReviewChat);
         }
     }
 }

@@ -29,6 +29,8 @@ import com.example.heami.data.models.UserSettingsModel;
 import com.example.heami.ui.auth.LoginActivity;
 import com.example.heami.ui.consultation.ConsultationsActivity;
 import com.example.heami.utils.NotificationScheduler;
+import com.example.heami.utils.StreakManager;
+
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
@@ -136,47 +138,53 @@ public class ProfileActivity extends AppCompatActivity {
         if (currentUser != null) {
             currentUserEmail = currentUser.getEmail();
 
-            FirebaseFirestore.getInstance().collection("users").document(currentUser.getUid())
-                    .get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
-                            isUpdatingUI = true;
-                            
-                            String nickname = documentSnapshot.getString("nickname");
-                            String motto = documentSnapshot.getString("motto");
-                            String avatarEmoji = documentSnapshot.getString("avatar_url");
-                            List<String> mood_goals = (List<String>) documentSnapshot.get("mood_goals");
-                            Long streak = documentSnapshot.getLong("current_streak");
-                            Boolean isProtected = documentSnapshot.getBoolean("is_protected_mode");
+            // Kiểm tra và reset streak về 0 nếu user bỏ lỡ ngày check-in hôm qua
+            // (total_checkins không bị ảnh hưởng, chỉ current_streak bị reset)
+            StreakManager.checkAndResetStreakIfMissed(currentUser.getUid(), correctedStreak -> {
+                // Sau khi đã đồng bộ streak trên Firestore, load lại thông tin để hiển thị
+                FirebaseFirestore.getInstance().collection("users").document(currentUser.getUid())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                isUpdatingUI = true;
 
-                            if (nickname != null) tvName.setText(nickname);
-                            if (motto != null) tvBio.setText(motto);
-                            if (streak != null) tvStatStreak.setText(String.valueOf(streak));
-                            
-                            tvStatCheckin.setText(documentSnapshot.contains("total_checkins") ? String.valueOf(documentSnapshot.getLong("total_checkins")) : "0");
-                            tvStatTask.setText(documentSnapshot.contains("tasks_done") ? String.valueOf(documentSnapshot.getLong("tasks_done")) : "0");
+                                String nickname = documentSnapshot.getString("nickname");
+                                String motto = documentSnapshot.getString("motto");
+                                String avatarEmoji = documentSnapshot.getString("avatar_url");
+                                List<String> mood_goals = (List<String>) documentSnapshot.get("mood_goals");
+                                Long streak = documentSnapshot.getLong("current_streak");
+                                Boolean isProtected = documentSnapshot.getBoolean("is_protected_mode");
 
-                            if (isProtected != null && switchPrivacy != null) {
-                                switchPrivacy.setChecked(isProtected);
-                                updatePrivacyStatusUI(isProtected);
+                                if (nickname != null) tvName.setText(nickname);
+                                if (motto != null) tvBio.setText(motto);
+                                // Hiển thị streak đã được đồng bộ (0 nếu bỏ lỡ, giá trị thực nếu còn hợp lệ)
+                                if (streak != null) tvStatStreak.setText(String.valueOf(streak));
+
+                                tvStatCheckin.setText(documentSnapshot.contains("total_checkins") ? String.valueOf(documentSnapshot.getLong("total_checkins")) : "0");
+                                tvStatTask.setText(documentSnapshot.contains("tasks_done") ? String.valueOf(documentSnapshot.getLong("tasks_done")) : "0");
+
+                                if (isProtected != null && switchPrivacy != null) {
+                                    switchPrivacy.setChecked(isProtected);
+                                    updatePrivacyStatusUI(isProtected);
+                                }
+
+                                if (avatarEmoji != null && !avatarEmoji.isEmpty()) {
+                                    tvAvatarEmoji.setText(avatarEmoji);
+                                    currentAvatarEmoji = avatarEmoji;
+                                    SharedPreferences.Editor editor = getSharedPreferences("HeamiData", MODE_PRIVATE).edit();
+                                    editor.putString("user_avatar_emoji", avatarEmoji);
+                                    editor.apply();
+                                }
+
+                                if (mood_goals != null) {
+                                    userSelectedMoodGoals = new ArrayList<>(mood_goals);
+                                    updateMoodGoalsUI(layoutChips, mood_goals);
+                                }
+
+                                isUpdatingUI = false;
                             }
-
-                            if (avatarEmoji != null && !avatarEmoji.isEmpty()) {
-                                tvAvatarEmoji.setText(avatarEmoji);
-                                currentAvatarEmoji = avatarEmoji;
-                                SharedPreferences.Editor editor = getSharedPreferences("HeamiData", MODE_PRIVATE).edit();
-                                editor.putString("user_avatar_emoji", avatarEmoji);
-                                editor.apply();
-                            }
-
-                            if (mood_goals != null) {
-                                userSelectedMoodGoals = new ArrayList<>(mood_goals);
-                                updateMoodGoalsUI(layoutChips, mood_goals);
-                            }
-                            
-                            isUpdatingUI = false;
-                        }
-                    });
+                        });
+            });
         }
     }
 

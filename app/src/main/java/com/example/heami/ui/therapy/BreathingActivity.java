@@ -209,7 +209,24 @@ public class BreathingActivity extends AppCompatActivity {
         if (mainTimer != null) mainTimer.cancel();
         if (cycleTimer != null) cycleTimer.cancel();
 
-        if (cycleCount > 0) showFinishDialog();
+        if (cycleCount > 0) {
+            getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE)
+                .edit()
+                .putBoolean("breath_done", true)
+                .putString("last_checked_date", new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(new java.util.Date()))
+                .apply();
+
+            // Cộng dồn tasks_done trên Firestore
+            com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(user.getUid())
+                        .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(1));
+            }
+
+            showFinishDialog();
+        }
 
         btnAction.setText("Bắt đầu");
         tvStatus.setText("Sẵn sàng?");
