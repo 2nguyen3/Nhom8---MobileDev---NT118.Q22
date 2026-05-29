@@ -98,6 +98,26 @@ public class CommunityActivity extends AppCompatActivity {
     private com.google.firebase.database.DatabaseReference statusRootRef;
     private com.google.firebase.database.ValueEventListener onlineCountListener;
 
+    private com.google.firebase.database.DatabaseReference serverTimeOffsetRef;
+    private com.google.firebase.database.ValueEventListener serverTimeOffsetListener;
+
+    private final android.os.Handler onlineRefreshHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private com.google.firebase.database.DataSnapshot lastStatusSnapshot;
+    private long serverTimeOffsetMs = 0L;
+
+    private final Set<String> userAccountUidSet = new HashSet<>();
+    private com.google.firebase.firestore.ListenerRegistration userRoleListener;
+
+    private final Runnable onlineRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateCommunityOnlineCount();
+            onlineRefreshHandler.postDelayed(this, 5_000L);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,6 +134,8 @@ public class CommunityActivity extends AppCompatActivity {
                 "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app"
         );
         statusRootRef = realtimeDb.getReference("status");
+        statusRootRef.keepSynced(true);
+        serverTimeOffsetRef = realtimeDb.getReference(".info/serverTimeOffset");
 
         bindViews();
         initData();
@@ -1890,21 +1912,13 @@ public class CommunityActivity extends AppCompatActivity {
     private void startOnlineCountListener() {
         stopOnlineCountListener();
 
+        startServerTimeOffsetListener();
+
         onlineCountListener = new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                int onlineCount = 0;
-                long now = System.currentTimeMillis();
-
-                for (com.google.firebase.database.DataSnapshot userSnapshot : snapshot.getChildren()) {
-                    if (PresenceUtils.isUserOnlineFromConnections(userSnapshot, now)) {
-                        onlineCount++;
-                    }
-                }
-
-                if (txtOnlineCount != null) {
-                    txtOnlineCount.setText(String.valueOf(onlineCount));
-                }
+                lastStatusSnapshot = snapshot;
+                updateCommunityOnlineCount();
             }
 
             @Override
@@ -1916,13 +1930,100 @@ public class CommunityActivity extends AppCompatActivity {
         };
 
         statusRootRef.addValueEventListener(onlineCountListener);
+
+        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
+        onlineRefreshHandler.post(onlineRefreshRunnable);
     }
 
     private void stopOnlineCountListener() {
+        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
+
         if (statusRootRef != null && onlineCountListener != null) {
             statusRootRef.removeEventListener(onlineCountListener);
             onlineCountListener = null;
         }
+
+        stopServerTimeOffsetListener();
+        lastStatusSnapshot = null;
+    }
+
+    private void startUserRoleListener() {
+        stopUserRoleListener();
+
+        userRoleListener = firestore.collection("accounts")
+                .whereEqualTo("role", "USER")
+                .addSnapshotListener((value, error) -> {
+                    userAccountUidSet.clear();
+
+                    if (error != null || value == null) {
+                        updateCommunityOnlineCount();
+                        return;
+                    }
+
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
+                        if (doc.getId() != null && !doc.getId().trim().isEmpty()) {
+                            userAccountUidSet.add(doc.getId());
+                        }
+                    }
+
+                    updateCommunityOnlineCount();
+                });
+    }
+
+    private void stopUserRoleListener() {
+        if (userRoleListener != null) {
+            userRoleListener.remove();
+            userRoleListener = null;
+        }
+
+        userAccountUidSet.clear();
+    }
+
+    private void startServerTimeOffsetListener() {
+        stopServerTimeOffsetListener();
+
+        if (serverTimeOffsetRef == null) {
+            return;
+        }
+
+        serverTimeOffsetListener = new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                Long offset = snapshot.getValue(Long.class);
+                serverTimeOffsetMs = offset != null ? offset : 0L;
+            }
+
+            @Override
+            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                serverTimeOffsetMs = 0L;
+            }
+        };
+
+        serverTimeOffsetRef.addValueEventListener(serverTimeOffsetListener);
+    }
+
+    private void stopServerTimeOffsetListener() {
+        if (serverTimeOffsetRef != null && serverTimeOffsetListener != null) {
+            serverTimeOffsetRef.removeEventListener(serverTimeOffsetListener);
+        }
+
+        serverTimeOffsetListener = null;
+    }
+
+    private void updateCommunityOnlineCount() {
+        if (lastStatusSnapshot == null || txtOnlineCount == null) {
+            return;
+        }
+
+        long estimatedServerNow = System.currentTimeMillis() + serverTimeOffsetMs;
+
+        int onlineCount = PresenceUtils.countOnlineUsersOnlyByUidSet(
+                lastStatusSnapshot,
+                estimatedServerNow,
+                userAccountUidSet
+        );
+
+        txtOnlineCount.setText(String.valueOf(onlineCount));
     }
 
     @NonNull
@@ -2106,6 +2207,8 @@ public class CommunityActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+
+        startUserRoleListener();
         startOnlineCountListener();
         startDashboardRealtimeListeners();
         loadCommunityDashboardStats();
@@ -2114,7 +2217,9 @@ public class CommunityActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+
         stopOnlineCountListener();
+        stopUserRoleListener();
         stopDashboardRealtimeListeners();
     }
 }

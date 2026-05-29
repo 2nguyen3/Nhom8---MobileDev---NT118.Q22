@@ -89,7 +89,7 @@ public class AdminReportDetailActivity extends AppCompatActivity {
         setupClicks();
 
         if (postId.isEmpty()) {
-            showError("Thiếu post_id để mở chi tiết moderation");
+            showError("Thiếu post_id để mở chi tiết kiểm ");
             return;
         }
 
@@ -275,7 +275,7 @@ public class AdminReportDetailActivity extends AppCompatActivity {
         cardDecisionSecondary.setVisibility(View.VISIBLE);
         cardDecisionSecondary.setEnabled(!isUpdating);
         txtDecisionSecondaryTitle.setText("Ẩn khỏi feed");
-        txtDecisionSecondaryDesc.setText("Bài viết sẽ không còn xuất hiện trên feed nhưng vẫn còn dữ liệu moderation.");
+        txtDecisionSecondaryDesc.setText("Bài viết sẽ không còn xuất hiện trên feed nhưng vẫn còn dữ liệu duyệt.");
 
         styleDecisionCard(cardDecisionPrimary, txtDecisionPrimaryTitle, txtDecisionPrimaryDesc,
                 "KEEP_VISIBLE".equals(selectedDecision), true, !isUpdating);
@@ -294,7 +294,7 @@ public class AdminReportDetailActivity extends AppCompatActivity {
     }
 
     private void bindHiddenDecisionUi() {
-        txtDecisionSectionTitle.setText("Quyết định moderation");
+        txtDecisionSectionTitle.setText("Quyết định kiểm duyệt");
         txtDecisionSectionDesc.setText("Bài viết hiện đang bị ẩn. Hãy chọn tiếp tục ẩn hoặc khôi phục hiển thị.");
 
         cardDecisionPrimary.setVisibility(View.VISIBLE);
@@ -521,7 +521,7 @@ public class AdminReportDetailActivity extends AppCompatActivity {
                     bindDecisionUi();
                     Toast.makeText(
                             this,
-                            e.getMessage() != null ? e.getMessage() : "Không thể cập nhật moderation",
+                            e.getMessage() != null ? e.getMessage() : "Không thể cập nhật kiểm duyệt",
                             Toast.LENGTH_SHORT
                     ).show();
                 });

@@ -54,6 +54,23 @@ public class AdminHomeActivity extends AppCompatActivity {
     private DatabaseReference statusRootRef;
     private ValueEventListener onlineCountListener;
 
+    private DatabaseReference serverTimeOffsetRef;
+    private ValueEventListener serverTimeOffsetListener;
+
+    private final android.os.Handler onlineRefreshHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private DataSnapshot lastStatusSnapshot;
+    private long serverTimeOffsetMs = 0L;
+
+    private final Runnable onlineRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateAdminOnlineCount();
+            onlineRefreshHandler.postDelayed(this, 5_000L);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -242,19 +259,16 @@ public class AdminHomeActivity extends AppCompatActivity {
         stopOnlineCountListener();
 
         statusRootRef = realtimeDb.getReference("status");
+        statusRootRef.keepSynced(true);
+
+        serverTimeOffsetRef = realtimeDb.getReference(".info/serverTimeOffset");
+        startServerTimeOffsetListener();
+
         onlineCountListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                int onlineCount = 0;
-                long now = System.currentTimeMillis();
-
-                for (DataSnapshot userSnapshot : snapshot.getChildren()) {
-                    if (PresenceUtils.isUserOnlineFromConnections(userSnapshot, now)) {
-                        onlineCount++;
-                    }
-                }
-
-                txtStatOnline.setText(String.valueOf(onlineCount));
+                lastStatusSnapshot = snapshot;
+                updateAdminOnlineCount();
             }
 
             @Override
@@ -264,13 +278,64 @@ public class AdminHomeActivity extends AppCompatActivity {
         };
 
         statusRootRef.addValueEventListener(onlineCountListener);
+
+        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
+        onlineRefreshHandler.post(onlineRefreshRunnable);
+    }
+
+    private void startServerTimeOffsetListener() {
+        stopServerTimeOffsetListener();
+
+        if (serverTimeOffsetRef == null) {
+            return;
+        }
+
+        serverTimeOffsetListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Long offset = snapshot.getValue(Long.class);
+                serverTimeOffsetMs = offset != null ? offset : 0L;
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                serverTimeOffsetMs = 0L;
+            }
+        };
+
+        serverTimeOffsetRef.addValueEventListener(serverTimeOffsetListener);
+    }
+
+    private void stopServerTimeOffsetListener() {
+        if (serverTimeOffsetRef != null && serverTimeOffsetListener != null) {
+            serverTimeOffsetRef.removeEventListener(serverTimeOffsetListener);
+        }
+
+        serverTimeOffsetListener = null;
+    }
+
+    private void updateAdminOnlineCount() {
+        if (lastStatusSnapshot == null || txtStatOnline == null) {
+            return;
+        }
+
+        long estimatedServerNow = System.currentTimeMillis() + serverTimeOffsetMs;
+        int onlineCount = PresenceUtils.countOnlineAllRoles(lastStatusSnapshot, estimatedServerNow);
+
+        txtStatOnline.setText(String.valueOf(onlineCount));
     }
 
     private void stopOnlineCountListener() {
+        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
+
         if (statusRootRef != null && onlineCountListener != null) {
             statusRootRef.removeEventListener(onlineCountListener);
         }
+
         onlineCountListener = null;
+        lastStatusSnapshot = null;
+
+        stopServerTimeOffsetListener();
     }
 
     private void performLogout() {

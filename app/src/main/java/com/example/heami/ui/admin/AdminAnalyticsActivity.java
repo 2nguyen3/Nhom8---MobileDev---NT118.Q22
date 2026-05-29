@@ -21,7 +21,37 @@ import android.widget.ProgressBar;
 
 import java.util.List;
 
+import com.example.heami.utils.PresenceUtils;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 public class AdminAnalyticsActivity extends AppCompatActivity {
+
+    private static final String RTDB_URL =
+            "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+    private DatabaseReference statusRootRef;
+    private DatabaseReference serverTimeOffsetRef;
+    private ValueEventListener onlineCountListener;
+    private ValueEventListener serverTimeOffsetListener;
+
+    private DataSnapshot lastStatusSnapshot;
+    private long serverTimeOffsetMs = 0L;
+    private int currentTotalAccounts = 0;
+
+    private final android.os.Handler onlineRefreshHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private final Runnable onlineRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateAnalyticsOnlineCount();
+            onlineRefreshHandler.postDelayed(this, 5_000L);
+        }
+    };
 
     private ImageView btnBackAnalytics;
     private View layoutLoadingAnalytics;
@@ -86,11 +116,16 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_admin_analytics);
 
         repository = new AdminAnalyticsRepository();
+        FirebaseDatabase realtimeDb = FirebaseDatabase.getInstance(RTDB_URL);
+        statusRootRef = realtimeDb.getReference("status");
+        statusRootRef.keepSynced(true);
+        serverTimeOffsetRef = realtimeDb.getReference(".info/serverTimeOffset");
 
         bindViews();
         setupRecyclerViews();
         setupClicks();
         loadAnalytics();
+        startOnlineCountListener();
     }
 
     private void bindViews() {
@@ -197,6 +232,7 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
 
     private void bindOverview(@NonNull AdminAnalyticsOverview overview) {
         txtTotalAccounts.setText(String.valueOf(overview.getTotalAccounts()));
+        currentTotalAccounts = overview.getTotalAccounts();
         txtTotalUsers.setText(String.valueOf(overview.getTotalUsers()));
         txtTotalDoctors.setText(String.valueOf(overview.getTotalDoctors()));
         txtTotalAdmins.setText(String.valueOf(overview.getTotalAdmins()));
@@ -264,5 +300,100 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
     private void showLoading(boolean isLoading) {
         layoutLoadingAnalytics.setVisibility(isLoading ? View.VISIBLE : View.GONE);
         layoutContentAnalytics.setVisibility(isLoading ? View.GONE : View.VISIBLE);
+    }
+
+    private void startOnlineCountListener() {
+        stopOnlineCountListener();
+
+        startServerTimeOffsetListener();
+
+        onlineCountListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                lastStatusSnapshot = snapshot;
+                updateAnalyticsOnlineCount();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                txtOnlineNow.setText("--");
+                txtOnlineRate.setText("--");
+            }
+        };
+
+        statusRootRef.addValueEventListener(onlineCountListener);
+
+        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
+        onlineRefreshHandler.post(onlineRefreshRunnable);
+    }
+
+    private void stopOnlineCountListener() {
+        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
+
+        if (statusRootRef != null && onlineCountListener != null) {
+            statusRootRef.removeEventListener(onlineCountListener);
+        }
+
+        onlineCountListener = null;
+        lastStatusSnapshot = null;
+
+        stopServerTimeOffsetListener();
+    }
+
+    private void startServerTimeOffsetListener() {
+        stopServerTimeOffsetListener();
+
+        if (serverTimeOffsetRef == null) {
+            return;
+        }
+
+        serverTimeOffsetListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Long offset = snapshot.getValue(Long.class);
+                serverTimeOffsetMs = offset != null ? offset : 0L;
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                serverTimeOffsetMs = 0L;
+            }
+        };
+
+        serverTimeOffsetRef.addValueEventListener(serverTimeOffsetListener);
+    }
+
+    private void stopServerTimeOffsetListener() {
+        if (serverTimeOffsetRef != null && serverTimeOffsetListener != null) {
+            serverTimeOffsetRef.removeEventListener(serverTimeOffsetListener);
+        }
+
+        serverTimeOffsetListener = null;
+    }
+
+    private void updateAnalyticsOnlineCount() {
+        if (lastStatusSnapshot == null || txtOnlineNow == null || txtOnlineRate == null) {
+            return;
+        }
+
+        long estimatedServerNow = System.currentTimeMillis() + serverTimeOffsetMs;
+        int onlineNow = PresenceUtils.countOnlineAllRoles(lastStatusSnapshot, estimatedServerNow);
+
+        txtOnlineNow.setText(String.valueOf(onlineNow));
+        txtOnlineRate.setText(calculatePercent(onlineNow, currentTotalAccounts) + "%");
+    }
+
+    private int calculatePercent(int part, int total) {
+        if (total <= 0) {
+            return 0;
+        }
+
+        return Math.round((part * 100f) / total);
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopOnlineCountListener();
+        super.onDestroy();
     }
 }

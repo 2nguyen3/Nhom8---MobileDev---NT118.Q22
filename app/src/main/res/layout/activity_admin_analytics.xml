@@ -100,7 +100,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Health overview"
+                android:text="Tổng quan"
                 android:textColor="#1B1730"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -762,7 +762,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Biểu đồ consultation"
+                android:text="Biểu đồ tham vấn trị liệu"
                 android:textColor="#1B1730"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -778,7 +778,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Trạng thái consultation"
+                    android:text="Trạng thái phiên tham vấn"
                     android:textColor="#1B1730"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -920,7 +920,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Biểu đồ moderation post"
+                android:text="Biểu đồ kiểm duyệt bài viết"
                 android:textColor="#1B1730"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -936,7 +936,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Phân bố moderation"
+                    android:text="Phân bổ bài viết"
                     android:textColor="#1B1730"
                     android:textSize="14sp"
                     android:textStyle="bold" />

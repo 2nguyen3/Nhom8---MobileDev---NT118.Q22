@@ -19,7 +19,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+import com.example.heami.utils.PresenceUtils;
+
 public class AdminAnalyticsRepository {
+
+    private static final String RTDB_URL =
+            "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     public interface LoadAnalyticsListener {
         void onSuccess(
@@ -43,7 +48,7 @@ public class AdminAnalyticsRepository {
                         firestore.collection("accounts").get(),
                         firestore.collection("community_posts").get(),
                         firestore.collection("consultations").get(),
-                        FirebaseDatabase.getInstance().getReference("status").get()
+                        FirebaseDatabase.getInstance(RTDB_URL).getReference("status").get()
                 )
                 .addOnSuccessListener(results -> {
                     QuerySnapshot accountsSnapshot = (QuerySnapshot) results.get(0);
@@ -201,14 +206,8 @@ public class AdminAnalyticsRepository {
             @NonNull AdminAnalyticsOverview overview,
             @NonNull DataSnapshot statusSnapshot
     ) {
-        int onlineNow = 0;
-
-        for (DataSnapshot userStatusSnapshot : statusSnapshot.getChildren()) {
-            DataSnapshot connectionsSnapshot = userStatusSnapshot.child("connections");
-            if (connectionsSnapshot.exists() && connectionsSnapshot.getChildrenCount() > 0) {
-                onlineNow++;
-            }
-        }
+        long now = System.currentTimeMillis();
+        int onlineNow = PresenceUtils.countOnlineAllRoles(statusSnapshot, now);
 
         overview.setOnlineNowUsers(onlineNow);
     }
