@@ -55,6 +55,11 @@ public class DoctorHomeActivity extends AppCompatActivity {
 
         FirebaseFirestore.getInstance().collection("doctors").document(uid).get()
                 .addOnSuccessListener(documentSnapshot -> {
+                    // 🌟 SỬA LỖI: Kiểm tra xem Màn hình (Activity) có đang bị đóng hoặc đã bị hủy hoàn toàn hay chưa
+                    if (isFinishing() || isDestroyed()) {
+                        return; // Ngừng xử lý, không gọi Glide nữa để tránh văng app
+                    }
+
                     if (documentSnapshot.exists()) {
                         String fullName = documentSnapshot.getString("full_name");
                         String avatarUrl = documentSnapshot.getString("avatar_url");
@@ -76,6 +81,10 @@ public class DoctorHomeActivity extends AppCompatActivity {
                     }
                 })
                 .addOnFailureListener(e -> {
+                    // 🌟 SỬA LỖI: Thêm kiểm tra an toàn tương tự ở khối catch thất bại
+                    if (isFinishing() || isDestroyed()) {
+                        return;
+                    }
                     txtDoctorGreetingTitle.setText("Bác sĩ Minh Anh");
                 });
     }
