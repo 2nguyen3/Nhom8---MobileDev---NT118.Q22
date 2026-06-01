@@ -17973,6 +17973,9 @@ public class CommunityActivity extends AppCompatActivity {
     private com.google.firebase.database.DataSnapshot lastStatusSnapshot;
     private long serverTimeOffsetMs = 0L;
 
+    private final Set<String> userAccountUidSet = new HashSet<>();
+    private com.google.firebase.firestore.ListenerRegistration userRoleListener;
+
     private final Runnable onlineRefreshRunnable = new Runnable() {
         @Override
         public void run() {
@@ -19810,6 +19813,38 @@ public class CommunityActivity extends AppCompatActivity {
         lastStatusSnapshot = null;
     }
 
+    private void startUserRoleListener() {
+        stopUserRoleListener();
+
+        userRoleListener = firestore.collection("accounts")
+                .whereEqualTo("role", "USER")
+                .addSnapshotListener((value, error) -> {
+                    userAccountUidSet.clear();
+
+                    if (error != null || value == null) {
+                        updateCommunityOnlineCount();
+                        return;
+                    }
+
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
+                        if (doc.getId() != null && !doc.getId().trim().isEmpty()) {
+                            userAccountUidSet.add(doc.getId());
+                        }
+                    }
+
+                    updateCommunityOnlineCount();
+                });
+    }
+
+    private void stopUserRoleListener() {
+        if (userRoleListener != null) {
+            userRoleListener.remove();
+            userRoleListener = null;
+        }
+
+        userAccountUidSet.clear();
+    }
+
     private void startServerTimeOffsetListener() {
         stopServerTimeOffsetListener();
 
@@ -19847,7 +19882,12 @@ public class CommunityActivity extends AppCompatActivity {
         }
 
         long estimatedServerNow = System.currentTimeMillis() + serverTimeOffsetMs;
-        int onlineCount = PresenceUtils.countOnlineUsersOnly(lastStatusSnapshot, estimatedServerNow);
+
+        int onlineCount = PresenceUtils.countOnlineUsersOnlyByUidSet(
+                lastStatusSnapshot,
+                estimatedServerNow,
+                userAccountUidSet
+        );
 
         txtOnlineCount.setText(String.valueOf(onlineCount));
     }
@@ -20033,6 +20073,8 @@ public class CommunityActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+
+        startUserRoleListener();
         startOnlineCountListener();
         startDashboardRealtimeListeners();
         loadCommunityDashboardStats();
@@ -20041,7 +20083,9 @@ public class CommunityActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+
         stopOnlineCountListener();
+        stopUserRoleListener();
         stopDashboardRealtimeListeners();
     }
 }
@@ -25525,6 +25569,19 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         holder.layoutDetail.setVisibility(expanded ? View.VISIBLE : View.GONE);
         holder.imgChevron.setRotation(expanded ? 180f : 0f);
 
+        // Click xem lai cuoc tro chuyen
+        if (holder.btnReviewChat != null) {
+            holder.btnReviewChat.setOnClickListener(v -> {
+                android.content.Intent intent = new android.content.Intent(context, ConsultationSessionActivity.class);
+                intent.putExtra(ConsultationSessionActivity.EXTRA_SESSION_ID, model.getSessionId());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_FORMAT_TYPE, model.getFormatType());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_DOCTOR_NAME, model.getDoctorName());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_DOCTOR_AVATAR, model.getDoctorAvatar());
+                intent.putExtra(ConsultationSessionActivity.EXTRA_STATUS, model.getStatus());
+                context.startActivity(intent);
+            });
+        }
+
         holder.itemView.setOnClickListener(v -> {
             boolean nextExpanded = !model.isIs_expanded();
             model.setIs_expanded(nextExpanded);
@@ -25769,6 +25826,7 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         TextView txtTotalPrice, txtUserComment, txtCancelMessage, txtPackageBadge;
         LinearLayout layoutDetail, layoutFeedbackContent;
         RatingBar ratingBar;
+        AppCompatButton btnReviewChat;
 
         public HistoryViewHolder(@NonNull View v) {
             super(v);
@@ -25788,6 +25846,7 @@ public class ConsultationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             layoutDetail          = v.findViewById(R.id.layoutDetail);
             layoutFeedbackContent = v.findViewById(R.id.layoutFeedbackContent);
             ratingBar             = v.findViewById(R.id.ratingBar);
+            btnReviewChat         = v.findViewById(R.id.btnReviewChat);
         }
     }
 }
@@ -34044,10 +34103,12 @@ public class HomeActivity extends AppCompatActivity {
 
     private TextView txtHelloTitle;
     private TextView txtHelloSub;
+    private TextView txtStreakCount;
 
     private TextView txtAiTitle;
     private TextView txtAiSubtitle;
     private TextView txtStartAi;
+
 
     private TextView txtSchedule1;
     private TextView txtSchedule2;
@@ -34064,6 +34125,10 @@ public class HomeActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
+    private boolean waterDone = false;
+    private boolean relaxDone = false;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34129,8 +34194,10 @@ public class HomeActivity extends AppCompatActivity {
 
         txtHelloTitle = findViewById(R.id.txtHelloTitle);
         txtHelloSub = findViewById(R.id.txtHelloSub);
+        txtStreakCount = findViewById(R.id.txtStreakCount);
 
         txtAiTitle = findViewById(R.id.txtAiTitle);
+
         txtAiSubtitle = findViewById(R.id.txtAiSubtitle);
         txtStartAi = findViewById(R.id.txtStartAi);
 
@@ -34153,17 +34220,23 @@ public class HomeActivity extends AppCompatActivity {
     private void loadUserData() {
         FirebaseUser user = auth.getCurrentUser();
         if (user != null) {
-            firestore.collection("users")
-                    .document(user.getUid())
-                    .get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
-                            String nickname = documentSnapshot.getString("nickname");
-                            if (nickname != null && !nickname.trim().isEmpty()) {
-                                txtGreetingTitle.setText(nickname.trim() + " ơi!");
+            com.example.heami.utils.StreakManager.checkAndResetStreakIfMissed(user.getUid(), correctedStreak -> {
+                firestore.collection("users")
+                        .document(user.getUid())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                String nickname = documentSnapshot.getString("nickname");
+                                if (nickname != null && !nickname.trim().isEmpty()) {
+                                    txtGreetingTitle.setText(nickname.trim() + " ơi!");
+                                }
+                                Long currentStreak = documentSnapshot.getLong("current_streak");
+                                if (currentStreak != null && txtStreakCount != null) {
+                                    txtStreakCount.setText(String.valueOf(currentStreak));
+                                }
                             }
-                        }
-                    });
+                        });
+            });
         }
 
         updateGreetingLabel();
@@ -34319,15 +34392,32 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void applyTodaySchedule(boolean hasMoodCheckinToday) {
-        // Hiện tại chỉ có check-in cảm xúc là task có dữ liệu lưu thật.
-        boolean waterDone = false;
+        // Kiểm tra và reset trạng thái uống nước hàng ngày
+        android.content.SharedPreferences prefs = getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE);
+        String todayKey = new java.text.SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+        String savedDate = prefs.getString("last_checked_date", "");
+        
+        if (!todayKey.equals(savedDate)) {
+            // Ngày mới -> reset trạng thái uống nước & thư giãn
+            waterDone = false;
+            relaxDone = false;
+            prefs.edit()
+                 .putString("last_checked_date", todayKey)
+                 .putBoolean("water_done", false)
+                 .putBoolean("relax_done", false)
+                 .apply();
+        } else {
+            waterDone = prefs.getBoolean("water_done", false);
+            relaxDone = prefs.getBoolean("relax_done", false);
+        }
+
         boolean moodCheckinDone = hasMoodCheckinToday;
-        boolean breathDone = false;
-        boolean relaxDone = false;
+        boolean breathDone = prefs.getBoolean("breath_done", false);
+
 
         setScheduleTaskState(txtSchedule1, checkDone1, "Uống 1 ly nước", waterDone);
         setScheduleTaskState(txtSchedule2, checkEmpty2, "Check-in cảm xúc buổi sáng", moodCheckinDone);
-        setScheduleTaskState(txtSchedule3, checkEmpty3, "Thở sâu 3 phút", breathDone);
+        setScheduleTaskState(txtSchedule3, checkEmpty3, "Thở sâu 1 phút", breathDone);
         setScheduleTaskState(txtSchedule4, checkEmpty4, "Thư giãn giữa buổi", relaxDone);
 
         int doneSteps = 0;
@@ -34463,11 +34553,11 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (checkView != null) {
-            checkView.setBackgroundResource(done ? R.drawable.bg_check_done : R.drawable.bg_check_empty);
+            checkView.setBackgroundResource(done ? R.drawable.ic_check : R.drawable.bg_check_empty);
             checkView.setAlpha(1f);
 
             if (checkView instanceof TextView) {
-                ((TextView) checkView).setText(done ? "✓" : "");
+                ((TextView) checkView).setText("");
             }
         }
     }
@@ -34848,6 +34938,140 @@ public class HomeActivity extends AppCompatActivity {
             txtAppointmentsMore.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, ConsultationsActivity.class);
                 startActivity(intent);
+            });
+        }
+
+        // Section Healing (Therapy) actions
+        TextView txtHealingMore = findViewById(R.id.txtHealingMore);
+        if (txtHealingMore != null) {
+            txtHealingMore.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        View cardHealMusic = findViewById(R.id.cardHealMusic);
+        if (cardHealMusic != null) {
+            cardHealMusic.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "audio");
+                startActivity(intent);
+            });
+        }
+
+        View cardHealBreath = findViewById(R.id.cardHealBreath);
+        if (cardHealBreath != null) {
+            cardHealBreath.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "breath");
+                startActivity(intent);
+            });
+        }
+
+        View cardHealDiary = findViewById(R.id.cardHealDiary);
+        if (cardHealDiary != null) {
+            cardHealDiary.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "journal");
+                startActivity(intent);
+            });
+        }
+
+        View cardHealPodcast = findViewById(R.id.cardHealPodcast);
+        if (cardHealPodcast != null) {
+            cardHealPodcast.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "audio"); // Podcast cũng thuộc tab Âm thanh (layoutAmThanh)
+                startActivity(intent);
+            });
+        }
+
+        // Handle water click check
+        if (checkDone1 != null) {
+            checkDone1.setOnClickListener(v -> {
+                waterDone = !waterDone;
+                getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("water_done", waterDone)
+                    .apply();
+                
+                // Cộng dồn tasks_done trên Firestore nếu tích hoàn thành
+                FirebaseUser user = auth.getCurrentUser();
+                if (user != null && waterDone) {
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(1));
+                } else if (user != null && !waterDone) {
+                    // Nếu bỏ tích, trừ bớt 1 nhưng không để âm
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+                                if (snapshot.exists()) {
+                                    Long currentTasks = snapshot.getLong("tasks_done");
+                                    if (currentTasks != null && currentTasks > 0) {
+                                        firestore.collection("users")
+                                                .document(user.getUid())
+                                                .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(-1));
+                                    }
+                                }
+                            });
+                }
+                
+                loadTodayMoodState(); // reload schedule state
+            });
+        }
+
+        // Handle breathing task click
+        View itemBreathGroup = findViewById(R.id.checkEmpty3);
+        if (itemBreathGroup != null) {
+            itemBreathGroup.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "breath");
+                startActivity(intent);
+            });
+        }
+        if (txtSchedule3 != null) {
+            txtSchedule3.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, com.example.heami.ui.therapy.TherapyActivity.class);
+                intent.putExtra("category", "breath");
+                startActivity(intent);
+            });
+        }
+
+        // Handle relax click check
+        if (checkEmpty4 != null) {
+            checkEmpty4.setOnClickListener(v -> {
+                relaxDone = !relaxDone;
+                getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("relax_done", relaxDone)
+                    .apply();
+
+                // Cộng dồn tasks_done trên Firestore nếu tích hoàn thành
+                FirebaseUser user = auth.getCurrentUser();
+                if (user != null && relaxDone) {
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(1));
+                } else if (user != null && !relaxDone) {
+                    // Nếu bỏ tích, trừ bớt 1 nhưng không để âm
+                    firestore.collection("users")
+                            .document(user.getUid())
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+                                if (snapshot.exists()) {
+                                    Long currentTasks = snapshot.getLong("tasks_done");
+                                    if (currentTasks != null && currentTasks > 0) {
+                                        firestore.collection("users")
+                                                .document(user.getUid())
+                                                .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(-1));
+                                    }
+                                }
+                            });
+                }
+
+                loadTodayMoodState(); // reload schedule state
             });
         }
     }
@@ -35495,6 +35719,8 @@ import com.example.heami.data.models.UserSettingsModel;
 import com.example.heami.ui.auth.LoginActivity;
 import com.example.heami.ui.consultation.ConsultationsActivity;
 import com.example.heami.utils.NotificationScheduler;
+import com.example.heami.utils.StreakManager;
+
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
@@ -35602,47 +35828,53 @@ public class ProfileActivity extends AppCompatActivity {
         if (currentUser != null) {
             currentUserEmail = currentUser.getEmail();
 
-            FirebaseFirestore.getInstance().collection("users").document(currentUser.getUid())
-                    .get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
-                            isUpdatingUI = true;
-                            
-                            String nickname = documentSnapshot.getString("nickname");
-                            String motto = documentSnapshot.getString("motto");
-                            String avatarEmoji = documentSnapshot.getString("avatar_url");
-                            List<String> mood_goals = (List<String>) documentSnapshot.get("mood_goals");
-                            Long streak = documentSnapshot.getLong("current_streak");
-                            Boolean isProtected = documentSnapshot.getBoolean("is_protected_mode");
+            // Kiểm tra và reset streak về 0 nếu user bỏ lỡ ngày check-in hôm qua
+            // (total_checkins không bị ảnh hưởng, chỉ current_streak bị reset)
+            StreakManager.checkAndResetStreakIfMissed(currentUser.getUid(), correctedStreak -> {
+                // Sau khi đã đồng bộ streak trên Firestore, load lại thông tin để hiển thị
+                FirebaseFirestore.getInstance().collection("users").document(currentUser.getUid())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                isUpdatingUI = true;
 
-                            if (nickname != null) tvName.setText(nickname);
-                            if (motto != null) tvBio.setText(motto);
-                            if (streak != null) tvStatStreak.setText(String.valueOf(streak));
-                            
-                            tvStatCheckin.setText(documentSnapshot.contains("total_checkins") ? String.valueOf(documentSnapshot.getLong("total_checkins")) : "0");
-                            tvStatTask.setText(documentSnapshot.contains("tasks_done") ? String.valueOf(documentSnapshot.getLong("tasks_done")) : "0");
+                                String nickname = documentSnapshot.getString("nickname");
+                                String motto = documentSnapshot.getString("motto");
+                                String avatarEmoji = documentSnapshot.getString("avatar_url");
+                                List<String> mood_goals = (List<String>) documentSnapshot.get("mood_goals");
+                                Long streak = documentSnapshot.getLong("current_streak");
+                                Boolean isProtected = documentSnapshot.getBoolean("is_protected_mode");
 
-                            if (isProtected != null && switchPrivacy != null) {
-                                switchPrivacy.setChecked(isProtected);
-                                updatePrivacyStatusUI(isProtected);
+                                if (nickname != null) tvName.setText(nickname);
+                                if (motto != null) tvBio.setText(motto);
+                                // Hiển thị streak đã được đồng bộ (0 nếu bỏ lỡ, giá trị thực nếu còn hợp lệ)
+                                if (streak != null) tvStatStreak.setText(String.valueOf(streak));
+
+                                tvStatCheckin.setText(documentSnapshot.contains("total_checkins") ? String.valueOf(documentSnapshot.getLong("total_checkins")) : "0");
+                                tvStatTask.setText(documentSnapshot.contains("tasks_done") ? String.valueOf(documentSnapshot.getLong("tasks_done")) : "0");
+
+                                if (isProtected != null && switchPrivacy != null) {
+                                    switchPrivacy.setChecked(isProtected);
+                                    updatePrivacyStatusUI(isProtected);
+                                }
+
+                                if (avatarEmoji != null && !avatarEmoji.isEmpty()) {
+                                    tvAvatarEmoji.setText(avatarEmoji);
+                                    currentAvatarEmoji = avatarEmoji;
+                                    SharedPreferences.Editor editor = getSharedPreferences("HeamiData", MODE_PRIVATE).edit();
+                                    editor.putString("user_avatar_emoji", avatarEmoji);
+                                    editor.apply();
+                                }
+
+                                if (mood_goals != null) {
+                                    userSelectedMoodGoals = new ArrayList<>(mood_goals);
+                                    updateMoodGoalsUI(layoutChips, mood_goals);
+                                }
+
+                                isUpdatingUI = false;
                             }
-
-                            if (avatarEmoji != null && !avatarEmoji.isEmpty()) {
-                                tvAvatarEmoji.setText(avatarEmoji);
-                                currentAvatarEmoji = avatarEmoji;
-                                SharedPreferences.Editor editor = getSharedPreferences("HeamiData", MODE_PRIVATE).edit();
-                                editor.putString("user_avatar_emoji", avatarEmoji);
-                                editor.apply();
-                            }
-
-                            if (mood_goals != null) {
-                                userSelectedMoodGoals = new ArrayList<>(mood_goals);
-                                updateMoodGoalsUI(layoutChips, mood_goals);
-                            }
-                            
-                            isUpdatingUI = false;
-                        }
-                    });
+                        });
+            });
         }
     }
 
@@ -39167,7 +39399,24 @@ public class BreathingActivity extends AppCompatActivity {
         if (mainTimer != null) mainTimer.cancel();
         if (cycleTimer != null) cycleTimer.cancel();
 
-        if (cycleCount > 0) showFinishDialog();
+        if (cycleCount > 0) {
+            getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE)
+                .edit()
+                .putBoolean("breath_done", true)
+                .putString("last_checked_date", new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(new java.util.Date()))
+                .apply();
+
+            // Cộng dồn tasks_done trên Firestore
+            com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(user.getUid())
+                        .update("tasks_done", com.google.firebase.firestore.FieldValue.increment(1));
+            }
+
+            showFinishDialog();
+        }
 
         btnAction.setText("Bắt đầu");
         tvStatus.setText("Sẵn sàng?");
@@ -42737,6 +42986,31 @@ public class TherapyActivity extends AppCompatActivity {
 
 
         BottomNavManager.setup(this, BottomNavManager.TAB_THERAPY);
+
+        // Handle category navigation from Home
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("category")) {
+            String category = intent.getStringExtra("category");
+            if (category != null) {
+                switch (category) {
+                    case "audio":
+                        applyFilter("audio", btnAmThanh);
+                        break;
+                    case "breath":
+                        applyFilter("breath", btnHitTho);
+                        break;
+                    case "journal":
+                        applyFilter("journal", btnNhatKy);
+                        break;
+                    case "plan":
+                        applyFilter("plan", btnKeHoach);
+                        break;
+                    default:
+                        applyFilter("all", btnTatCa);
+                        break;
+                }
+            }
+        }
     }
 
     private void initViews() {
@@ -43418,6 +43692,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.database.DataSnapshot;
 
 import java.util.Locale;
+import java.util.Set;
 
 public final class PresenceUtils {
 
@@ -43426,7 +43701,7 @@ public final class PresenceUtils {
 
     public static final int PRESENCE_VERSION = 2;
 
-    // Tăng timeout để tránh Firebase delay làm online nhảy về 0.
+    // 90s để tránh Firebase delay nhẹ làm online nhảy về 0.
     public static final long ONLINE_HEARTBEAT_TIMEOUT_MS = 90_000L;
 
     public static boolean isOnlineFromConnections(
@@ -43448,21 +43723,12 @@ public final class PresenceUtils {
         return false;
     }
 
-    // Giữ lại hàm cũ để các file khác không bị lỗi build.
+    // Giữ tên hàm cũ để các file khác như CommunityChatListActivity không bị lỗi build.
     public static boolean isUserOnlineFromConnections(
             @NonNull DataSnapshot userSnapshot,
             long now
     ) {
         return isOnlineFromConnections(userSnapshot, now);
-    }
-
-    public static boolean isUserRoleOnline(
-            @NonNull DataSnapshot userSnapshot,
-            long now
-    ) {
-        String role = safeUpper(userSnapshot.child("role").getValue(String.class));
-
-        return "USER".equals(role) && isOnlineFromConnections(userSnapshot, now);
     }
 
     public static int countOnlineAllRoles(
@@ -43487,7 +43753,31 @@ public final class PresenceUtils {
         int onlineCount = 0;
 
         for (DataSnapshot userSnapshot : statusSnapshot.getChildren()) {
-            if (isUserRoleOnline(userSnapshot, now)) {
+            String role = safeUpper(userSnapshot.child("role").getValue(String.class));
+
+            if ("USER".equals(role) && isOnlineFromConnections(userSnapshot, now)) {
+                onlineCount++;
+            }
+        }
+
+        return onlineCount;
+    }
+
+    public static int countOnlineUsersOnlyByUidSet(
+            @NonNull DataSnapshot statusSnapshot,
+            long now,
+            @NonNull Set<String> userUidSet
+    ) {
+        int onlineCount = 0;
+
+        for (DataSnapshot userSnapshot : statusSnapshot.getChildren()) {
+            String uid = userSnapshot.getKey();
+
+            if (uid == null || !userUidSet.contains(uid)) {
+                continue;
+            }
+
+            if (isOnlineFromConnections(userSnapshot, now)) {
                 onlineCount++;
             }
         }
@@ -43499,18 +43789,6 @@ public final class PresenceUtils {
             @NonNull DataSnapshot connectionSnapshot,
             long now
     ) {
-        Integer version = getInteger(connectionSnapshot.child("presence_version"));
-
-        // Quan trọng: bỏ qua toàn bộ connection cũ do code cũ tạo.
-        if (version == null || version != PRESENCE_VERSION) {
-            return false;
-        }
-
-        String deviceId = connectionSnapshot.child("device_id").getValue(String.class);
-        if (deviceId == null || deviceId.trim().isEmpty()) {
-            return false;
-        }
-
         Boolean isForeground = connectionSnapshot.child("isForeground").getValue(Boolean.class);
         Long heartbeatAt = connectionSnapshot.child("heartbeat_at").getValue(Long.class);
 
@@ -43565,6 +43843,83 @@ public class StreakManager {
     public interface StreakUpdateCallback {
         void onSuccess(int currentStreak, int longestStreak, long totalCheckins);
         void onFailure(Exception e);
+    }
+
+    public interface StreakResetCallback {
+        void onResult(int currentStreak);
+    }
+
+    /**
+     * Kiểm tra nếu user không check-in trong ngày hôm qua (hoặc lâu hơn) thì reset current_streak về 0.
+     * total_checkins KHÔNG bị ảnh hưởng - chỉ mất streak nếu bỏ lỡ ngày check-in.
+     * Nên gọi method này khi mở màn hình Profile để đồng bộ streak hiển thị.
+     */
+    public static void checkAndResetStreakIfMissed(String userId, StreakResetCallback callback) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userRef = db.collection("users").document(userId);
+
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (!documentSnapshot.exists()) {
+                if (callback != null) callback.onResult(0);
+                return;
+            }
+
+            long currentStreak = 0;
+            if (documentSnapshot.contains("current_streak")) {
+                currentStreak = documentSnapshot.getLong("current_streak");
+            }
+
+            // Nếu streak đã là 0 thì không cần kiểm tra
+            if (currentStreak <= 0) {
+                if (callback != null) callback.onResult(0);
+                return;
+            }
+
+            Timestamp lastActivity = null;
+            if (documentSnapshot.contains("last_activity_date")) {
+                lastActivity = documentSnapshot.getTimestamp("last_activity_date");
+            }
+
+            // Nếu chưa từng check-in thì streak đã là 0
+            if (lastActivity == null) {
+                if (callback != null) callback.onResult(0);
+                return;
+            }
+
+            Calendar today = Calendar.getInstance();
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+
+            Calendar lastCheckIn = Calendar.getInstance();
+            lastCheckIn.setTime(lastActivity.toDate());
+            lastCheckIn.set(Calendar.HOUR_OF_DAY, 0);
+            lastCheckIn.set(Calendar.MINUTE, 0);
+            lastCheckIn.set(Calendar.SECOND, 0);
+            lastCheckIn.set(Calendar.MILLISECOND, 0);
+
+            long diffMs = today.getTimeInMillis() - lastCheckIn.getTimeInMillis();
+            long diffDays = diffMs / (24 * 60 * 60 * 1000);
+
+            // Nếu bỏ lỡ hơn 1 ngày (tức là hôm qua không check-in) thì reset streak về 0
+            if (diffDays > 1) {
+                final long resetStreak = 0;
+                Map<String, Object> updates = new HashMap<>();
+                updates.put("current_streak", resetStreak);
+                userRef.update(updates).addOnSuccessListener(aVoid -> {
+                    if (callback != null) callback.onResult((int) resetStreak);
+                }).addOnFailureListener(e -> {
+                    // Nếu update thất bại, vẫn trả về 0 để UI hiển thị đúng
+                    if (callback != null) callback.onResult(0);
+                });
+            } else {
+                // Streak còn hợp lệ (check-in hôm nay hoặc hôm qua)
+                if (callback != null) callback.onResult((int) currentStreak);
+            }
+        }).addOnFailureListener(e -> {
+            if (callback != null) callback.onResult(-1); // -1 = không thể xác định
+        });
     }
 
     public static void updateCheckInStreak(String userId, StreakUpdateCallback callback) {
@@ -70820,10 +71175,13 @@ android:viewportHeight="100">
 
                         <!-- Card 1 -->
                         <FrameLayout
+                            android:id="@+id/cardHealMusic"
                             android:layout_width="118dp"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="12dp"
-                            android:background="@drawable/bg_heal_card_pink">
+                            android:background="@drawable/bg_heal_card_pink"
+                            android:clickable="true"
+                            android:focusable="true">
 
                             <View
                                 android:layout_width="56dp"
@@ -70900,10 +71258,13 @@ android:viewportHeight="100">
 
                         <!-- Card 2 -->
                         <FrameLayout
+                            android:id="@+id/cardHealBreath"
                             android:layout_width="118dp"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="12dp"
-                            android:background="@drawable/bg_heal_card_teal">
+                            android:background="@drawable/bg_heal_card_teal"
+                            android:clickable="true"
+                            android:focusable="true">
 
                             <View
                                 android:layout_width="56dp"
@@ -70980,10 +71341,13 @@ android:viewportHeight="100">
 
                         <!-- Card 3 -->
                         <FrameLayout
+                            android:id="@+id/cardHealDiary"
                             android:layout_width="118dp"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="12dp"
-                            android:background="@drawable/bg_heal_card_yellow">
+                            android:background="@drawable/bg_heal_card_yellow"
+                            android:clickable="true"
+                            android:focusable="true">
 
                             <View
                                 android:layout_width="56dp"
@@ -71060,10 +71424,13 @@ android:viewportHeight="100">
 
                         <!-- Card 4 -->
                         <FrameLayout
+                            android:id="@+id/cardHealPodcast"
                             android:layout_width="118dp"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="12dp"
-                            android:background="@drawable/bg_heal_card_purple">
+                            android:background="@drawable/bg_heal_card_purple"
+                            android:clickable="true"
+                            android:focusable="true">
 
                             <View
                                 android:layout_width="56dp"
@@ -71100,15 +71467,15 @@ android:viewportHeight="100">
                                         android:layout_width="22dp"
                                         android:layout_height="22dp"
                                         android:layout_gravity="center"
-                                        android:src="@drawable/ic_heal_meditation"
-                                        android:contentDescription="meditation" />
+                                        android:src="@drawable/ic_heal_music"
+                                        android:contentDescription="podcast" />
                                 </FrameLayout>
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="14dp"
-                                    android:text="Thiền định"
+                                    android:text="Podcast"
                                     android:textColor="#2D3A5E"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
@@ -71118,7 +71485,7 @@ android:viewportHeight="100">
                                     android:layout_height="30dp"
                                     android:layout_marginTop="4dp"
                                     android:gravity="top"
-                                    android:text="Body scan nhẹ nhàng"
+                                    android:text="Podcast chia sẻ"
                                     android:textColor="#6F7E9C"
                                     android:textSize="11sp" />
 
@@ -71131,7 +71498,7 @@ android:viewportHeight="100">
                                     android:paddingTop="4dp"
                                     android:paddingEnd="9dp"
                                     android:paddingBottom="4dp"
-                                    android:text="7 phút"
+                                    android:text="15 phút"
                                     android:textColor="#8B5CF6"
                                     android:textSize="11sp"
                                     android:textStyle="bold" />
@@ -71741,7 +72108,7 @@ android:viewportHeight="100">
                             android:layout_height="wrap_content"
                             android:layout_marginStart="12dp"
                             android:layout_marginEnd="12dp"
-                            android:text="Thở sâu 3 phút"
+                            android:text="Thở sâu 1 phút"
                             android:textColor="#2D3A5E"
                             android:textSize="14sp"
                             android:textStyle="bold"
@@ -79199,85 +79566,7 @@ android:viewportHeight="100">
 
             </LinearLayout>
 
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="#FFFFFF">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp">
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/bg_ombre_pink_blue"> <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_centerInParent="true"
-                            android:text="🔔"
-                            android:textSize="24sp" />
-                        </RelativeLayout>
-                    </androidx.cardview.widget.CardView>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="8dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/quicksand_bold"
-                            android:text="Nhắc nhở hàng ngày"
-                            android:textColor="#313866"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/quicksand_medium"
-                            android:text="Heami sẽ nhắc bạn thở, uống nước và thực hiện kế hoạch đúng giờ"
-                            android:textColor="#A1A1A1"
-                            android:textSize="12sp"
-                            android:lineSpacingExtra="2dp" />
-                    </LinearLayout>
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switchReminder"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:thumbTint="@null"
-                        app:trackTint="@null"
-                        android:splitTrack="false"
-                        android:checked="false"
-                        android:thumb="@drawable/custom_switch_thumb"
-                        app:track="@drawable/custom_switch_track"/>
-
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-
-
-            <View android:layout_width="match_parent" android:layout_height="20dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

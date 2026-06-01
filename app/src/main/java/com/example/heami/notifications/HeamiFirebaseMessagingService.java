@@ -61,6 +61,12 @@ public class HeamiFirebaseMessagingService extends FirebaseMessagingService {
             return;
         }
 
+        SharedPreferences notiPrefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+        boolean chatNotificationEnabled = notiPrefs.getBoolean("notif_chat", true);
+        if (!chatNotificationEnabled) {
+            return;
+        }
+
         String roomId = safeText(data.get("room_id"), "");
         String sessionId = safeText(data.get("session_id"), "");
         String matchId = safeText(data.get("match_id"), "");

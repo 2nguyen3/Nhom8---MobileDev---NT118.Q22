@@ -210,7 +210,12 @@ public class ProfileActivity extends AppCompatActivity {
             if (userSettings != null) {
                 // Đồng bộ cấu hình checkin với SharedPreferences và báo cho scheduler
                 SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
-                prefs.edit().putBoolean("notif_checkin", userSettings.isNotif_checkin()).apply();
+                prefs.edit()
+                        .putBoolean("notif_checkin", userSettings.isNotif_checkin())
+                        .putBoolean("notif_plan", userSettings.isNotif_plan())
+                        .putBoolean("notif_appoint", userSettings.isNotif_appoint())
+                        .putBoolean("notif_chat", userSettings.isNotif_chat())
+                        .apply();
                 if (userSettings.isNotif_checkin()) {
                     NotificationScheduler.scheduleDailyCheckIn(this);
                 } else {
@@ -299,6 +304,8 @@ public class ProfileActivity extends AppCompatActivity {
                 prefs.edit().putBoolean("notif_appoint", (Boolean) value).apply();
             } else if ("notif_chat".equals(key)) {
                 userSettings.setNotif_chat((Boolean) value);
+                SharedPreferences prefs = getSharedPreferences("HeamiSettings", MODE_PRIVATE);
+                prefs.edit().putBoolean("notif_chat", (Boolean) value).apply();
             } else if ("is_protected_mode".equals(key)) {
                 userSettings.setIs_protected_mode((Boolean) value);
             }

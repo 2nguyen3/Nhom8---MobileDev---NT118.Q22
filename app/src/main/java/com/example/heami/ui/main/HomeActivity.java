@@ -61,8 +61,20 @@ import java.util.List;
 import android.util.Log;
 
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
+import android.app.Dialog;
+import android.graphics.drawable.ColorDrawable;
+import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.ViewGroup;
+import android.widget.Toast;
+import android.widget.ScrollView;
+
+import androidx.lifecycle.ViewModelProvider;
+
+import com.example.heami.data.models.HomeNotificationModel;
+import com.example.heami.ui.consultation.ConsultationSessionActivity;
+import com.example.heami.viewmodels.UserNotificationViewModel;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -100,7 +112,12 @@ public class HomeActivity extends AppCompatActivity {
     private boolean waterDone = false;
     private boolean relaxDone = false;
 
+    private UserNotificationViewModel notificationViewModel;
+    private Dialog homeNotificationDialog;
+    private View homeNotificationDialogView;
 
+    private View layoutBell;
+    private View viewBellDot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,6 +145,8 @@ public class HomeActivity extends AppCompatActivity {
         setupNotificationPermissionLauncher();
         syncFcmToken();
         handleNotificationIntent(getIntent());
+
+        initHomeNotificationCenter();
     }
 
     @Override
@@ -135,6 +154,9 @@ public class HomeActivity extends AppCompatActivity {
         super.onResume();
         updateGreetingLabel();
         loadTodayMoodState();
+        if (notificationViewModel != null) {
+            notificationViewModel.refresh();
+        }
     }
 
     @Override
@@ -187,6 +209,9 @@ public class HomeActivity extends AppCompatActivity {
         checkEmpty4 = findViewById(R.id.checkEmpty4);
 
         btnStartAi = findViewById(R.id.btnStartAi);
+
+        layoutBell = findViewById(R.id.layoutBell);
+        viewBellDot = findViewById(R.id.viewBellDot);
     }
 
     private void loadUserData() {
@@ -487,13 +512,6 @@ public class HomeActivity extends AppCompatActivity {
             default:
                 return "Heami thấy trạng thái của bạn hiện tại khá ổn định.";
         }
-    }
-
-    private String safeText(String value, String fallback) {
-        if (value == null || value.trim().isEmpty()) {
-            return fallback;
-        }
-        return value.trim();
     }
 
     private void setScheduleProgress(int doneSteps) {
@@ -1470,6 +1488,228 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         snackbar.show();
+    }
+
+    private void initHomeNotificationCenter() {
+        notificationViewModel = new ViewModelProvider(this).get(UserNotificationViewModel.class);
+
+        notificationViewModel.getNotifications().observe(this, notifications -> {
+            boolean hasNotification = notifications != null && !notifications.isEmpty();
+
+            if (viewBellDot != null) {
+                viewBellDot.setVisibility(hasNotification ? View.VISIBLE : View.GONE);
+            }
+
+            if (homeNotificationDialog != null
+                    && homeNotificationDialog.isShowing()
+                    && homeNotificationDialogView != null) {
+                renderHomeNotificationDialog(homeNotificationDialogView, notifications);
+            }
+        });
+
+        if (layoutBell != null) {
+            layoutBell.setOnClickListener(v -> showHomeNotificationDialog());
+        }
+
+        notificationViewModel.refresh();
+    }
+
+    private void showHomeNotificationDialog() {
+        if (homeNotificationDialog != null && homeNotificationDialog.isShowing()) {
+            return;
+        }
+
+        homeNotificationDialog = new Dialog(this);
+        homeNotificationDialogView = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_home_notifications, null, false);
+
+        homeNotificationDialog.setContentView(homeNotificationDialogView);
+        homeNotificationDialog.setCanceledOnTouchOutside(true);
+
+        TextView btnClose = homeNotificationDialogView.findViewById(R.id.btnCloseHomeNotifications);
+        if (btnClose != null) {
+            btnClose.setOnClickListener(v -> homeNotificationDialog.dismiss());
+        }
+
+        List<HomeNotificationModel> currentItems = notificationViewModel != null
+                ? notificationViewModel.getNotifications().getValue()
+                : new ArrayList<>();
+
+        renderHomeNotificationDialog(homeNotificationDialogView, currentItems);
+
+        homeNotificationDialog.setOnDismissListener(dialog -> {
+            homeNotificationDialog = null;
+            homeNotificationDialogView = null;
+        });
+
+        homeNotificationDialog.show();
+
+        Window window = homeNotificationDialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+            WindowManager.LayoutParams params = new WindowManager.LayoutParams();
+            params.copyFrom(window.getAttributes());
+
+            params.width = getResources().getDisplayMetrics().widthPixels - dp(28);
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+            params.gravity = Gravity.TOP | Gravity.END;
+            params.x = dp(14);
+            params.y = dp(74);
+
+            // Giảm độ tối nền phía sau, tránh làm popup bị chìm
+            params.dimAmount = 0.28f;
+
+            window.setAttributes(params);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        }
+
+        if (notificationViewModel != null) {
+            notificationViewModel.refresh();
+        }
+    }
+
+    private void renderHomeNotificationDialog(
+            @NonNull View dialogView,
+            List<HomeNotificationModel> notifications
+    ) {
+        LinearLayout container = dialogView.findViewById(R.id.layoutHomeNotificationItems);
+        View emptyView = dialogView.findViewById(R.id.layoutHomeNotificationEmpty);
+        ScrollView scrollView = dialogView.findViewById(R.id.scrollHomeNotificationList);
+
+        if (container == null || emptyView == null || scrollView == null) {
+            return;
+        }
+
+        container.removeAllViews();
+
+        int count = notifications != null ? notifications.size() : 0;
+
+        if (count <= 0) {
+            emptyView.setVisibility(View.VISIBLE);
+            scrollView.setVisibility(View.GONE);
+            return;
+        }
+
+        emptyView.setVisibility(View.GONE);
+        scrollView.setVisibility(View.VISIBLE);
+
+        ViewGroup.LayoutParams scrollParams = scrollView.getLayoutParams();
+        if (count <= 3) {
+            scrollParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        } else {
+            scrollParams.height = dp(420);
+        }
+        scrollView.setLayoutParams(scrollParams);
+
+        for (HomeNotificationModel item : notifications) {
+            if (item == null) continue;
+
+            View itemView = LayoutInflater.from(this)
+                    .inflate(R.layout.item_home_notification, container, false);
+
+            TextView txtIcon = itemView.findViewById(R.id.txtHomeNotificationIcon);
+            TextView txtTitle = itemView.findViewById(R.id.txtHomeNotificationTitle);
+            TextView txtMessage = itemView.findViewById(R.id.txtHomeNotificationMessage);
+            TextView txtTime = itemView.findViewById(R.id.txtHomeNotificationTime);
+            TextView txtAction = itemView.findViewById(R.id.txtHomeNotificationAction);
+
+            if (txtIcon != null) txtIcon.setText(safeText(item.getIconEmoji(), "🔔"));
+            if (txtTitle != null) txtTitle.setText(safeText(item.getTitle(), "Thông báo Heami"));
+            if (txtMessage != null) txtMessage.setText(safeText(item.getMessage(), ""));
+            if (txtTime != null) txtTime.setText(safeText(item.getTimeText(), "Vừa xong"));
+            if (txtAction != null) txtAction.setText(safeText(item.getActionText(), "Mở"));
+
+            View.OnClickListener openListener = v -> openHomeNotification(item);
+
+            itemView.setOnClickListener(openListener);
+            if (txtAction != null) {
+                txtAction.setOnClickListener(openListener);
+            }
+
+            container.addView(itemView);
+        }
+    }
+
+    private void openHomeNotification(@NonNull HomeNotificationModel item) {
+        if (homeNotificationDialog != null && homeNotificationDialog.isShowing()) {
+            homeNotificationDialog.dismiss();
+        }
+
+        String type = safeText(item.getType(), "");
+
+        if (HomeNotificationModel.TYPE_CHECKIN.equals(type)) {
+            Intent intent = new Intent(this, CheckInAiActivity.class);
+            startActivity(intent);
+            return;
+        }
+
+        if (HomeNotificationModel.TYPE_PLAN.equals(type)) {
+            Toast.makeText(this, "Bạn xem lịch trình hôm nay ngay trên trang chủ nhé 🌿", Toast.LENGTH_SHORT).show();
+
+            View scheduleSection = findViewById(R.id.layoutSectionSchedule);
+            if (scheduleSection != null) {
+                scheduleSection.requestFocus();
+            }
+
+            return;
+        }
+
+        if (HomeNotificationModel.TYPE_APPOINTMENT.equals(type)) {
+            Intent intent = new Intent(this, ConsultationsActivity.class);
+            startActivity(intent);
+            return;
+        }
+
+        if (HomeNotificationModel.TYPE_COMMUNITY_CHAT.equals(type)) {
+            Intent intent = new Intent(this, MoodMatchChatActivity.class);
+            intent.putExtra("room_id", safeText(item.getRoomId(), ""));
+            intent.putExtra("match_id", safeText(item.getMatchId(), ""));
+            intent.putExtra("matched_user_id", safeText(item.getPartnerId(), ""));
+            intent.putExtra("matched_user_name", safeText(item.getPartnerName(), "Người bạn ẩn danh"));
+            intent.putExtra("matched_user_avatar", safeText(item.getPartnerAvatar(), ""));
+            intent.putExtra("mood_tag", safeText(item.getMoodTag(), "stress"));
+            intent.putExtra("room_status", safeText(item.getStatus(), "ACTIVE"));
+            startActivity(intent);
+            return;
+        }
+
+        if (HomeNotificationModel.TYPE_CONSULTATION_CHAT.equals(type)) {
+            Intent intent = new Intent(this, ConsultationSessionActivity.class);
+            intent.putExtra(
+                    ConsultationSessionActivity.EXTRA_SESSION_ID,
+                    safeText(item.getSessionId(), "")
+            );
+            intent.putExtra(
+                    ConsultationSessionActivity.EXTRA_FORMAT_TYPE,
+                    safeText(item.getFormatType(), "Chat")
+            );
+            intent.putExtra(
+                    ConsultationSessionActivity.EXTRA_DOCTOR_NAME,
+                    safeText(item.getPartnerName(), "Bác sĩ Heami")
+            );
+            intent.putExtra(
+                    ConsultationSessionActivity.EXTRA_DOCTOR_AVATAR,
+                    safeText(item.getPartnerAvatar(), "")
+            );
+            intent.putExtra(
+                    ConsultationSessionActivity.EXTRA_STATUS,
+                    safeText(item.getStatus(), "ONGOING")
+            );
+            startActivity(intent);
+        }
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    @NonNull
+    private String safeText(String value, @NonNull String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim();
     }
 }
 
