@@ -583,14 +583,31 @@
             </LinearLayout>
 
             <!-- Section Title: Lịch rảnh -->
-            <TextView
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Lịch rảnh"
-                android:textColor="#1A2530"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lịch rảnh"
+                    android:textColor="#1A2530"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSetupSchedule"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thiết lập"
+                    android:textColor="#09A38C"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
 
             <!-- Availability card -->
             <androidx.cardview.widget.CardView
@@ -602,6 +619,7 @@
                 app:cardBackgroundColor="#FFFFFF">
 
                 <LinearLayout
+                    android:id="@+id/layoutDoctorScheduleList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"

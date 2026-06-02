@@ -18,7 +18,16 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.widget.ImageView;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.view.LayoutInflater;
+import android.graphics.Color;
 import com.bumptech.glide.Glide;
+import com.google.firebase.Timestamp;
+import java.util.Calendar;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.Query;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class DoctorProfileActivity extends AppCompatActivity {
 
@@ -35,6 +44,7 @@ public class DoctorProfileActivity extends AppCompatActivity {
     private TextView txtDoctorProfileExperience;
     private android.widget.ImageButton btnProfileSettings;
     private ImageView btnDoctorEditAvatar;
+    private com.google.android.material.button.MaterialButton btnSetupSchedule;
 
     private String currentDoctorUid = "doc_001";
     private String currentFullName = "";
@@ -51,7 +61,7 @@ public class DoctorProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_doctor_profile);
 
         initViews();
-        setupActions();
+        // setupActions() will be called in onResume()
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -63,6 +73,13 @@ public class DoctorProfileActivity extends AppCompatActivity {
                 overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Load lại dữ liệu mỗi khi quay về màn hình này để cập nhật lịch rảnh
+        setupActions();
     }
 
     private void initViews() {
@@ -79,6 +96,7 @@ public class DoctorProfileActivity extends AppCompatActivity {
         txtDoctorProfileExperience = findViewById(R.id.txtDoctorProfileExperience);
         btnProfileSettings = findViewById(R.id.btnProfileSettings);
         btnDoctorEditAvatar = findViewById(R.id.btnDoctorEditAvatar);
+        btnSetupSchedule = findViewById(R.id.btnSetupSchedule);
     }
 
     private void setupActions() {
@@ -153,6 +171,9 @@ public class DoctorProfileActivity extends AppCompatActivity {
                                     .error(R.drawable.img_doctor_1)
                                     .into(imgDoctorProfileAvatar);
                         }
+
+                        // Load động danh sách lịch rảnh tóm tắt
+                        loadScheduleSummary();
                     }
                 });
 
@@ -171,6 +192,13 @@ public class DoctorProfileActivity extends AppCompatActivity {
         }
         if (btnDoctorEditAvatar != null) {
             btnDoctorEditAvatar.setOnClickListener(editListener);
+        }
+        if (btnSetupSchedule != null) {
+            btnSetupSchedule.setOnClickListener(v -> {
+                Intent intent = new Intent(DoctorProfileActivity.this, DoctorScheduleActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
         }
     }
 
@@ -309,5 +337,151 @@ public class DoctorProfileActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void loadScheduleSummary() {
+        LinearLayout container = findViewById(R.id.layoutDoctorScheduleList);
+        if (container == null) return;
+
+        container.removeAllViews();
+
+        // Lấy mốc thời gian bắt đầu ngày hôm nay
+        Calendar today = Calendar.getInstance();
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.set(Calendar.MILLISECOND, 0);
+
+        Calendar nextWeek = (Calendar) today.clone();
+        nextWeek.add(Calendar.DAY_OF_YEAR, 7); // Giới hạn 1 tuần (7 ngày)
+
+        Timestamp tsStart = new Timestamp(today.getTime());
+        Timestamp tsEnd = new Timestamp(nextWeek.getTime());
+
+        FirebaseFirestore.getInstance().collection("doctors").document(currentDoctorUid)
+                .collection("time_slots")
+                .whereGreaterThanOrEqualTo("start_time", tsStart)
+                .whereLessThanOrEqualTo("start_time", tsEnd)
+                .orderBy("start_time", Query.Direction.ASCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                        LayoutInflater inflater = LayoutInflater.from(this);
+                        SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE, dd/MM/yyyy", new Locale("vi", "VN"));
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+
+                        // Sử dụng Map để nhóm các slot giờ theo từng ngày trước khi vẽ UI
+                        java.util.Map<String, java.util.List<String>> groupedSlots = new java.util.LinkedHashMap<>();
+
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Timestamp start = doc.getTimestamp("start_time");
+                            Timestamp end = doc.getTimestamp("end_time");
+                            if (start != null) {
+                                String dateStr = dayFormat.format(start.toDate());
+                                String timeStr = timeFormat.format(start.toDate());
+                                if (end != null) {
+                                    timeStr += " - " + timeFormat.format(end.toDate());
+                                }
+                                if (!groupedSlots.containsKey(dateStr)) {
+                                    groupedSlots.put(dateStr, new java.util.ArrayList<>());
+                                }
+                                groupedSlots.get(dateStr).add(timeStr);
+                            }
+                        }
+
+                        // Vẽ UI: duyệt qua từng ngày đã nhóm
+                        for (java.util.Map.Entry<String, java.util.List<String>> entry : groupedSlots.entrySet()) {
+                            String dateStr = entry.getKey();
+                            java.util.List<String> times = entry.getValue();
+
+                            // Tạo một container ngang cho dòng đầu tiên (Ngày + Slot giờ thứ nhất ở bên phải)
+                            LinearLayout firstRow = new LinearLayout(this);
+                            firstRow.setOrientation(LinearLayout.HORIZONTAL);
+                            firstRow.setLayoutParams(new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT));
+                            firstRow.setPadding(0, 16, 0, 8);
+
+                            // TextView hiển thị ngày ở lề trái
+                            TextView tvDate = new TextView(this);
+                            tvDate.setText(dateStr);
+                            tvDate.setTextColor(Color.parseColor("#09A38C"));
+                            tvDate.setTextSize(14);
+                            tvDate.setTypeface(null, android.graphics.Typeface.BOLD);
+                            LinearLayout.LayoutParams dateLp = new LinearLayout.LayoutParams(
+                                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                            tvDate.setLayoutParams(dateLp);
+                            firstRow.addView(tvDate);
+
+                            // TextView hiển thị slot giờ thứ nhất ở lề phải
+                            TextView tvFirstTime = new TextView(this);
+                            tvFirstTime.setText(times.get(0));
+                            tvFirstTime.setTextColor(Color.parseColor("#1A2530"));
+                            tvFirstTime.setTextSize(13);
+                            tvFirstTime.setGravity(android.view.Gravity.END);
+                            LinearLayout.LayoutParams timeLp = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT);
+                            tvFirstTime.setLayoutParams(timeLp);
+                            firstRow.addView(tvFirstTime);
+
+                            container.addView(firstRow);
+
+                            // Nếu ngày này có thêm các slot giờ khác, tạo các dòng tiếp theo dồn về bên phải
+                            for (int k = 1; k < times.size(); k++) {
+                                LinearLayout extraRow = new LinearLayout(this);
+                                extraRow.setOrientation(LinearLayout.HORIZONTAL);
+                                extraRow.setLayoutParams(new LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.MATCH_PARENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                                extraRow.setPadding(0, 4, 0, 4);
+
+                                // View đệm chiếm hết không gian bên trái
+                                View spacer = new View(this);
+                                LinearLayout.LayoutParams spacerLp = new LinearLayout.LayoutParams(
+                                        0, 1, 1f);
+                                spacer.setLayoutParams(spacerLp);
+                                extraRow.addView(spacer);
+
+                                // TextView hiển thị slot giờ tiếp theo ở lề phải
+                                TextView tvExtraTime = new TextView(this);
+                                tvExtraTime.setText(times.get(k));
+                                tvExtraTime.setTextColor(Color.parseColor("#1A2530"));
+                                tvExtraTime.setTextSize(13);
+                                tvExtraTime.setGravity(android.view.Gravity.END);
+                                tvExtraTime.setLayoutParams(new LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                                extraRow.addView(tvExtraTime);
+
+                                container.addView(extraRow);
+                            }
+
+                            // Đường kẻ chia ngày
+                            View divider = new View(this);
+                            LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    (int) (0.5 * getResources().getDisplayMetrics().density));
+                            divLp.topMargin = 8;
+                            divider.setLayoutParams(divLp);
+                            divider.setBackgroundColor(Color.parseColor("#F2F4F7"));
+                            container.addView(divider);
+                        }
+                    } else {
+                        TextView emptyTv = new TextView(this);
+                        emptyTv.setText("Chưa thiết lập lịch rảnh nào.");
+                        emptyTv.setTextColor(Color.parseColor("#9E8AAA"));
+                        emptyTv.setTextSize(14);
+                        emptyTv.setPadding(0, 16, 0, 16);
+                        container.addView(emptyTv);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    TextView errorTv = new TextView(this);
+                    errorTv.setText("Lỗi tải tóm tắt lịch.");
+                    errorTv.setTextColor(Color.parseColor("#FF5A5F"));
+                    errorTv.setTextSize(14);
+                    container.addView(errorTv);
+                });
     }
 }

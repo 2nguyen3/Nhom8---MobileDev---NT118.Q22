@@ -26,12 +26,18 @@ import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
 public class DoctorDetailActivity extends AppCompatActivity {
+
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     private ImageButton btnBackDoctorDetail;
     private ImageButton btnDoctorDetailFavorite;
@@ -304,15 +310,26 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
         SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE", new Locale("vi", "VN"));
 
-        for (int i = 0; i < 14; i++) { // Khoảng thời gian tối đa là 14 ngày
+        // Tạo mảng để kiểm soát các view
+        final View[] dateViews = new View[14];
+        final Calendar[] itemDates = new Calendar[14];
+
+        for (int i = 0; i < 14; i++) {
+            final int index = i;
             final Calendar itemDate = (Calendar) calendar.clone();
+            itemDates[index] = itemDate;
+
             View dateView = inflater.inflate(R.layout.item_booking_date, dateContainer, false);
+            dateViews[index] = dateView;
+            
+            // Ban đầu ẩn đi để đợi query Firestore xác nhận có lịch hay không
+            dateView.setVisibility(View.GONE);
 
             TextView txtDayOfWeek = dateView.findViewById(R.id.txtDayOfWeek);
             TextView txtDayNumber = dateView.findViewById(R.id.txtDayNumber);
             TextView txtMonthYear = dateView.findViewById(R.id.txtMonthYear);
 
-            if (i == 0) {
+            if (index == 0) {
                 txtDayOfWeek.setText("Ngày mai");
             } else {
                 txtDayOfWeek.setText(dayFormat.format(itemDate.getTime()));
@@ -323,13 +340,7 @@ public class DoctorDetailActivity extends AppCompatActivity {
             txtDayNumber.setTextSize(18);
 
             txtMonthYear.setText(String.valueOf(itemDate.get(Calendar.YEAR)));
-
             dateView.setTag(itemDate.getTimeInMillis());
-            
-            boolean isInitiallySelected = tempDate[0] != null && 
-                    itemDate.get(Calendar.DAY_OF_YEAR) == tempDate[0].get(Calendar.DAY_OF_YEAR) &&
-                    itemDate.get(Calendar.YEAR) == tempDate[0].get(Calendar.YEAR);
-            updateDateItemUI(dateView, isInitiallySelected);
 
             dateView.setOnClickListener(v -> {
                 tempDate[0] = itemDate;
@@ -341,6 +352,42 @@ public class DoctorDetailActivity extends AppCompatActivity {
             });
 
             dateContainer.addView(dateView);
+
+            // Kiểm tra xem ngày này bác sĩ có lịch rảnh nào không
+            Calendar startDay = (Calendar) itemDate.clone();
+            startDay.set(Calendar.HOUR_OF_DAY, 0);
+            startDay.set(Calendar.MINUTE, 0);
+            startDay.set(Calendar.SECOND, 0);
+            startDay.set(Calendar.MILLISECOND, 0);
+
+            Calendar endDay = (Calendar) itemDate.clone();
+            endDay.set(Calendar.HOUR_OF_DAY, 23);
+            endDay.set(Calendar.MINUTE, 59);
+            endDay.set(Calendar.SECOND, 59);
+            endDay.set(Calendar.MILLISECOND, 999);
+
+            Timestamp tsStart = new Timestamp(startDay.getTime());
+            Timestamp tsEnd = new Timestamp(endDay.getTime());
+
+            db.collection("doctors").document(doctorId)
+                    .collection("time_slots")
+                    .whereGreaterThanOrEqualTo("start_time", tsStart)
+                    .whereLessThanOrEqualTo("start_time", tsEnd)
+                    .get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                            // Có lịch -> Hiện card ngày lên
+                            dateView.setVisibility(View.VISIBLE);
+                            
+                            // Thiết lập highlight cho ngày đầu tiên khả dụng nếu chưa chọn ngày
+                            boolean isInitiallySelected = tempDate[0] != null && 
+                                    itemDate.get(Calendar.DAY_OF_YEAR) == tempDate[0].get(Calendar.DAY_OF_YEAR) &&
+                                    itemDate.get(Calendar.YEAR) == tempDate[0].get(Calendar.YEAR);
+                            
+                            updateDateItemUI(dateView, isInitiallySelected);
+                        }
+                    });
+
             calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
     }
@@ -348,39 +395,164 @@ public class DoctorDetailActivity extends AppCompatActivity {
     private void setupTimeSlots(FlexboxLayout container, View btnConfirm, final Calendar[] tempDate, final String[] tempTime) {
         container.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(this);
-        
-        String[] hours = {"08", "09", "10", "11", "12", "13", "14", "15", "16"};
-        String[] minutes = {"00", "30"};
 
-        for (String hour : hours) {
-            for (String min : minutes) {
-                String time = hour + ":" + min;
-                
-                View timeView = inflater.inflate(R.layout.item_booking_time, container, false);
-                TextView txtTime = (TextView) timeView;
-                txtTime.setText(time);
-                
-                boolean isBooked = (time.equals("09:00") || time.equals("10:30") || time.equals("14:00"));
-                
-                boolean isSelected = time.equals(tempTime[0]);
-                updateTimeItemUI(txtTime, isSelected, isBooked);
-                
-                if (!isBooked) {
-                    txtTime.setOnClickListener(v -> {
-                        tempTime[0] = time;
-                        updateTimeSelectionUI(container, tempTime[0]);
-                        btnConfirm.setEnabled(true);
-                        btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
-                    });
-                } else {
-                    txtTime.setOnClickListener(v -> {
-                        Toast.makeText(this, "Khung giờ này đã có người đặt", Toast.LENGTH_SHORT).show();
-                    });
-                }
-                
-                container.addView(timeView);
+        if (tempDate[0] == null) return;
+
+        // Định nghĩa các khung giờ cứng mặc định của ứng dụng
+        String[] hardcodedHours = {"08", "09", "10", "11", "12", "13", "14", "15", "16"};
+        String[] hardcodedMinutes = {"00", "30"};
+        java.util.List<String> fixedSlots = new java.util.ArrayList<>();
+        for (String hour : hardcodedHours) {
+            for (String min : hardcodedMinutes) {
+                fixedSlots.add(hour + ":" + min);
             }
         }
+
+        // Xác định khoảng thời gian của ngày được chọn
+        Calendar startDay = (Calendar) tempDate[0].clone();
+        startDay.set(Calendar.HOUR_OF_DAY, 0);
+        startDay.set(Calendar.MINUTE, 0);
+        startDay.set(Calendar.SECOND, 0);
+        startDay.set(Calendar.MILLISECOND, 0);
+
+        Calendar endDay = (Calendar) tempDate[0].clone();
+        endDay.set(Calendar.HOUR_OF_DAY, 23);
+        endDay.set(Calendar.MINUTE, 59);
+        endDay.set(Calendar.SECOND, 59);
+        endDay.set(Calendar.MILLISECOND, 999);
+
+        Timestamp tsStart = new Timestamp(startDay.getTime());
+        Timestamp tsEnd = new Timestamp(endDay.getTime());
+
+        db.collection("doctors").document(doctorId)
+                .collection("time_slots")
+                .whereGreaterThanOrEqualTo("start_time", tsStart)
+                .whereLessThanOrEqualTo("start_time", tsEnd)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    java.util.List<DocumentSnapshot> doctorSlots = new java.util.ArrayList<>();
+                    if (queryDocumentSnapshots != null) {
+                        doctorSlots.addAll(queryDocumentSnapshots.getDocuments());
+                    }
+
+                    // Query danh sách consultations của bác sĩ
+                    db.collection("consultations")
+                            .whereEqualTo("doctor_id", doctorId)
+                            .whereEqualTo("status", "BOOKED")
+                            .get()
+                            .addOnSuccessListener(consultationsSnapshots -> {
+                                java.util.List<DocumentSnapshot> bookedConsults = new java.util.ArrayList<>();
+                                if (consultationsSnapshots != null) {
+                                    // Lọc cục bộ theo ngày để tránh yêu cầu tạo Composite Index trên Firestore
+                                    for (DocumentSnapshot doc : consultationsSnapshots.getDocuments()) {
+                                        Timestamp cStart = doc.getTimestamp("start_time");
+                                        if (cStart != null) {
+                                            long startMs = cStart.toDate().getTime();
+                                            if (startMs >= tsStart.toDate().getTime() && startMs <= tsEnd.toDate().getTime()) {
+                                                bookedConsults.add(doc);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                int visibleSlotsCount = 0;
+                                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+
+                                for (String slotTime : fixedSlots) {
+                                    // Phân tích giờ & phút của slot cứng
+                                    String[] parts = slotTime.split(":");
+                                    int hour = Integer.parseInt(parts[0]);
+                                    int min = Integer.parseInt(parts[1]);
+
+                                    // Tạo Calendar mốc thời gian bắt đầu của slot cứng
+                                    Calendar slotStartCal = (Calendar) tempDate[0].clone();
+                                    slotStartCal.set(Calendar.HOUR_OF_DAY, hour);
+                                    slotStartCal.set(Calendar.MINUTE, min);
+                                    slotStartCal.set(Calendar.SECOND, 0);
+                                    slotStartCal.set(Calendar.MILLISECOND, 0);
+
+                                    // Tạo Calendar mốc kết thúc của ca tư vấn (slot cứng bắt đầu + 30 phút)
+                                    Calendar slotEndCal = (Calendar) slotStartCal.clone();
+                                    slotEndCal.add(Calendar.MINUTE, 30);
+
+                                    long slotStartMs = slotStartCal.getTimeInMillis();
+                                    long slotEndMs = slotEndCal.getTimeInMillis();
+
+                                    // Kiểm tra xem slot cứng này có nằm TRỌN VẸN trong bất kỳ slot rảnh nào của bác sĩ thiết lập không
+                                    DocumentSnapshot matchingDoc = null;
+                                    for (DocumentSnapshot doc : doctorSlots) {
+                                        Timestamp docStart = doc.getTimestamp("start_time");
+                                        Timestamp docEnd = doc.getTimestamp("end_time");
+                                        if (docStart != null && docEnd != null) {
+                                            long docStartMs = docStart.toDate().getTime();
+                                            long docEndMs = docEnd.toDate().getTime();
+
+                                            // Kiểm tra: start_slot_cứng >= start_lịch_rảnh VÀ (end_slot_cứng + 30p) <= end_lịch_rảnh
+                                            if (slotStartMs >= docStartMs && slotEndMs <= docEndMs) {
+                                                matchingDoc = doc;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Nếu không khớp với bất kỳ lịch rảnh nào thiết lập hoặc sát giờ kết thúc (< 30p) -> Ẩn hoàn toàn
+                                    if (matchingDoc == null) {
+                                        continue;
+                                    }
+
+                                    // Kiểm tra xem slot giờ cứng này ĐÃ CÓ AI ĐẶT trong consultations chưa
+                                    boolean isBooked = false;
+                                    for (DocumentSnapshot cDoc : bookedConsults) {
+                                        Timestamp cStart = cDoc.getTimestamp("start_time");
+                                        if (cStart != null) {
+                                            String bookedTimeStr = timeFormat.format(cStart.toDate());
+                                            if (slotTime.equals(bookedTimeStr)) {
+                                                isBooked = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    visibleSlotsCount++;
+
+                                    View timeView = inflater.inflate(R.layout.item_booking_time, container, false);
+                                    TextView txtTime = (TextView) timeView;
+                                    txtTime.setText(slotTime);
+
+                                    boolean isSelected = slotTime.equals(tempTime[0]);
+                                    updateTimeItemUI(txtTime, isSelected, isBooked);
+
+                                    if (!isBooked) {
+                                        txtTime.setOnClickListener(v -> {
+                                            tempTime[0] = slotTime;
+                                            updateTimeSelectionUI(container, tempTime[0]);
+                                            btnConfirm.setEnabled(true);
+                                            btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
+                                        });
+                                    } else {
+                                        txtTime.setOnClickListener(v -> {
+                                            Toast.makeText(this, "Khung giờ này đã có người đặt", Toast.LENGTH_SHORT).show();
+                                        });
+                                    }
+
+                                    container.addView(timeView);
+                                }
+
+                                if (visibleSlotsCount == 0) {
+                                    TextView emptyText = new TextView(this);
+                                    emptyText.setText("Không có lịch hẹn nào trống trong ngày này.");
+                                    emptyText.setTextColor(Color.parseColor("#9E8AAA"));
+                                    emptyText.setTextSize(14);
+                                    emptyText.setPadding(16, 16, 16, 16);
+                                    container.addView(emptyText);
+                                }
+                            }).addOnFailureListener(e -> {
+                                Toast.makeText(this, "Lỗi tải thông tin ca hẹn: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Lỗi tải lịch rảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void updateDateSelectionUI(LinearLayout container, Calendar selected) {
@@ -407,11 +579,15 @@ public class DoctorDetailActivity extends AppCompatActivity {
 
     private void updateTimeSelectionUI(FlexboxLayout container, String selectedTime) {
         for (int i = 0; i < container.getChildCount(); i++) {
-            TextView child = (TextView) container.getChildAt(i);
-            String time = child.getText().toString();
-            boolean isBooked = (time.equals("09:00") || time.equals("10:30") || time.equals("14:00"));
-            boolean isSelected = time.equals(selectedTime);
-            updateTimeItemUI(child, isSelected, isBooked);
+            View view = container.getChildAt(i);
+            if (view instanceof TextView) {
+                TextView child = (TextView) view;
+                String time = child.getText().toString();
+                // Không thể đoán trước isBooked từ hardcode, ta kiểm tra màu chữ/nền của chính nó để giữ trạng thái đã disable
+                boolean isBooked = child.getTextColors().getDefaultColor() == Color.parseColor("#CBD5E1");
+                boolean isSelected = time.equals(selectedTime);
+                updateTimeItemUI(child, isSelected, isBooked);
+            }
         }
     }
 
@@ -420,10 +596,12 @@ public class DoctorDetailActivity extends AppCompatActivity {
             view.setBackgroundResource(R.drawable.bg_doctor_calendar_card);
             view.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E2E8F0")));
             view.setTextColor(Color.parseColor("#CBD5E1"));
+            view.setClickable(false);
         } else {
             view.setBackgroundResource(isSelected ? R.drawable.bg_doctor_package_card_selected : R.drawable.bg_doctor_package_card);
             view.setBackgroundTintList(null);
             view.setTextColor(isSelected ? Color.parseColor("#E86FA0") : Color.parseColor("#9E8AAA"));
+            view.setClickable(true);
         }
     }
 
