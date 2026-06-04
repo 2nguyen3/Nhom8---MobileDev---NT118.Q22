@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="20dp"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="Chỉnh sửa thông tin"
+                android:textColor="#09A38C"
+                android:textSize="20sp" />
+
+            <ImageView
+                android:id="@+id/btnDoctorDismiss"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp"
+                android:src="@drawable/ic_close"
+                app:tint="#C0BACA"
+                tools:ignore="ContentDescription" />
+        </RelativeLayout>
+
+        <!-- Main Scrollable Content -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="450dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="start"
+                android:paddingHorizontal="24dp"
+                android:paddingBottom="24dp"
+                android:paddingTop="8dp">
+
+                <!-- Avatar URL input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="ĐƯỜNG DẪN ẢNH ĐẠI DIỆN"
+                    android:textColor="#9EA8B6"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etDoctorEditAvatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_input_teal"
+                    android:fontFamily="@font/quicksand_medium"
+                    android:paddingHorizontal="20dp"
+                    android:textColor="#1A2530"
+                    android:textSize="15sp"
+                    android:inputType="textUri"
+                    android:gravity="start|center_vertical"
+                    tools:ignore="Autofill,SpeakableTextPresentCheck" />
+
+                <!-- Input Name -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="HỌ VÀ TÊN"
+                    android:textColor="#9EA8B6"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etDoctorEditName"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_input_teal"
+                    android:fontFamily="@font/quicksand_medium"
+                    android:paddingHorizontal="20dp"
+                    android:textColor="#1A2530"
+                    android:textSize="15sp"
+                    android:inputType="textPersonName"
+                    android:gravity="start|center_vertical"
+                    tools:ignore="Autofill,SpeakableTextPresentCheck" />
+
+                <!-- Input Degree -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="HỌC VỊ (DEGREE)"
+                    android:textColor="#9EA8B6"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etDoctorEditDegree"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_input_teal"
+                    android:fontFamily="@font/quicksand_medium"
+                    android:paddingHorizontal="20dp"
+                    android:textColor="#1A2530"
+                    android:textSize="15sp"
+                    android:inputType="text"
+                    android:gravity="start|center_vertical"
+                    tools:ignore="Autofill,SpeakableTextPresentCheck" />
+
+                <!-- Input Specialty -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="CHUYÊN KHOA (SPECIALIZATION)"
+                    android:textColor="#9EA8B6"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etDoctorEditSpecialty"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_input_teal"
+                    android:fontFamily="@font/quicksand_medium"
+                    android:paddingHorizontal="20dp"
+                    android:textColor="#1A2530"
+                    android:textSize="15sp"
+                    android:inputType="text"
+                    android:gravity="start|center_vertical"
+                    tools:ignore="Autofill,SpeakableTextPresentCheck" />
+
+                <!-- Input Location -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="ĐỊA ĐIỂM (LOCATION)"
+                    android:textColor="#9EA8B6"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etDoctorEditLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_input_teal"
+                    android:fontFamily="@font/quicksand_medium"
+                    android:paddingHorizontal="20dp"
+                    android:textColor="#1A2530"
+                    android:textSize="15sp"
+                    android:inputType="text"
+                    android:gravity="start|center_vertical"
+                    tools:ignore="Autofill,SpeakableTextPresentCheck" />
+
+                <!-- Input Experience Years -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="SỐ NĂM KINH NGHIỆM"
+                    android:textColor="#9EA8B6"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etDoctorEditExperience"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_input_teal"
+                    android:fontFamily="@font/quicksand_medium"
+                    android:paddingHorizontal="20dp"
+                    android:textColor="#1A2530"
+                    android:textSize="15sp"
+                    android:inputType="number"
+                    android:gravity="start|center_vertical"
+                    tools:ignore="Autofill,SpeakableTextPresentCheck" />
+
+                <!-- Input Bio -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="GIỚI THIỆU BẢN THÂN (BIO)"
+                    android:textColor="#9EA8B6"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etDoctorEditBio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="120dp"
+                    android:layout_marginBottom="24dp"
+                    android:background="@drawable/bg_input_teal"
+                    android:fontFamily="@font/quicksand_medium"
+                    android:gravity="top|start"
+                    android:padding="16dp"
+                    android:textColor="#1A2530"
+                    android:textSize="15sp"
+                    android:inputType="textMultiLine"
+                    android:scrollbars="vertical"
+                    android:overScrollMode="always"
+                    tools:ignore="Autofill,SpeakableTextPresentCheck" />
+
+                <!-- Save Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSaveDoctorProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:fontFamily="@font/quicksand_bold"
+                    android:text="Lưu thông tin"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    app:backgroundTint="#09A38C"
+                    app:cornerRadius="28dp"
+                    app:elevation="0dp"
+                    app:rippleColor="#33FFFFFF" />
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

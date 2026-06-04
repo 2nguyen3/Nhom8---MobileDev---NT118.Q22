@@ -223,6 +223,9 @@
             <activity
                 android:name=".ui.doctor.DoctorPatientDetailActivity"
                 android:exported="false" />
+            <activity
+                android:name=".ui.doctor.DoctorScheduleActivity"
+                android:exported="false" />
 
         <activity
             android:name=".ui.admin.AdminHomeActivity"

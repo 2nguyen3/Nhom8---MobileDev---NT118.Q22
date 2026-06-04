@@ -110,6 +110,7 @@
 
                             <!-- Edit Pencil Button overlay -->
                             <ImageView
+                                android:id="@+id/btnDoctorEditAvatar"
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_gravity="bottom|end"
@@ -148,9 +149,10 @@
                                 android:layout_marginTop="2dp" />
 
                             <TextView
+                                android:id="@+id/txtDoctorProfileSub"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="📍 Tâm lý lâm sàng  •  📍 Hà Nội"
+                                android:text="📍 Hà Nội"
                                 android:textColor="#9EA8B6"
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp" />
@@ -189,6 +191,7 @@
 
                     <!-- Bio box description -->
                     <TextView
+                        android:id="@+id/txtDoctorProfileBio"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="20dp"
@@ -242,6 +245,7 @@
                         </FrameLayout>
 
                         <TextView
+                            android:id="@+id/txtDoctorProfileRating"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="4.9"
@@ -251,6 +255,7 @@
                             android:layout_marginTop="6dp"/>
 
                         <TextView
+                            android:id="@+id/txtDoctorProfileReviewCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Đánh giá (312)"
@@ -293,6 +298,7 @@
                         </FrameLayout>
 
                         <TextView
+                            android:id="@+id/txtDoctorProfileSessions"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="1247"
@@ -343,6 +349,7 @@
                         </FrameLayout>
 
                         <TextView
+                            android:id="@+id/txtDoctorProfileExperience"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="10+"
@@ -576,14 +583,31 @@
             </LinearLayout>
 
             <!-- Section Title: Lịch rảnh -->
-            <TextView
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Lịch rảnh"
-                android:textColor="#1A2530"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lịch rảnh"
+                    android:textColor="#1A2530"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSetupSchedule"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thiết lập"
+                    android:textColor="#09A38C"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
 
             <!-- Availability card -->
             <androidx.cardview.widget.CardView
@@ -595,6 +619,7 @@
                 app:cardBackgroundColor="#FFFFFF">
 
                 <LinearLayout
+                    android:id="@+id/layoutDoctorScheduleList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
