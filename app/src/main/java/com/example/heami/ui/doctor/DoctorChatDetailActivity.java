@@ -106,8 +106,16 @@ public class DoctorChatDetailActivity extends AppCompatActivity {
         boolean isDoctor = prefs.getBoolean("is_doctor", false);
 
         if (isDoctor) {
-            doctorActorId = safeText(prefs.getString("doctor_id", "doc_001"));
-        } else if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            doctorActorId = safeText(prefs.getString("doctor_id", ""));
+
+            if (doctorActorId.isEmpty()) {
+                doctorActorId = "doc_001";
+            }
+
+            return;
+        }
+
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             doctorActorId = safeText(FirebaseAuth.getInstance().getCurrentUser().getUid());
         } else {
             doctorActorId = "";
@@ -253,21 +261,40 @@ public class DoctorChatDetailActivity extends AppCompatActivity {
     }
 
     private void openConsultationCallScreen() {
+        if (sessionId.isEmpty()) {
+            Toast.makeText(this, "Thiếu session_id để bắt đầu cuộc gọi", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (doctorActorId.isEmpty()) {
+            resolveDoctorActorId();
+        }
+
+        if (doctorActorId.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy định danh bác sĩ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Intent intent = new Intent(this, ConsultationCallActivity.class);
         intent.putExtra(ConsultationCallActivity.EXTRA_SESSION_ID, sessionId);
         intent.putExtra(ConsultationCallActivity.EXTRA_ROLE, ConsultationCallActivity.ROLE_DOCTOR);
+        intent.putExtra(ConsultationCallActivity.EXTRA_ACTOR_UID, doctorActorId);
+
         intent.putExtra(
                 ConsultationCallActivity.EXTRA_PARTNER_NAME,
                 partnerName.isEmpty() ? "Người dùng Heami" : partnerName
         );
+
         intent.putExtra(
                 ConsultationCallActivity.EXTRA_PARTNER_AVATAR,
                 partnerAvatar
         );
+
         intent.putExtra(
                 ConsultationCallActivity.EXTRA_FORMAT_TYPE,
                 formatType.isEmpty() ? "CALL" : formatType
         );
+
         intent.putExtra(
                 ConsultationCallActivity.EXTRA_CALL_CHANNEL_ID,
                 ""

@@ -163,6 +163,7 @@ public class LoginActivity extends AppCompatActivity {
                 getSharedPreferences("HeamiData", MODE_PRIVATE).edit()
                         .putBoolean("is_doctor", true)
                         .putBoolean("is_admin", false)
+                        .putString("doctor_id", "doc_001")
                         .apply();
 
                 startActivity(new Intent(LoginActivity.this, com.example.heami.ui.doctor.DoctorHomeActivity.class));

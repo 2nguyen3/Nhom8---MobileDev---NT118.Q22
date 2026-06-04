@@ -63,6 +63,7 @@ public class ConsultationCallActivity extends AppCompatActivity {
     public static final String EXTRA_PARTNER_AVATAR = "extra_partner_avatar";
     public static final String EXTRA_FORMAT_TYPE = "extra_format_type";
     public static final String EXTRA_CALL_CHANNEL_ID = "extra_call_channel_id";
+    public static final String EXTRA_ACTOR_UID = "extra_actor_uid";
 
     public static final String ROLE_USER = "USER";
     public static final String ROLE_DOCTOR = "DOCTOR";
@@ -248,6 +249,7 @@ public class ConsultationCallActivity extends AppCompatActivity {
     private String partnerAvatar = "";
     private String formatType = "";
     private String callChannelId = "";
+    private String actorUidFromIntent = "";
 
     private static final String CALL_NOTE_PREFS = "HeamiCallNotes";
     private String localCallNoteDraft = "";
@@ -334,6 +336,7 @@ public class ConsultationCallActivity extends AppCompatActivity {
         partnerAvatar = safeText(extras.getString(EXTRA_PARTNER_AVATAR), "");
         formatType = safeText(extras.getString(EXTRA_FORMAT_TYPE), "");
         callChannelId = safeText(extras.getString(EXTRA_CALL_CHANNEL_ID), "");
+        actorUidFromIntent = safeText(extras.getString(EXTRA_ACTOR_UID), "");
 
         applyFallbackValues();
     }
@@ -554,16 +557,32 @@ public class ConsultationCallActivity extends AppCompatActivity {
     }
 
     private void resolveActorUid() {
+        currentActorUid = safeText(actorUidFromIntent, "");
+        if (!currentActorUid.isEmpty()) {
+            return;
+        }
+
         SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
         boolean isDoctor = prefs.getBoolean("is_doctor", false);
 
         if (ROLE_DOCTOR.equals(role) && isDoctor) {
             currentActorUid = safeText(prefs.getString("doctor_id", ""), "");
-        } else {
-            com.google.firebase.auth.FirebaseUser user =
-                    com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-            currentActorUid = user != null ? safeText(user.getUid(), "") : "";
+
+            if (currentActorUid.isEmpty()) {
+                /*
+                 * Fallback cho tài khoản doctor nội bộ hiện tại.
+                 * AuthViewModel đang dùng account/doctor id cố định là doc_001.
+                 */
+                currentActorUid = "doc_001";
+            }
+
+            return;
         }
+
+        com.google.firebase.auth.FirebaseUser user =
+                com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+
+        currentActorUid = user != null ? safeText(user.getUid(), "") : "";
     }
 
     private void fetchCallToken() {

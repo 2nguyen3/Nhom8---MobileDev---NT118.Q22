@@ -1,6 +1,280 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_doctor_screen">
+
+    <View
+        android:id="@+id/blobSosPink"
+        android:layout_width="230dp"
+        android:layout_height="230dp"
+        android:alpha="0.18"
+        android:background="@drawable/bg_blob_doctor_pink"
+        android:translationX="-60dp"
+        android:translationY="-70dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/blobSosMint"
+        android:layout_width="210dp"
+        android:layout_height="210dp"
+        android:alpha="0.12"
+        android:background="@drawable/bg_blob_doctor_mint"
+        android:translationX="70dp"
+        android:translationY="520dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutSosHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingTop="48dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="14dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnBackSos"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_doctor_detail_round_btn"
+            android:contentDescription="Quay lại"
+            android:padding="11dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#313866" />
+
+        <TextView
+            android:id="@+id/txtSosHeaderTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:fontFamily="@font/quicksand_bold"
+            android:text="Hỗ trợ khẩn cấp"
+            android:textColor="#313866"
+            android:textSize="22sp"
+            app:layout_constraintBottom_toBottomOf="@id/btnBackSos"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/btnBackSos"
+            app:layout_constraintTop_toTopOf="@id/btnBackSos" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <ScrollView
+        android:id="@+id/scrollSos"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="34dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutSosHeader">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/gradient_sos"
+                    android:orientation="vertical"
+                    android:padding="22dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Bạn đang cần hỗ trợ ngay?"
+                        android:textColor="@color/white"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="@font/quicksand_medium"
+                        android:lineSpacingExtra="3dp"
+                        android:text="Nếu bạn đang gặp nguy hiểm hoặc cần hỗ trợ y tế khẩn cấp, hãy liên hệ cấp cứu hoặc người tin cậy ngay."
+                        android:textColor="#FFF2F8"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCallEmergency"
+                        android:layout_width="match_parent"
+                        android:layout_height="58dp"
+                        android:layout_marginTop="18dp"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Gọi cấp cứu 115"
+                        android:textAllCaps="false"
+                        android:textColor="#E86FA0"
+                        android:textSize="15sp"
+                        app:backgroundTint="@color/white"
+                        app:cornerRadius="29dp"
+                        app:elevation="0dp"
+                        app:icon="@drawable/ic_phone"
+                        app:iconGravity="textStart"
+                        app:iconTint="#E86FA0" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="24dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="LIÊN HỆ NHANH"
+                android:textColor="#B7B0C3"
+                android:textSize="12sp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/txtTrustedContactStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Chưa thiết lập người tin cậy"
+                        android:textColor="#313866"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/quicksand_medium"
+                        android:text="Lưu số người thân hoặc bạn bè mà bạn có thể liên hệ khi cần."
+                        android:textColor="#8E99B8"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCallTrustedContact"
+                        android:layout_width="match_parent"
+                        android:layout_height="54dp"
+                        android:layout_marginTop="14dp"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:text="Gọi người tin cậy"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        app:backgroundTint="#00BFA5"
+                        app:cornerRadius="27dp"
+                        app:elevation="0dp"
+                        app:icon="@drawable/ic_phone"
+                        app:iconGravity="textStart"
+                        app:iconTint="@color/white" />
+
+                    <TextView
+                        android:id="@+id/btnEditTrustedContact"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/quicksand_bold"
+                        android:gravity="center"
+                        android:text="Thiết lập / đổi số người tin cậy"
+                        android:textColor="#E86FA0"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="24dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="HEAMI CÓ THỂ GIÚP BẠN"
+                android:textColor="#B7B0C3"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenConsultation"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="Mở tư vấn với bác sĩ"
+                android:textAllCaps="false"
+                android:textColor="#313866"
+                app:backgroundTint="#FFFFFF"
+                app:cornerRadius="24dp"
+                app:elevation="0dp"
+                app:icon="@drawable/ic_doctor_chat"
+                app:iconGravity="textStart"
+                app:iconTint="#E86FA0" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenBreathing"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="Bài thở giúp bình tĩnh lại"
+                android:textAllCaps="false"
+                android:textColor="#313866"
+                app:backgroundTint="#FFFFFF"
+                app:cornerRadius="24dp"
+                app:elevation="0dp"
+                app:icon="@drawable/ic_heal_breath"
+                app:iconGravity="textStart"
+                app:iconTint="#00BFA5" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCallChildProtection"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/quicksand_bold"
+                android:text="Gọi tổng đài 111"
+                android:textAllCaps="false"
+                android:textColor="#313866"
+                app:backgroundTint="#FFFFFF"
+                app:cornerRadius="24dp"
+                app:elevation="0dp"
+                app:icon="@drawable/ic_safety_shield"
+                app:iconGravity="textStart"
+                app:iconTint="#9575CD" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="@font/quicksand_medium"
+                android:gravity="center"
+                android:lineSpacingExtra="3dp"
+                android:text="Heami không thay thế dịch vụ cấp cứu chuyên nghiệp. Nếu bạn đang ở trong tình huống nguy hiểm, hãy gọi cấp cứu hoặc liên hệ người xung quanh ngay."
+                android:textColor="#9AA8C7"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
