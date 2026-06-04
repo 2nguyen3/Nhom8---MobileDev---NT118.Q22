@@ -2,8 +2,6 @@ package com.example.heami;
 
 import android.app.Application;
 import android.content.SharedPreferences;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -34,12 +32,8 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
     private static final String RTDB_URL =
             "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-    private static final int PRESENCE_VERSION = 2;
-
     private static final String PREFS_PRESENCE = "HeamiPresencePrefs";
     private static final String KEY_DEVICE_ID = "presence_device_id";
-
-    private static final long HEARTBEAT_INTERVAL_MS = 15_000L;
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
@@ -49,16 +43,24 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
     private ValueEventListener connectedListener;
 
     private DatabaseReference connectedRef;
-    private DatabaseReference userStatusRef;
-    private DatabaseReference myConnectionsRef;
-    private DatabaseReference lastOnlineRef;
+
+    /*
+     * Path mới dùng cho presence:
+     *
+     * presence_connections/{uid}/{deviceId}
+     *
+     * Mỗi uid có thể có nhiều deviceId.
+     * Cloud Functions sẽ đếm theo uid, không đếm theo device,
+     * để tránh 1 tài khoản mở 2 máy bị tính thành 2 người online.
+     */
+    private DatabaseReference presenceUserRef;
     private DatabaseReference currentConnectionRef;
 
-    private DatabaseReference currentConnectionForegroundRef;
-    private DatabaseReference currentConnectionHeartbeatRef;
-    private DatabaseReference currentConnectionConnectedAtRef;
-
-    private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
+    /*
+     * Path phụ để lưu lần online cuối.
+     * Path này không dùng để đếm realtime online.
+     */
+    private DatabaseReference lastOnlineRef;
 
     private String currentPresenceUid = "";
     private String presenceDeviceId = "";
@@ -66,16 +68,9 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
     private boolean isAppForeground = false;
     private static boolean appForegroundStatic = false;
 
-    private final Runnable heartbeatRunnable = new Runnable() {
-        @Override
-        public void run() {
-            syncHeartbeatNow();
-
-            if (isAppForeground && currentConnectionRef != null) {
-                heartbeatHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS);
-            }
-        }
-    };
+    public interface PresenceCleanupCallback {
+        void onDone();
+    }
 
     @Override
     public void onCreate() {
@@ -99,6 +94,7 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
 
             if (!nextUid.equals(currentPresenceUid)) {
                 detachPresence();
+
                 currentPresenceUid = nextUid;
 
                 if (!currentPresenceUid.isEmpty()) {
@@ -128,8 +124,7 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
 
         Log.d(TAG, "App foreground");
 
-        syncHeartbeatNow();
-        startHeartbeatLoop();
+        syncCurrentPresenceOnline();
     }
 
     @Override
@@ -139,43 +134,24 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
 
         Log.d(TAG, "App background");
 
-        stopHeartbeatLoop();
-        markCurrentConnectionBackground();
-
-        if (lastOnlineRef != null) {
-            lastOnlineRef.setValue(ServerValue.TIMESTAMP, (error, ref) -> {
-                if (error != null) {
-                    Log.e(TAG, "Failed to set lastOnline", error.toException());
-                } else {
-                    Log.d(TAG, "lastOnline updated");
-                }
-            });
-        }
+        removeCurrentPresenceConnection();
+        updateLastOnlineNow();
     }
 
     private void attachPresence(@NonNull String uid) {
         Log.d(TAG, "attachPresence uid = " + uid);
 
         connectedRef = realtimeDb.getReference(".info/connected");
-        userStatusRef = realtimeDb.getReference("status").child(uid);
-        myConnectionsRef = userStatusRef.child("connections");
-        lastOnlineRef = userStatusRef.child("lastOnline");
 
-        /*
-         * Mỗi máy/app chỉ dùng 1 connection cố định theo presenceDeviceId.
-         * Không dùng push() nữa để tránh sinh nhiều connection rác trong RTDB.
-         */
-        currentConnectionRef = myConnectionsRef.child(presenceDeviceId);
-        currentConnectionForegroundRef = currentConnectionRef.child("isForeground");
-        currentConnectionHeartbeatRef = currentConnectionRef.child("heartbeat_at");
-        currentConnectionConnectedAtRef = currentConnectionRef.child("connected_at");
+        presenceUserRef = realtimeDb
+                .getReference("presence_connections")
+                .child(uid);
 
-        Map<String, Object> statusUpdates = new HashMap<>();
-        statusUpdates.put("presence_version", PRESENCE_VERSION);
-        statusUpdates.put("device_id", presenceDeviceId);
-        userStatusRef.updateChildren(statusUpdates);
+        currentConnectionRef = presenceUserRef.child(presenceDeviceId);
 
-        syncPresenceRole(uid);
+        lastOnlineRef = realtimeDb
+                .getReference("presence_last_online")
+                .child(uid);
 
         connectedListener = new ValueEventListener() {
             @Override
@@ -185,17 +161,13 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
                 Log.d(TAG, ".info/connected = " + connected);
 
                 if (connected == null || !connected) {
-                    stopHeartbeatLoop();
                     return;
                 }
 
                 registerOnDisconnectHandlers();
-                syncConnectionOnlineNow(true);
 
                 if (isAppForeground) {
-                    startHeartbeatLoop();
-                } else {
-                    stopHeartbeatLoop();
+                    writeCurrentConnectionOnline();
                 }
             }
 
@@ -206,37 +178,163 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         };
 
         connectedRef.addValueEventListener(connectedListener);
+
+        if (isAppForeground) {
+            syncCurrentPresenceOnline();
+        }
     }
 
     private void detachPresence() {
         Log.d(TAG, "detachPresence uid = " + currentPresenceUid);
 
-        stopHeartbeatLoop();
-
         if (connectedRef != null && connectedListener != null) {
             connectedRef.removeEventListener(connectedListener);
         }
 
-        if (currentConnectionRef != null) {
-            currentConnectionRef.child("isForeground").setValue(false);
-            currentConnectionRef.removeValue();
-        }
-
-        if (lastOnlineRef != null) {
-            lastOnlineRef.setValue(ServerValue.TIMESTAMP);
-        }
+        removeCurrentPresenceConnection();
+        updateLastOnlineNow();
 
         connectedListener = null;
         connectedRef = null;
 
-        userStatusRef = null;
-        myConnectionsRef = null;
-        lastOnlineRef = null;
-
+        presenceUserRef = null;
         currentConnectionRef = null;
-        currentConnectionForegroundRef = null;
-        currentConnectionHeartbeatRef = null;
-        currentConnectionConnectedAtRef = null;
+        lastOnlineRef = null;
+    }
+
+    private void syncCurrentPresenceOnline() {
+        if (currentPresenceUid == null || currentPresenceUid.trim().isEmpty()) {
+            FirebaseUser user = auth != null ? auth.getCurrentUser() : null;
+            currentPresenceUid = user != null ? user.getUid() : "";
+        }
+
+        if (currentPresenceUid.isEmpty()) {
+            return;
+        }
+
+        if (currentConnectionRef == null) {
+            attachPresence(currentPresenceUid);
+            return;
+        }
+
+        cleanupStalePresenceForCurrentDeviceThenWrite();
+    }
+
+    private void cleanupStalePresenceForCurrentDeviceThenWrite() {
+        if (realtimeDb == null || presenceDeviceId == null || presenceDeviceId.trim().isEmpty()) {
+            writeCurrentConnectionOnline();
+            return;
+        }
+
+        realtimeDb.getReference("presence_connections")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    Map<String, Object> updates = new HashMap<>();
+
+                    for (DataSnapshot uidSnapshot : snapshot.getChildren()) {
+                        String uid = uidSnapshot.getKey();
+
+                        for (DataSnapshot connectionSnapshot : uidSnapshot.getChildren()) {
+                            String connectionId = connectionSnapshot.getKey();
+                            String deviceId = connectionSnapshot.child("device_id").getValue(String.class);
+
+                            if (uid == null || connectionId == null) {
+                                continue;
+                            }
+
+                            boolean isSameDevice = presenceDeviceId.equals(deviceId);
+                            boolean isOtherUid = !uid.equals(currentPresenceUid);
+
+                            if (isSameDevice && isOtherUid) {
+                                updates.put(uid + "/" + connectionId, null);
+                            }
+                        }
+                    }
+
+                    if (updates.isEmpty()) {
+                        writeCurrentConnectionOnline();
+                        return;
+                    }
+
+                    realtimeDb.getReference("presence_connections")
+                            .updateChildren(updates, (error, ref) -> {
+                                if (error != null) {
+                                    Log.e(TAG, "Failed to cleanup stale presence before write", error.toException());
+                                } else {
+                                    Log.d(TAG, "stale presence cleaned before write, count = " + updates.size());
+                                }
+
+                                writeCurrentConnectionOnline();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to cleanup stale presence before write", e);
+                    writeCurrentConnectionOnline();
+                });
+    }
+
+    private void writeCurrentConnectionOnline() {
+        if (currentConnectionRef == null || currentPresenceUid == null || currentPresenceUid.isEmpty()) {
+            return;
+        }
+
+        String fallbackRole = getLocalRoleFallback();
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("role", fallbackRole);
+        updates.put("platform", "android");
+        updates.put("connected_at", ServerValue.TIMESTAMP);
+        updates.put("device_id", presenceDeviceId);
+
+        currentConnectionRef.updateChildren(updates, (error, ref) -> {
+            if (error != null) {
+                Log.e(TAG, "Failed to write presence connection", error.toException());
+            } else {
+                Log.d(TAG, "presence connection written with fallback role = " + fallbackRole);
+            }
+        });
+
+        syncConnectionRoleFromFirestore(currentPresenceUid, fallbackRole);
+    }
+
+    private void syncConnectionRoleFromFirestore(
+            @NonNull String uid,
+            @NonNull String fallbackRole
+    ) {
+        if (firestore == null || currentConnectionRef == null) {
+            return;
+        }
+
+        String accountDocId = resolveAccountDocIdForPresence(uid);
+
+        firestore.collection("accounts")
+                .document(accountDocId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    String rawRole = doc != null && doc.exists()
+                            ? doc.getString("role")
+                            : fallbackRole;
+
+                    String finalRole = normalizeRole(rawRole, fallbackRole);
+
+                    if (currentConnectionRef != null) {
+                        currentConnectionRef.child("role").setValue(finalRole, (error, ref) -> {
+                            if (error != null) {
+                                Log.e(TAG, "Failed to sync connection role", error.toException());
+                            } else {
+                                Log.d(TAG, "connection role synced = " + finalRole
+                                        + " from accountDocId = " + accountDocId);
+                            }
+                        });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to fetch account role from " + accountDocId, e);
+
+                    if (currentConnectionRef != null) {
+                        currentConnectionRef.child("role").setValue(fallbackRole);
+                    }
+                });
     }
 
     private void registerOnDisconnectHandlers() {
@@ -247,9 +345,9 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         OnDisconnect removeConnectionOnDisconnect = currentConnectionRef.onDisconnect();
         removeConnectionOnDisconnect.removeValue((error, ref) -> {
             if (error != null) {
-                Log.e(TAG, "onDisconnect removeValue failed", error.toException());
+                Log.e(TAG, "onDisconnect remove connection failed", error.toException());
             } else {
-                Log.d(TAG, "onDisconnect removeValue registered");
+                Log.d(TAG, "onDisconnect remove connection registered");
             }
         });
 
@@ -263,116 +361,51 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
         });
     }
 
-    private void startHeartbeatLoop() {
-        heartbeatHandler.removeCallbacks(heartbeatRunnable);
-
-        if (isAppForeground && currentConnectionRef != null) {
-            heartbeatHandler.post(heartbeatRunnable);
-        }
-    }
-
-    private void stopHeartbeatLoop() {
-        heartbeatHandler.removeCallbacks(heartbeatRunnable);
-    }
-
-    private void syncHeartbeatNow() {
+    private void removeCurrentPresenceConnection() {
         if (currentConnectionRef == null) {
             return;
         }
 
-        syncConnectionOnlineNow(false);
-    }
-
-    private void syncConnectionOnlineNow(boolean includeConnectedAt) {
-        if (currentConnectionRef == null) {
-            return;
-        }
-
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("presence_version", PRESENCE_VERSION);
-        updates.put("device_id", presenceDeviceId);
-        updates.put("isForeground", isAppForeground);
-        updates.put("heartbeat_at", ServerValue.TIMESTAMP);
-
-        if (includeConnectedAt) {
-            updates.put("connected_at", ServerValue.TIMESTAMP);
-        }
-
-        currentConnectionRef.updateChildren(updates, (error, ref) -> {
+        currentConnectionRef.removeValue((error, ref) -> {
             if (error != null) {
-                Log.e(TAG, "Failed to sync connection online", error.toException());
+                Log.e(TAG, "Failed to remove presence connection", error.toException());
             } else {
-                Log.d(TAG, "connection online synced, foreground = " + isAppForeground);
+                Log.d(TAG, "presence connection removed");
             }
         });
     }
 
-    private void markCurrentConnectionBackground() {
-        if (currentConnectionRef == null) {
+    private void updateLastOnlineNow() {
+        if (lastOnlineRef == null) {
             return;
         }
 
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("presence_version", PRESENCE_VERSION);
-        updates.put("device_id", presenceDeviceId);
-        updates.put("isForeground", false);
-        updates.put("heartbeat_at", ServerValue.TIMESTAMP);
-
-        currentConnectionRef.updateChildren(updates, (error, ref) -> {
+        lastOnlineRef.setValue(ServerValue.TIMESTAMP, (error, ref) -> {
             if (error != null) {
-                Log.e(TAG, "Failed to set connection background", error.toException());
+                Log.e(TAG, "Failed to update last online", error.toException());
             } else {
-                Log.d(TAG, "connection background synced");
+                Log.d(TAG, "last online updated");
             }
         });
     }
 
-    private void syncPresenceRole(@NonNull String uid) {
-        if (userStatusRef == null || firestore == null) {
-            return;
+    @NonNull
+    private String resolveAccountDocIdForPresence(@NonNull String authUid) {
+        SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+
+        boolean isDoctor = prefs.getBoolean("is_doctor", false);
+
+        if (isDoctor) {
+            String doctorId = prefs.getString("doctor_id", "");
+
+            if (doctorId != null && !doctorId.trim().isEmpty()) {
+                return doctorId.trim();
+            }
+
+            return "doc_001";
         }
 
-        firestore.collection("accounts")
-                .document(uid)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    String fallbackRole = getLocalRoleFallback();
-
-                    String rawRole = doc != null && doc.exists()
-                            ? doc.getString("role")
-                            : fallbackRole;
-
-                    final String finalRole = normalizeRole(rawRole, fallbackRole);
-
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("role", finalRole);
-                    updates.put("presence_version", PRESENCE_VERSION);
-                    updates.put("device_id", presenceDeviceId);
-
-                    userStatusRef.updateChildren(updates, (error, ref) -> {
-                        if (error != null) {
-                            Log.e(TAG, "Failed to sync presence role", error.toException());
-                        } else {
-                            Log.d(TAG, "presence role synced = " + finalRole);
-                        }
-                    });
-                })
-                .addOnFailureListener(e -> {
-                    final String fallbackRole = getLocalRoleFallback();
-
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("role", fallbackRole);
-                    updates.put("presence_version", PRESENCE_VERSION);
-                    updates.put("device_id", presenceDeviceId);
-
-                    userStatusRef.updateChildren(updates, (error, ref) -> {
-                        if (error != null) {
-                            Log.e(TAG, "Failed to sync fallback presence role", error.toException());
-                        } else {
-                            Log.d(TAG, "fallback presence role synced = " + fallbackRole);
-                        }
-                    });
-                });
+        return authUid;
     }
 
     @NonNull
@@ -423,6 +456,98 @@ public class HeamiApp extends Application implements DefaultLifecycleObserver {
                 .apply();
 
         return newId;
+    }
+
+    public void refreshPresenceForCurrentUser() {
+        Log.d(TAG, "refreshPresenceForCurrentUser");
+
+        FirebaseUser user = auth != null ? auth.getCurrentUser() : null;
+        if (user == null) {
+            return;
+        }
+
+        currentPresenceUid = user.getUid();
+
+        if (currentConnectionRef == null) {
+            attachPresence(currentPresenceUid);
+            return;
+        }
+
+        writeCurrentConnectionOnline();
+    }
+
+    public void forceClearPresenceBeforeLogout(@NonNull PresenceCleanupCallback callback) {
+        Log.d(TAG, "forceClearPresenceBeforeLogout");
+
+        if (currentConnectionRef == null) {
+            cleanupPresenceByDeviceId(callback);
+            return;
+        }
+
+        currentConnectionRef.removeValue((error, ref) -> {
+            if (error != null) {
+                Log.e(TAG, "Failed to force remove current connection", error.toException());
+            } else {
+                Log.d(TAG, "current presence connection force removed");
+            }
+
+            updateLastOnlineNow();
+            cleanupPresenceByDeviceId(callback);
+        });
+    }
+
+    private void cleanupPresenceByDeviceId(@NonNull PresenceCleanupCallback callback) {
+        if (realtimeDb == null || presenceDeviceId == null || presenceDeviceId.trim().isEmpty()) {
+            callback.onDone();
+            return;
+        }
+
+        /*
+         * Trường hợp test nhiều role trên cùng một máy:
+         * cùng device_id có thể còn sót ở uid cũ.
+         * Hàm này quét presence_connections và xóa mọi connection
+         * có device_id trùng với máy hiện tại.
+         */
+        realtimeDb.getReference("presence_connections")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    Map<String, Object> updates = new HashMap<>();
+
+                    for (DataSnapshot uidSnapshot : snapshot.getChildren()) {
+                        for (DataSnapshot connectionSnapshot : uidSnapshot.getChildren()) {
+                            String deviceId = connectionSnapshot.child("device_id").getValue(String.class);
+
+                            if (presenceDeviceId.equals(deviceId)) {
+                                String uid = uidSnapshot.getKey();
+                                String connectionId = connectionSnapshot.getKey();
+
+                                if (uid != null && connectionId != null) {
+                                    updates.put(uid + "/" + connectionId, null);
+                                }
+                            }
+                        }
+                    }
+
+                    if (updates.isEmpty()) {
+                        callback.onDone();
+                        return;
+                    }
+
+                    realtimeDb.getReference("presence_connections")
+                            .updateChildren(updates, (error, ref) -> {
+                                if (error != null) {
+                                    Log.e(TAG, "Failed to cleanup presence by device id", error.toException());
+                                } else {
+                                    Log.d(TAG, "presence cleanup by device id done, count = " + updates.size());
+                                }
+
+                                callback.onDone();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to read presence_connections for cleanup", e);
+                    callback.onDone();
+                });
     }
 
     public static boolean isAppForegroundStatic() {

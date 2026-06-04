@@ -7,8 +7,6 @@ import com.example.heami.data.models.AdminAnalyticsOverview;
 import com.example.heami.data.models.AdminTopPostItem;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -19,12 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import com.example.heami.utils.PresenceUtils;
-
 public class AdminAnalyticsRepository {
-
-    private static final String RTDB_URL =
-            "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     public interface LoadAnalyticsListener {
         void onSuccess(
@@ -47,21 +40,22 @@ public class AdminAnalyticsRepository {
         Tasks.whenAllSuccess(
                         firestore.collection("accounts").get(),
                         firestore.collection("community_posts").get(),
-                        firestore.collection("consultations").get(),
-                        FirebaseDatabase.getInstance(RTDB_URL).getReference("status").get()
+                        firestore.collection("consultations").get()
                 )
                 .addOnSuccessListener(results -> {
                     QuerySnapshot accountsSnapshot = (QuerySnapshot) results.get(0);
                     QuerySnapshot postsSnapshot = (QuerySnapshot) results.get(1);
                     QuerySnapshot consultationsSnapshot = (QuerySnapshot) results.get(2);
-                    DataSnapshot statusSnapshot = (DataSnapshot) results.get(3);
 
                     AdminAnalyticsOverview overview = new AdminAnalyticsOverview();
 
                     fillAccountStats(overview, accountsSnapshot);
                     fillPostStats(overview, postsSnapshot);
                     fillConsultationStats(overview, consultationsSnapshot);
-                    fillRealtimeOnlineStats(overview, statusSnapshot);
+
+                    overview.setOnlineNowUsers(0);
+                    overview.setOnlineRatePercent(0);
+
                     fillHealthRates(overview);
 
                     List<AdminTopPostItem> allPosts = buildTopPostItems(postsSnapshot);
@@ -202,16 +196,6 @@ public class AdminAnalyticsRepository {
         overview.setCallConsultations(callCount);
     }
 
-    private void fillRealtimeOnlineStats(
-            @NonNull AdminAnalyticsOverview overview,
-            @NonNull DataSnapshot statusSnapshot
-    ) {
-        long now = System.currentTimeMillis();
-        int onlineNow = PresenceUtils.countOnlineAllRoles(statusSnapshot, now);
-
-        overview.setOnlineNowUsers(onlineNow);
-    }
-
     private void fillHealthRates(@NonNull AdminAnalyticsOverview overview) {
         overview.setActiveRatePercent(
                 calculatePercent(
@@ -220,12 +204,7 @@ public class AdminAnalyticsRepository {
                 )
         );
 
-        overview.setOnlineRatePercent(
-                calculatePercent(
-                        overview.getOnlineNowUsers(),
-                        overview.getTotalAccounts()
-                )
-        );
+        overview.setOnlineRatePercent(0);
 
         overview.setReportRatePercent(
                 calculatePercent(

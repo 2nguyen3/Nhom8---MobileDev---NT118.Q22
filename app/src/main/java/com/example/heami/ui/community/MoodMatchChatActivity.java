@@ -1,6 +1,7 @@
 package com.example.heami.ui.community;
 
 import com.example.heami.data.repositories.MoodMatchRepository;
+import com.example.heami.data.repositories.PresenceStatusRepository;
 
 import com.google.firebase.auth.GetTokenResult;
 import okhttp3.Call;
@@ -114,13 +115,12 @@ public class MoodMatchChatActivity extends AppCompatActivity {
     private TextView txtPartnerPresence;
     private TextView txtTypingIndicator;
 
-    private DatabaseReference partnerStatusRef;
     private DatabaseReference roomTypingRef;
     private DatabaseReference myTypingRef;
     private DatabaseReference partnerTypingRef;
 
-    private ValueEventListener partnerPresenceListener;
     private ValueEventListener partnerTypingListener;
+    private PresenceStatusRepository presenceStatusRepository;
 
     private final Handler typingHandler = new Handler(Looper.getMainLooper());
     private final Runnable stopTypingRunnable = () -> setMyTyping(false);
@@ -149,6 +149,7 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
         realtimeDb = FirebaseDatabase.getInstance(RTDB_URL);
         moodMatchRepository = new MoodMatchRepository();
+        presenceStatusRepository = new PresenceStatusRepository();
 
         if (auth.getCurrentUser() != null) {
             currentUserId = safeText(auth.getCurrentUser().getUid(), "");
@@ -684,33 +685,28 @@ public class MoodMatchChatActivity extends AppCompatActivity {
             return;
         }
 
-        partnerStatusRef = realtimeDb.getReference("status").child(matchedUserId);
+        if (presenceStatusRepository == null) {
+            presenceStatusRepository = new PresenceStatusRepository();
+        }
 
-        partnerPresenceListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                DataSnapshot connectionsSnapshot = snapshot.child("connections");
-                Boolean isForeground = snapshot.child("isForeground").getValue(Boolean.class);
+        presenceStatusRepository.observeUserOnline(
+                matchedUserId,
+                new PresenceStatusRepository.UserOnlineCallback() {
+                    @Override
+                    public void onChanged(boolean online) {
+                        if (txtPartnerPresence != null) {
+                            txtPartnerPresence.setText(online ? "Đang Online" : "Đang Offline");
+                        }
+                    }
 
-                boolean hasConnections =
-                        connectionsSnapshot.exists() && connectionsSnapshot.getChildrenCount() > 0;
-
-                boolean online = hasConnections && Boolean.TRUE.equals(isForeground);
-
-                if (txtPartnerPresence != null) {
-                    txtPartnerPresence.setText(online ? "Đang Online" : "Đang Offline");
+                    @Override
+                    public void onError(@NonNull String message) {
+                        if (txtPartnerPresence != null) {
+                            txtPartnerPresence.setText("Đang Offline");
+                        }
+                    }
                 }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                if (txtPartnerPresence != null) {
-                    txtPartnerPresence.setText("Đang offline");
-                }
-            }
-        };
-
-        partnerStatusRef.addValueEventListener(partnerPresenceListener);
+        );
     }
 
     private void endCurrentMoodMatch() {
@@ -1407,9 +1403,8 @@ public class MoodMatchChatActivity extends AppCompatActivity {
         typingHandler.removeCallbacks(stopTypingRunnable);
         setMyTyping(false);
 
-        if (partnerStatusRef != null && partnerPresenceListener != null) {
-            partnerStatusRef.removeEventListener(partnerPresenceListener);
-            partnerPresenceListener = null;
+        if (presenceStatusRepository != null) {
+            presenceStatusRepository.stopObservingUserOnline();
         }
 
         if (partnerTypingRef != null && partnerTypingListener != null) {

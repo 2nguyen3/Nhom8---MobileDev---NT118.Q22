@@ -1,7 +1,5 @@
 package com.example.heami.ui.community;
 
-import com.example.heami.utils.PresenceUtils;
-
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -31,6 +29,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.heami.R;
 import com.example.heami.data.models.CommunityPostModel;
 import com.example.heami.data.repositories.CommunityRepository;
+import com.example.heami.data.repositories.PresenceCountRepository;
 import com.example.heami.ui.main.BottomNavManager;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.Timestamp;
@@ -94,29 +93,7 @@ public class CommunityActivity extends AppCompatActivity {
 
     private final Runnable dashboardStatsRunnable = this::loadCommunityDashboardStats;
 
-    private com.google.firebase.database.FirebaseDatabase realtimeDb;
-    private com.google.firebase.database.DatabaseReference statusRootRef;
-    private com.google.firebase.database.ValueEventListener onlineCountListener;
-
-    private com.google.firebase.database.DatabaseReference serverTimeOffsetRef;
-    private com.google.firebase.database.ValueEventListener serverTimeOffsetListener;
-
-    private final android.os.Handler onlineRefreshHandler =
-            new android.os.Handler(android.os.Looper.getMainLooper());
-
-    private com.google.firebase.database.DataSnapshot lastStatusSnapshot;
-    private long serverTimeOffsetMs = 0L;
-
-    private final Set<String> userAccountUidSet = new HashSet<>();
-    private com.google.firebase.firestore.ListenerRegistration userRoleListener;
-
-    private final Runnable onlineRefreshRunnable = new Runnable() {
-        @Override
-        public void run() {
-            updateCommunityOnlineCount();
-            onlineRefreshHandler.postDelayed(this, 5_000L);
-        }
-    };
+    private PresenceCountRepository presenceCountRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,13 +106,6 @@ public class CommunityActivity extends AppCompatActivity {
 
         firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance();
         auth = com.google.firebase.auth.FirebaseAuth.getInstance();
-
-        realtimeDb = com.google.firebase.database.FirebaseDatabase.getInstance(
-                "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app"
-        );
-        statusRootRef = realtimeDb.getReference("status");
-        statusRootRef.keepSynced(true);
-        serverTimeOffsetRef = realtimeDb.getReference(".info/serverTimeOffset");
 
         bindViews();
         initData();
@@ -181,6 +151,7 @@ public class CommunityActivity extends AppCompatActivity {
 
     private void initData() {
         communityRepository = new CommunityRepository();
+        presenceCountRepository = new PresenceCountRepository();
     }
 
     private void initLaunchers() {
@@ -1912,118 +1883,35 @@ public class CommunityActivity extends AppCompatActivity {
     private void startOnlineCountListener() {
         stopOnlineCountListener();
 
-        startServerTimeOffsetListener();
+        if (presenceCountRepository == null) {
+            presenceCountRepository = new PresenceCountRepository();
+        }
 
-        onlineCountListener = new com.google.firebase.database.ValueEventListener() {
+        presenceCountRepository.observePresenceCounts(new PresenceCountRepository.PresenceCountCallback() {
             @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                lastStatusSnapshot = snapshot;
-                updateCommunityOnlineCount();
+            public void onChanged(@NonNull com.example.heami.data.models.PresenceCountModel countModel) {
+                if (txtOnlineCount != null) {
+                    /*
+                     * Trang Community chỉ hiển thị số account role USER đang online.
+                     * Không tính DOCTOR và ADMIN.
+                     */
+                    txtOnlineCount.setText(String.valueOf(countModel.getOnlineUsers()));
+                }
             }
 
             @Override
-            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+            public void onError(@NonNull String message) {
                 if (txtOnlineCount != null) {
                     txtOnlineCount.setText("--");
                 }
             }
-        };
-
-        statusRootRef.addValueEventListener(onlineCountListener);
-
-        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
-        onlineRefreshHandler.post(onlineRefreshRunnable);
+        });
     }
 
     private void stopOnlineCountListener() {
-        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
-
-        if (statusRootRef != null && onlineCountListener != null) {
-            statusRootRef.removeEventListener(onlineCountListener);
-            onlineCountListener = null;
+        if (presenceCountRepository != null) {
+            presenceCountRepository.stopObservingPresenceCounts();
         }
-
-        stopServerTimeOffsetListener();
-        lastStatusSnapshot = null;
-    }
-
-    private void startUserRoleListener() {
-        stopUserRoleListener();
-
-        userRoleListener = firestore.collection("accounts")
-                .whereEqualTo("role", "USER")
-                .addSnapshotListener((value, error) -> {
-                    userAccountUidSet.clear();
-
-                    if (error != null || value == null) {
-                        updateCommunityOnlineCount();
-                        return;
-                    }
-
-                    for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
-                        if (doc.getId() != null && !doc.getId().trim().isEmpty()) {
-                            userAccountUidSet.add(doc.getId());
-                        }
-                    }
-
-                    updateCommunityOnlineCount();
-                });
-    }
-
-    private void stopUserRoleListener() {
-        if (userRoleListener != null) {
-            userRoleListener.remove();
-            userRoleListener = null;
-        }
-
-        userAccountUidSet.clear();
-    }
-
-    private void startServerTimeOffsetListener() {
-        stopServerTimeOffsetListener();
-
-        if (serverTimeOffsetRef == null) {
-            return;
-        }
-
-        serverTimeOffsetListener = new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                Long offset = snapshot.getValue(Long.class);
-                serverTimeOffsetMs = offset != null ? offset : 0L;
-            }
-
-            @Override
-            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
-                serverTimeOffsetMs = 0L;
-            }
-        };
-
-        serverTimeOffsetRef.addValueEventListener(serverTimeOffsetListener);
-    }
-
-    private void stopServerTimeOffsetListener() {
-        if (serverTimeOffsetRef != null && serverTimeOffsetListener != null) {
-            serverTimeOffsetRef.removeEventListener(serverTimeOffsetListener);
-        }
-
-        serverTimeOffsetListener = null;
-    }
-
-    private void updateCommunityOnlineCount() {
-        if (lastStatusSnapshot == null || txtOnlineCount == null) {
-            return;
-        }
-
-        long estimatedServerNow = System.currentTimeMillis() + serverTimeOffsetMs;
-
-        int onlineCount = PresenceUtils.countOnlineUsersOnlyByUidSet(
-                lastStatusSnapshot,
-                estimatedServerNow,
-                userAccountUidSet
-        );
-
-        txtOnlineCount.setText(String.valueOf(onlineCount));
     }
 
     @NonNull
@@ -2208,7 +2096,6 @@ public class CommunityActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        startUserRoleListener();
         startOnlineCountListener();
         startDashboardRealtimeListeners();
         loadCommunityDashboardStats();
@@ -2219,7 +2106,6 @@ public class CommunityActivity extends AppCompatActivity {
         super.onStop();
 
         stopOnlineCountListener();
-        stopUserRoleListener();
         stopDashboardRealtimeListeners();
     }
 }

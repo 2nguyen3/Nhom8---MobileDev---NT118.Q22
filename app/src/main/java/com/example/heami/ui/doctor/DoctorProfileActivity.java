@@ -1,5 +1,7 @@
 package com.example.heami.ui.doctor;
 
+import com.example.heami.HeamiApp;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -137,10 +139,21 @@ public class DoctorProfileActivity extends AppCompatActivity {
     }
 
     private void performLogout() {
+        if (getApplication() instanceof HeamiApp) {
+            ((HeamiApp) getApplication()).forceClearPresenceBeforeLogout(this::finishLogoutFlow);
+        } else {
+            finishLogoutFlow();
+        }
+    }
+
+    private void finishLogoutFlow() {
         FirebaseAuth.getInstance().signOut();
+
         android.content.SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
         prefs.edit().clear().apply();
+
         Toast.makeText(this, "Đã đăng xuất tài khoản", Toast.LENGTH_SHORT).show();
+
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

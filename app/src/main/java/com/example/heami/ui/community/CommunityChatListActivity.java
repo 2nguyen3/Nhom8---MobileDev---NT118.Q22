@@ -1,8 +1,7 @@
 package com.example.heami.ui.community;
 
-import com.example.heami.utils.PresenceUtils;
-
 import com.example.heami.data.repositories.MoodMatchRepository;
+import com.example.heami.data.repositories.PresenceStatusRepository;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -25,11 +24,6 @@ import com.example.heami.R;
 import com.example.heami.data.models.ChatRoomModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -43,9 +37,6 @@ import java.util.Locale;
 
 public class CommunityChatListActivity extends AppCompatActivity {
 
-    private static final String RTDB_URL =
-            "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
-
     private ImageButton btnBackCommunityChatList;
     private TextView tabCommunityChatAll;
     private TextView tabCommunityChatUnread;
@@ -56,11 +47,9 @@ public class CommunityChatListActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
-    private FirebaseDatabase realtimeDb;
 
     private ListenerRegistration roomListener;
-    private DatabaseReference statusRootRef;
-    private ValueEventListener partnerOnlineListener;
+    private PresenceStatusRepository presenceStatusRepository;
 
     private String currentUserId = "";
 
@@ -95,7 +84,7 @@ public class CommunityChatListActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        realtimeDb = FirebaseDatabase.getInstance(RTDB_URL);
+        presenceStatusRepository = new PresenceStatusRepository();
 
         FirebaseUser currentUser = auth.getCurrentUser();
         currentUserId = currentUser != null ? safeText(currentUser.getUid(), "") : "";
@@ -136,10 +125,7 @@ public class CommunityChatListActivity extends AppCompatActivity {
             roomListener = null;
         }
 
-        if (statusRootRef != null && partnerOnlineListener != null) {
-            statusRootRef.removeEventListener(partnerOnlineListener);
-            partnerOnlineListener = null;
-        }
+        stopPartnerOnlineListener();
         purgeHandler.removeCallbacks(purgeRunnable);
     }
 
@@ -287,42 +273,33 @@ public class CommunityChatListActivity extends AppCompatActivity {
             return;
         }
 
-        if (statusRootRef == null) {
-            statusRootRef = realtimeDb.getReference("status");
+        if (presenceStatusRepository == null) {
+            presenceStatusRepository = new PresenceStatusRepository();
         }
 
-        if (partnerOnlineListener != null) {
-            statusRootRef.removeEventListener(partnerOnlineListener);
-        }
-
-        partnerOnlineListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                onlineUserIds.clear();
-                long now = System.currentTimeMillis();
-
-                for (DataSnapshot userSnapshot : snapshot.getChildren()) {
-                    String uid = userSnapshot.getKey();
-                    if (uid == null || uid.equals(currentUserId)) {
-                        continue;
+        presenceStatusRepository.observeOnlineUserIds(
+                currentUserId,
+                new PresenceStatusRepository.OnlineUserIdsCallback() {
+                    @Override
+                    public void onChanged(@NonNull Set<String> onlineIds) {
+                        onlineUserIds.clear();
+                        onlineUserIds.addAll(onlineIds);
+                        applyFilters();
                     }
 
-                    if (PresenceUtils.isUserOnlineFromConnections(userSnapshot, now)) {
-                        onlineUserIds.add(uid);
+                    @Override
+                    public void onError(@NonNull String message) {
+                        onlineUserIds.clear();
+                        applyFilters();
                     }
                 }
+        );
+    }
 
-                applyFilters();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                onlineUserIds.clear();
-                applyFilters();
-            }
-        };
-
-        statusRootRef.addValueEventListener(partnerOnlineListener);
+    private void stopPartnerOnlineListener() {
+        if (presenceStatusRepository != null) {
+            presenceStatusRepository.stopObservingOnlineUserIds();
+        }
     }
 
     private void sortRoomsNewestFirst(@NonNull List<ChatRoomModel> roomList) {

@@ -1,5 +1,8 @@
 package com.example.heami.ui.admin;
 
+import com.example.heami.HeamiApp;
+import android.widget.Toast;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -12,24 +15,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
 import com.example.heami.data.repositories.AdminModerationRepository;
+import com.example.heami.data.repositories.PresenceCountRepository;
 import com.example.heami.ui.auth.LoginActivity;
-import com.example.heami.utils.PresenceUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class AdminHomeActivity extends AppCompatActivity {
 
     private static final String PREFS_ADMIN = "HeamiAdminPrefs";
     private static final String KEY_LAST_SEEN_PENDING = "last_seen_pending_reports";
-
-    private static final String RTDB_URL =
-            "https://heami-8nt118-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     private TextView txtAdminName;
     private TextView txtAdminRole;
@@ -48,28 +43,8 @@ public class AdminHomeActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
-    private FirebaseDatabase realtimeDb;
     private AdminModerationRepository moderationRepository;
-
-    private DatabaseReference statusRootRef;
-    private ValueEventListener onlineCountListener;
-
-    private DatabaseReference serverTimeOffsetRef;
-    private ValueEventListener serverTimeOffsetListener;
-
-    private final android.os.Handler onlineRefreshHandler =
-            new android.os.Handler(android.os.Looper.getMainLooper());
-
-    private DataSnapshot lastStatusSnapshot;
-    private long serverTimeOffsetMs = 0L;
-
-    private final Runnable onlineRefreshRunnable = new Runnable() {
-        @Override
-        public void run() {
-            updateAdminOnlineCount();
-            onlineRefreshHandler.postDelayed(this, 5_000L);
-        }
-    };
+    private PresenceCountRepository presenceCountRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,8 +53,8 @@ public class AdminHomeActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        realtimeDb = FirebaseDatabase.getInstance(RTDB_URL);
         moderationRepository = new AdminModerationRepository();
+        presenceCountRepository = new PresenceCountRepository();
 
         bindViews();
         setupClicks();
@@ -258,94 +233,59 @@ public class AdminHomeActivity extends AppCompatActivity {
     private void startOnlineCountListener() {
         stopOnlineCountListener();
 
-        statusRootRef = realtimeDb.getReference("status");
-        statusRootRef.keepSynced(true);
-
-        serverTimeOffsetRef = realtimeDb.getReference(".info/serverTimeOffset");
-        startServerTimeOffsetListener();
-
-        onlineCountListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                lastStatusSnapshot = snapshot;
-                updateAdminOnlineCount();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                txtStatOnline.setText("--");
-            }
-        };
-
-        statusRootRef.addValueEventListener(onlineCountListener);
-
-        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
-        onlineRefreshHandler.post(onlineRefreshRunnable);
-    }
-
-    private void startServerTimeOffsetListener() {
-        stopServerTimeOffsetListener();
-
-        if (serverTimeOffsetRef == null) {
-            return;
+        if (presenceCountRepository == null) {
+            presenceCountRepository = new PresenceCountRepository();
         }
 
-        serverTimeOffsetListener = new ValueEventListener() {
+        presenceCountRepository.observePresenceCounts(new PresenceCountRepository.PresenceCountCallback() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Long offset = snapshot.getValue(Long.class);
-                serverTimeOffsetMs = offset != null ? offset : 0L;
+            public void onChanged(@NonNull com.example.heami.data.models.PresenceCountModel countModel) {
+                if (txtStatOnline != null) {
+                    /*
+                     * Admin Home hiển thị tổng online của cả 3 role:
+                     * USER + DOCTOR + ADMIN.
+                     */
+                    txtStatOnline.setText(String.valueOf(countModel.getOnlineTotal()));
+                }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                serverTimeOffsetMs = 0L;
+            public void onError(@NonNull String message) {
+                if (txtStatOnline != null) {
+                    txtStatOnline.setText("--");
+                }
             }
-        };
-
-        serverTimeOffsetRef.addValueEventListener(serverTimeOffsetListener);
-    }
-
-    private void stopServerTimeOffsetListener() {
-        if (serverTimeOffsetRef != null && serverTimeOffsetListener != null) {
-            serverTimeOffsetRef.removeEventListener(serverTimeOffsetListener);
-        }
-
-        serverTimeOffsetListener = null;
-    }
-
-    private void updateAdminOnlineCount() {
-        if (lastStatusSnapshot == null || txtStatOnline == null) {
-            return;
-        }
-
-        long estimatedServerNow = System.currentTimeMillis() + serverTimeOffsetMs;
-        int onlineCount = PresenceUtils.countOnlineAllRoles(lastStatusSnapshot, estimatedServerNow);
-
-        txtStatOnline.setText(String.valueOf(onlineCount));
+        });
     }
 
     private void stopOnlineCountListener() {
-        onlineRefreshHandler.removeCallbacks(onlineRefreshRunnable);
-
-        if (statusRootRef != null && onlineCountListener != null) {
-            statusRootRef.removeEventListener(onlineCountListener);
+        if (presenceCountRepository != null) {
+            presenceCountRepository.stopObservingPresenceCounts();
         }
-
-        onlineCountListener = null;
-        lastStatusSnapshot = null;
-
-        stopServerTimeOffsetListener();
     }
 
     private void performLogout() {
+        if (getApplication() instanceof HeamiApp) {
+            ((HeamiApp) getApplication()).forceClearPresenceBeforeLogout(this::finishLogoutFlow);
+        } else {
+            finishLogoutFlow();
+        }
+    }
+
+    private void finishLogoutFlow() {
         SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
         prefs.edit()
                 .putBoolean("is_doctor", false)
                 .putBoolean("is_admin", false)
                 .apply();
 
-        auth.signOut();
+        if (auth != null) {
+            auth.signOut();
+        } else {
+            FirebaseAuth.getInstance().signOut();
+        }
+
+        Toast.makeText(this, "Đã đăng xuất tài khoản", Toast.LENGTH_SHORT).show();
 
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

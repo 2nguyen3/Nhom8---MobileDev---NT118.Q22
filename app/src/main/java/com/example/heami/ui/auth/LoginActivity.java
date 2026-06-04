@@ -1,5 +1,7 @@
 package com.example.heami.ui.auth;
 
+import com.example.heami.HeamiApp;
+
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
@@ -165,6 +167,10 @@ public class LoginActivity extends AppCompatActivity {
                         .putBoolean("is_admin", false)
                         .putString("doctor_id", "doc_001")
                         .apply();
+
+                if (getApplication() instanceof HeamiApp) {
+                    ((HeamiApp) getApplication()).refreshPresenceForCurrentUser();
+                }
 
                 startActivity(new Intent(LoginActivity.this, com.example.heami.ui.doctor.DoctorHomeActivity.class));
                 finish();
