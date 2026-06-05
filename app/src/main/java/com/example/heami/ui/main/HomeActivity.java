@@ -389,27 +389,30 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void applyTodaySchedule(boolean hasMoodCheckinToday) {
-        // Kiểm tra và reset trạng thái uống nước hàng ngày
+        // Kiểm tra và reset trạng thái uống nước, thở sâu & thư giãn hàng ngày
         android.content.SharedPreferences prefs = getSharedPreferences("HeamiDailyTasks", MODE_PRIVATE);
         String todayKey = new java.text.SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
         String savedDate = prefs.getString("last_checked_date", "");
         
+        boolean breathDone;
         if (!todayKey.equals(savedDate)) {
-            // Ngày mới -> reset trạng thái uống nước & thư giãn
+            // Ngày mới -> reset trạng thái các nhiệm vụ
             waterDone = false;
             relaxDone = false;
+            breathDone = false;
             prefs.edit()
                  .putString("last_checked_date", todayKey)
                  .putBoolean("water_done", false)
                  .putBoolean("relax_done", false)
+                 .putBoolean("breath_done", false)
                  .apply();
         } else {
             waterDone = prefs.getBoolean("water_done", false);
             relaxDone = prefs.getBoolean("relax_done", false);
+            breathDone = prefs.getBoolean("breath_done", false);
         }
 
         boolean moodCheckinDone = hasMoodCheckinToday;
-        boolean breathDone = prefs.getBoolean("breath_done", false);
 
 
         setScheduleTaskState(txtSchedule1, checkDone1, "Uống 1 ly nước", waterDone);

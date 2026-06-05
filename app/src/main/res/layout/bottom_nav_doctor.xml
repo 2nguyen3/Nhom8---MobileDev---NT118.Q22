@@ -72,7 +72,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
-            android:text="Lịch hẹn"
+            android:text="Lịch trình"
             android:textColor="#B5BFD1"
             android:textSize="10sp"
             android:textStyle="bold" />

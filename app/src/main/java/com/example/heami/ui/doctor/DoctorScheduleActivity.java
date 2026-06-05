@@ -1,42 +1,52 @@
 package com.example.heami.ui.doctor;
 
-import android.app.TimePickerDialog;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.CalendarView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.heami.R;
+import com.example.heami.data.models.TimeSlotsModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class DoctorScheduleActivity extends AppCompatActivity {
 
     private ImageButton btnBackSchedule;
-    private CalendarView calendarViewSchedule;
+    private MonthCalendarView calendarViewSchedule;
     private TextView txtSelectedDateTitle;
     private MaterialButton btnAddTimeSlot;
     private LinearLayout layoutScheduleSlotsContainer;
     private TextView txtScheduleEmpty;
+
+    private final List<TimeSlotsModel> fullFirebaseList = new ArrayList<>();
 
     private FirebaseFirestore db;
     private String doctorId = "doc_001";
@@ -67,6 +77,7 @@ public class DoctorScheduleActivity extends AppCompatActivity {
 
         initViews();
         setupEvents();
+        listenToAllTimeSlots();
         loadSlotsForSelectedDate();
     }
 
@@ -78,46 +89,152 @@ public class DoctorScheduleActivity extends AppCompatActivity {
         layoutScheduleSlotsContainer = findViewById(R.id.layoutScheduleSlotsContainer);
         txtScheduleEmpty = findViewById(R.id.txtScheduleEmpty);
 
-        // Giới hạn lịch tháng: Cho chọn từ hôm nay trở đi
-        calendarViewSchedule.setMinDate(System.currentTimeMillis() - 1000);
         updateTitle();
+        if (calendarViewSchedule != null) {
+            calendarViewSchedule.setSelectedDay(selectedDay);
+        }
     }
 
     private void setupEvents() {
         btnBackSchedule.setOnClickListener(v -> finish());
 
-        calendarViewSchedule.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
-            selectedDay.set(Calendar.YEAR, year);
-            selectedDay.set(Calendar.MONTH, month);
-            selectedDay.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-            updateTitle();
-            loadSlotsForSelectedDate();
-        });
+        if (calendarViewSchedule != null) {
+            calendarViewSchedule.setOnDateClickListener((year, month, day) -> {
+                selectedDay.set(Calendar.YEAR, year);
+                selectedDay.set(Calendar.MONTH, month);
+                selectedDay.set(Calendar.DAY_OF_MONTH, day);
+                updateTitle();
+                loadSlotsForSelectedDate();
+            });
+        }
 
-        btnAddTimeSlot.setOnClickListener(v -> showTimePickerDialogs());
+        btnAddTimeSlot.setOnClickListener(v -> showCustomTimePickerDialog());
+    }
+
+    private void listenToAllTimeSlots() {
+        db.collection("doctors").document(doctorId)
+                .collection("time_slots")
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error != null) {
+                        Log.e("HEAMI_FIREBASE", "Lỗi Firestore: " + error.getMessage());
+                        return;
+                    }
+                    if (snapshots != null) {
+                        fullFirebaseList.clear();
+                        for (QueryDocumentSnapshot document : snapshots) {
+                            try {
+                                TimeSlotsModel slot = document.toObject(TimeSlotsModel.class);
+                                if (slot != null) {
+                                    if (slot.getSlot_id() == null || slot.getSlot_id().isEmpty()) {
+                                        slot.setSlot_id(document.getId());
+                                    }
+                                    fullFirebaseList.add(slot);
+                                }
+                            } catch (Exception e) {
+                                Log.e("HEAMI_PARSING", "Lỗi ánh xạ: " + e.getMessage());
+                            }
+                        }
+                        updateCalendarDecorator();
+                    }
+                });
+    }
+
+    private void updateCalendarDecorator() {
+        if (calendarViewSchedule == null) return;
+
+        Set<String> bookedDayKeys = new HashSet<>();
+        SimpleDateFormat keyFmt = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
+
+        for (TimeSlotsModel slot : fullFirebaseList) {
+            if (slot == null || slot.getStart_time() == null) continue;
+            if ("booked".equalsIgnoreCase(slot.getStatus())) {
+                String key = keyFmt.format(slot.getStart_time().toDate());
+                bookedDayKeys.add(key);
+            }
+        }
+
+        calendarViewSchedule.setBookedDays(bookedDayKeys);
     }
 
     private void updateTitle() {
+        if (txtSelectedDateTitle == null) return;
         txtSelectedDateTitle.setText(titleDateFormat.format(selectedDay.getTime()));
+
+        // So sánh selectedDay với ngày hôm nay
+        Calendar today = Calendar.getInstance();
+        boolean isToday = (selectedDay.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+                && selectedDay.get(Calendar.MONTH) == today.get(Calendar.MONTH)
+                && selectedDay.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH));
+
+        boolean isPast = selectedDay.before(today) && !isToday;
+
+        if (btnAddTimeSlot != null) {
+            if (isToday || isPast) {
+                // Khóa nút thêm giờ đối với hôm nay hoặc các ngày quá khứ
+                btnAddTimeSlot.setVisibility(View.GONE);
+            } else {
+                btnAddTimeSlot.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
-    private void showTimePickerDialogs() {
-        Calendar helper = Calendar.getInstance();
-        
-        // Chọn giờ bắt đầu
-        new TimePickerDialog(this, (viewStart, startHour, startMin) -> {
-            // Sau khi chọn giờ bắt đầu, chọn tiếp giờ kết thúc
-            new TimePickerDialog(this, (viewEnd, endHour, endMin) -> {
-                
-                if (endHour < startHour || (endHour == startHour && endMin <= startMin)) {
-                    Toast.makeText(this, "Thời gian kết thúc phải lớn hơn thời gian bắt đầu!", Toast.LENGTH_LONG).show();
-                    return;
-                }
+    private void showCustomTimePickerDialog() {
+        // Tạo danh sách giờ (mỗi ca cách nhau 30 phút từ 06:00 đến 22:00)
+        List<String> timeList = new ArrayList<>();
+        for (int h = 6; h <= 22; h++) {
+            timeList.add(String.format(Locale.getDefault(), "%02d:00", h));
+            if (h < 22) {
+                timeList.add(String.format(Locale.getDefault(), "%02d:30", h));
+            }
+        }
 
-                saveTimeSlotToFirestore(startHour, startMin, endHour, endMin);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_time_slot, null);
+        builder.setView(dialogView);
 
-            }, helper.get(Calendar.HOUR_OF_DAY) + 1, 0, true).show();
-        }, helper.get(Calendar.HOUR_OF_DAY), 0, true).show();
+        Spinner spinnerStart = dialogView.findViewById(R.id.spinnerStartTime);
+        Spinner spinnerEnd = dialogView.findViewById(R.id.spinnerEndTime);
+        TextView btnCancel = dialogView.findViewById(R.id.btnCancelDialog);
+        MaterialButton btnConfirm = dialogView.findViewById(R.id.btnConfirmDialog);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, timeList);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerStart.setAdapter(adapter);
+        spinnerEnd.setAdapter(adapter);
+
+        // Đặt mặc định giờ bắt đầu là 08:00, giờ kết thúc là 09:00 cho tiện dụng
+        spinnerStart.setSelection(timeList.indexOf("08:00") >= 0 ? timeList.indexOf("08:00") : 0);
+        spinnerEnd.setSelection(timeList.indexOf("09:00") >= 0 ? timeList.indexOf("09:00") : 0);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirm.setOnClickListener(v -> {
+            String startTime = spinnerStart.getSelectedItem().toString();
+            String endTime = spinnerEnd.getSelectedItem().toString();
+
+            String[] startParts = startTime.split(":");
+            String[] endParts = endTime.split(":");
+
+            int startHour = Integer.parseInt(startParts[0]);
+            int startMin = Integer.parseInt(startParts[1]);
+            int endHour = Integer.parseInt(endParts[0]);
+            int endMin = Integer.parseInt(endParts[1]);
+
+            if (endHour < startHour || (endHour == startHour && endMin <= startMin)) {
+                Toast.makeText(this, "Thời gian kết thúc phải lớn hơn thời gian bắt đầu!", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            saveTimeSlotToFirestore(startHour, startMin, endHour, endMin);
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
     private void saveTimeSlotToFirestore(int startHour, int startMin, int endHour, int endMin) {
@@ -201,6 +318,13 @@ public class DoctorScheduleActivity extends AppCompatActivity {
                                 txtTimeRange.setText(timeRange);
                             }
 
+                            // Kiểm tra ngày hôm nay hoặc quá khứ
+                            Calendar today = Calendar.getInstance();
+                            boolean isToday = (selectedDay.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+                                    && selectedDay.get(Calendar.MONTH) == today.get(Calendar.MONTH)
+                                    && selectedDay.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH));
+                            boolean isPast = selectedDay.before(today) && !isToday;
+
                             if ("booked".equals(status)) {
                                 txtStatus.setText("Đã đặt");
                                 txtStatus.setTextColor(Color.parseColor("#FF5A5F"));
@@ -208,8 +332,14 @@ public class DoctorScheduleActivity extends AppCompatActivity {
                             } else {
                                 txtStatus.setText("Sẵn sàng");
                                 txtStatus.setTextColor(Color.parseColor("#09A38C"));
-                                btnDelete.setVisibility(View.VISIBLE);
-                                btnDelete.setOnClickListener(v -> deleteTimeSlot(doc.getId()));
+                                
+                                if (isToday || isPast) {
+                                    // Ẩn nút xóa đối với hôm nay và quá khứ
+                                    btnDelete.setVisibility(View.INVISIBLE);
+                                } else {
+                                    btnDelete.setVisibility(View.VISIBLE);
+                                    btnDelete.setOnClickListener(v -> deleteTimeSlot(doc.getId()));
+                                }
                             }
 
                             layoutScheduleSlotsContainer.addView(row);
