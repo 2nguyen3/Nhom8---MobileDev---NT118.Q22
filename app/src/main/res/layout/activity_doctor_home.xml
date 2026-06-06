@@ -2,12 +2,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://tools.android.com/tools"
     android:id="@+id/doctorHomeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_home_gradient">
 
-    <!-- Decor Background Blobs -->
     <ImageView
         android:id="@+id/decorFlowerPinkTop"
         android:layout_width="18dp"
@@ -32,7 +32,6 @@
         android:layout_marginTop="160dp"
         android:layout_marginEnd="30dp" />
 
-    <!-- Main Scroll Content -->
     <ScrollView
         android:id="@+id/scrollDoctorHome"
         android:layout_width="0dp"
@@ -54,7 +53,6 @@
             android:paddingEnd="22dp"
             android:paddingTop="52dp">
 
-            <!-- Header Section -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -90,7 +88,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Round avatar with green online status dot -->
                 <FrameLayout
                     android:id="@+id/layoutDoctorAvatarContainer"
                     android:layout_width="64dp"
@@ -116,7 +113,6 @@
                             android:contentDescription="doctor avatar" />
                     </androidx.cardview.widget.CardView>
 
-                    <!-- Green status dot at bottom right -->
                     <View
                         android:layout_width="14dp"
                         android:layout_height="14dp"
@@ -129,14 +125,12 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Section 1: Quick Stats Cards Grid (2 rows, 2 columns) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginBottom="24dp">
 
-                <!-- Row 1 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -144,7 +138,6 @@
                     android:weightSum="2"
                     android:layout_marginBottom="12dp">
 
-                    <!-- Card 1: Lịch hôm nay -->
                     <androidx.cardview.widget.CardView
                         android:layout_width="0dp"
                         android:layout_height="80dp"
@@ -191,10 +184,11 @@
                                     android:textStyle="bold" />
 
                                 <TextView
+                                    android:id="@+id/txtLichHomNay"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
-                                    android:text="5 phiên"
+                                    android:text="0 ca"
                                     android:textColor="#7F8C8D"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -202,7 +196,6 @@
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
 
-                    <!-- Card 2: Chờ xác nhận -->
                     <androidx.cardview.widget.CardView
                         android:layout_width="0dp"
                         android:layout_height="80dp"
@@ -243,16 +236,17 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="CHỜ XÁC NHẬN"
+                                    android:text="ĐÃ HOÀN THÀNH"
                                     android:textColor="#9EA8B6"
                                     android:textSize="9sp"
                                     android:textStyle="bold" />
 
                                 <TextView
+                                    android:id="@+id/txtCaDaHoanThanh"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
-                                    android:text="2 phiên"
+                                    android:text="0 ca"
                                     android:textColor="#7F8C8D"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -262,14 +256,12 @@
 
                 </LinearLayout>
 
-                <!-- Row 2 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:weightSum="2">
 
-                    <!-- Card 3: Đang tư vấn -->
                     <androidx.cardview.widget.CardView
                         android:layout_width="0dp"
                         android:layout_height="80dp"
@@ -310,16 +302,17 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="ĐANG TƯ VẤN"
+                                    android:text="SẮP DIỄN RA"
                                     android:textColor="#9EA8B6"
                                     android:textSize="9sp"
                                     android:textStyle="bold" />
 
                                 <TextView
+                                    android:id="@+id/txtCaSapDienRa"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
-                                    android:text="1 phiên"
+                                    android:text="0 ca"
                                     android:textColor="#7F8C8D"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -327,7 +320,6 @@
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
 
-                    <!-- Card 4: Tin nhắn mới -->
                     <androidx.cardview.widget.CardView
                         android:layout_width="0dp"
                         android:layout_height="80dp"
@@ -374,10 +366,11 @@
                                     android:textStyle="bold" />
 
                                 <TextView
+                                    android:id="@+id/txtTinNhanMoi"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
-                                    android:text="8 tin"
+                                    android:text="0 tin"
                                     android:textColor="#7F8C8D"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
@@ -389,7 +382,6 @@
 
             </LinearLayout>
 
-            <!-- Section 2: "Lịch sắp tới" -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -407,7 +399,6 @@
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent" />
 
-                <!-- See all pill button -->
                 <TextView
                     android:id="@+id/btnDoctorSeeAll"
                     android:layout_width="wrap_content"
@@ -427,158 +418,13 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Upcoming List -->
             <LinearLayout
+                android:id="@+id/containerUpcoming"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="24dp">
+                android:layout_marginBottom="24dp" />
 
-                <!-- Item 1: Bướm tím mộng -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="14dp"
-                        android:gravity="center_vertical">
-
-                        <!-- Blue circle with 😔 emoji -->
-                        <FrameLayout
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@drawable/bg_stat_icon_blue">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:text="😔"
-                                android:textSize="22sp" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="14dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Bướm tím mộng"
-                                android:textColor="#1A2530"
-                                android:textSize="15sp"
-                                android:textStyle="bold"/>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Chat 30 phút"
-                                android:textColor="#9EA8B6"
-                                android:textSize="12sp"
-                                android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-
-                        <!-- Time Pill -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="14:30"
-                            android:textColor="#09A38C"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:background="@drawable/bg_stat_icon_green"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="8dp"
-                            android:paddingBottom="8dp" />
-
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
-                <!-- Item 2: Cáo nhỏ hồng -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="14dp"
-                        android:gravity="center_vertical">
-
-                        <!-- Purple circle with 😰 emoji -->
-                        <FrameLayout
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@drawable/bg_stat_icon_pink">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:text="😰"
-                                android:textSize="22sp" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="14dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Cáo nhỏ hồng"
-                                android:textColor="#1A2530"
-                                android:textSize="15sp"
-                                android:textStyle="bold"/>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Call 15 phút"
-                                android:textColor="#9EA8B6"
-                                android:textSize="12sp"
-                                android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-
-                        <!-- Time Pill -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="16:00"
-                            android:textColor="#09A38C"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:background="@drawable/bg_stat_icon_green"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="8dp"
-                            android:paddingBottom="8dp" />
-
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
-            </LinearLayout>
-
-            <!-- Section 3: "Bệnh nhân cần chú ý" -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -604,99 +450,16 @@
 
             </LinearLayout>
 
-            <!-- Attention List -->
             <LinearLayout
+                android:id="@+id/containerAttention"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="24dp">
-
-                <!-- Item 1: Gấu bông trắng -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:background="@drawable/bg_attention_card_pink"
-                    android:padding="16dp"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
-
-                    <View
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/bg_dot_pink_small" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="14dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Gấu bông trắng"
-                            android:textColor="#1A2530"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Mood tiêu cực 5 ngày liên tiếp"
-                            android:textColor="#7F8C8D"
-                            android:textSize="13sp"
-                            android:layout_marginTop="2dp" />
-
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Item 2: Ếch xanh lá -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:background="@drawable/bg_attention_card_yellow"
-                    android:padding="16dp"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
-
-                    <View
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/bg_dot_yellow_small" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginStart="14dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ếch xanh lá"
-                            android:textColor="#1A2530"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Chưa hoàn thành kế hoạch 7 ngày"
-                            android:textColor="#7F8C8D"
-                            android:textSize="13sp"
-                            android:layout_marginTop="2dp" />
-
-                    </LinearLayout>
-                </LinearLayout>
-
-            </LinearLayout>
+                android:layout_marginBottom="24dp" />
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- Include Bottom Navigation Bar for Doctor -->
     <include
         layout="@layout/bottom_nav_doctor"
         android:id="@+id/layoutBottomNavDoctorContainer"
