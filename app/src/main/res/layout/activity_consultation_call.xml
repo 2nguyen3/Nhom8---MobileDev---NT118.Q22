@@ -61,7 +61,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="#F4FFFE" />
+            app:tint="#0F4A48" />
 
         <LinearLayout
             android:id="@+id/layoutCallTimerChip"
@@ -88,7 +88,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="00:17"
-                android:textColor="#F5FFFD"
+                android:textColor="#0F4A48"
                 android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -105,7 +105,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="#F4FFFE" />
+            app:tint="#0F4A48" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Local preview -->
@@ -151,7 +151,7 @@
                 android:paddingEnd="8dp"
                 android:paddingBottom="4dp"
                 android:text="Bạn"
-                android:textColor="#F4FFFE"
+                android:textColor="#0F4A48"
                 android:textSize="10sp"
                 android:textStyle="bold" />
         </FrameLayout>
@@ -239,7 +239,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="Đã kết nối"
-                android:textColor="#F0FFFB"
+                android:textColor="#0F4A48"
                 android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -281,7 +281,7 @@
                     android:padding="14dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_call_speaker"
-                    app:tint="#F4FFFE" />
+                    app:tint="#0F4A48" />
 
                 <TextView
                     android:id="@+id/txtCallSpeakerLabel"
@@ -310,7 +310,7 @@
                     android:padding="14dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_call_camera"
-                    app:tint="#F4FFFE" />
+                    app:tint="#0F4A48" />
 
                 <TextView
                     android:id="@+id/txtCallCameraLabel"
@@ -347,7 +347,7 @@
                     android:padding="16dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_call_mic"
-                    app:tint="#F4FFFE" />
+                    app:tint="#0F4A48" />
 
                 <TextView
                     android:id="@+id/txtCallMicLabel"
@@ -407,7 +407,7 @@
                     android:padding="16dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_call_chat"
-                    app:tint="#F4FFFE" />
+                    app:tint="#0F4A48" />
 
                 <TextView
                     android:id="@+id/txtCallChatLabel"
