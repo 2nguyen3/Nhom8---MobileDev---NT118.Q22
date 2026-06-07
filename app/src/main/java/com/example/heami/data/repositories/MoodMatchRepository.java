@@ -769,7 +769,7 @@ public class MoodMatchRepository {
             @NonNull CandidateFindCallback callback
     ) {
         firestore.collection("mood_match_requests")
-                .orderBy("created_at", Query.Direction.ASCENDING)
+                .whereEqualTo("status", "SEARCHING")
                 .limit(CANDIDATE_SCAN_LIMIT)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -785,6 +785,17 @@ public class MoodMatchRepository {
 
                         allRequests.add(request);
                     }
+
+                    // Sắp xếp in-memory theo created_at tăng dần (ưu tiên người chờ lâu nhất)
+                    // để không cần composite index trên Firestore
+                    allRequests.sort((a, b) -> {
+                        com.google.firebase.Timestamp tA = a.getCreated_at();
+                        com.google.firebase.Timestamp tB = b.getCreated_at();
+                        if (tA == null && tB == null) return 0;
+                        if (tA == null) return 1;
+                        if (tB == null) return -1;
+                        return tA.compareTo(tB);
+                    });
 
                     MoodMatchRequestModel exactCandidate = null;
                     MoodMatchRequestModel nearCandidate = null;

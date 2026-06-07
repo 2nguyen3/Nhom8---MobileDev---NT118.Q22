@@ -56,10 +56,12 @@ public class DoctorMessagesActivity extends AppCompatActivity {
     private View progressDoctorMessages;
     private TextView txtDoctorMessagesEmptyTitle;
     private TextView txtDoctorMessagesEmptySubtitle;
-
-    private TextView txtUnreadCountBadge;
-    private TextView txtConversationCount;
     private EditText edtDoctorMessagesSearch;
+
+    private TextView btnFilterOngoing;
+    private TextView btnFilterUpcoming;
+    private TextView btnFilterCompleted;
+    private String currentFilter = "ongoing"; // "ongoing", "upcoming", "completed"
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
@@ -86,6 +88,7 @@ public class DoctorMessagesActivity extends AppCompatActivity {
         bindViews();
         setupRecyclerView();
         setupSearch();
+        setupFilters();
 
         DoctorBottomNavManager.setup(this, DoctorBottomNavManager.TAB_MESSAGES);
         ExitDialogHelper.registerExitHandler(this);
@@ -127,9 +130,11 @@ public class DoctorMessagesActivity extends AppCompatActivity {
         txtDoctorMessagesEmptyTitle = findViewById(R.id.txtDoctorMessagesEmptyTitle);
         txtDoctorMessagesEmptySubtitle = findViewById(R.id.txtDoctorMessagesEmptySubtitle);
 
-        txtUnreadCountBadge = findViewById(R.id.txtUnreadCountBadge);
-        txtConversationCount = findViewById(R.id.txtConversationCount);
         edtDoctorMessagesSearch = findViewById(R.id.edtDoctorMessagesSearch);
+
+        btnFilterOngoing = findViewById(R.id.btnFilterOngoing);
+        btnFilterUpcoming = findViewById(R.id.btnFilterUpcoming);
+        btnFilterCompleted = findViewById(R.id.btnFilterCompleted);
     }
 
     private void setupRecyclerView() {
@@ -161,6 +166,44 @@ public class DoctorMessagesActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) { }
         });
+    }
+
+    private void setupFilters() {
+        if (btnFilterOngoing != null) {
+            btnFilterOngoing.setOnClickListener(v -> {
+                currentFilter = "ongoing";
+                updateTabStyles(btnFilterOngoing, btnFilterUpcoming, btnFilterCompleted);
+                applySearchAndRender();
+            });
+        }
+
+        if (btnFilterUpcoming != null) {
+            btnFilterUpcoming.setOnClickListener(v -> {
+                currentFilter = "upcoming";
+                updateTabStyles(btnFilterUpcoming, btnFilterOngoing, btnFilterCompleted);
+                applySearchAndRender();
+            });
+        }
+
+        if (btnFilterCompleted != null) {
+            btnFilterCompleted.setOnClickListener(v -> {
+                currentFilter = "completed";
+                updateTabStyles(btnFilterCompleted, btnFilterOngoing, btnFilterUpcoming);
+                applySearchAndRender();
+            });
+        }
+    }
+
+    private void updateTabStyles(TextView selectedTab, TextView... unselectedTabs) {
+        selectedTab.setTextColor(android.graphics.Color.parseColor("#009688"));
+        selectedTab.setBackgroundResource(R.drawable.bg_chip_active_border);
+        selectedTab.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        for (TextView tab : unselectedTabs) {
+            tab.setTextColor(android.graphics.Color.parseColor("#7F8C8D"));
+            tab.setBackgroundResource(R.drawable.bg_chip_inactive_border);
+            tab.setTypeface(null, android.graphics.Typeface.NORMAL);
+        }
     }
 
     private void startConsultationListener() {
@@ -377,19 +420,36 @@ public class DoctorMessagesActivity extends AppCompatActivity {
 
         String query = currentSearchQuery != null ? currentSearchQuery.trim().toLowerCase(Locale.ROOT) : "";
 
-        if (query.isEmpty()) {
-            filtered.addAll(masterItems);
-        } else {
-            for (DoctorConsultationThreadItem item : masterItems) {
+        for (DoctorConsultationThreadItem item : masterItems) {
+            String status = safeText(item.consultation.getStatus(), "BOOKED").toUpperCase(Locale.ROOT);
+
+            // Filter by active status tab
+            boolean matchesFilter = false;
+            if ("ongoing".equals(currentFilter)) {
+                matchesFilter = "ONGOING".equals(status);
+            } else if ("upcoming".equals(currentFilter)) {
+                matchesFilter = "BOOKED".equals(status);
+            } else if ("completed".equals(currentFilter)) {
+                matchesFilter = "COMPLETED".equals(status) || "CANCELLED".equals(status) || "CANCELED".equals(status);
+            }
+
+            if (!matchesFilter) {
+                continue;
+            }
+
+            // Apply search query within selected status
+            if (query.isEmpty()) {
+                filtered.add(item);
+            } else {
                 String userName = resolveUserName(item).toLowerCase(Locale.ROOT);
                 String lastMessage = resolvePreviewMessage(item).toLowerCase(Locale.ROOT);
                 String formatType = safeText(item.consultation.getFormatType(), "").toLowerCase(Locale.ROOT);
-                String status = safeText(item.consultation.getStatus(), "").toLowerCase(Locale.ROOT);
+                String statusText = safeText(item.consultation.getStatus(), "").toLowerCase(Locale.ROOT);
 
                 if (userName.contains(query)
                         || lastMessage.contains(query)
                         || formatType.contains(query)
-                        || status.contains(query)) {
+                        || statusText.contains(query)) {
                     filtered.add(item);
                 }
             }
@@ -425,14 +485,6 @@ public class DoctorMessagesActivity extends AppCompatActivity {
         for (DoctorConsultationThreadItem item : visibleItems) {
             unreadTotal += Math.max(item.unreadCount, 0);
         }
-
-        if (txtConversationCount != null) {
-            txtConversationCount.setText(visibleItems.size() + " cuộc trò chuyện");
-        }
-
-        if (txtUnreadCountBadge != null) {
-            txtUnreadCountBadge.setText(unreadTotal + " chưa đọc");
-        }
     }
 
     private void updateEmptyState(@NonNull List<DoctorConsultationThreadItem> visibleItems) {
@@ -441,8 +493,16 @@ public class DoctorMessagesActivity extends AppCompatActivity {
         rvDoctorConsultationRooms.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
 
         if (isEmpty) {
-            txtDoctorMessagesEmptyTitle.setText("Chưa có cuộc trò chuyện tư vấn nào");
-            txtDoctorMessagesEmptySubtitle.setText("Khi người dùng bắt đầu phiên chat hoặc gọi tư vấn, cuộc trò chuyện sẽ xuất hiện ở đây.");
+            if ("ongoing".equals(currentFilter)) {
+                txtDoctorMessagesEmptyTitle.setText("Không có cuộc tư vấn nào đang diễn ra");
+                txtDoctorMessagesEmptySubtitle.setText("Các cuộc tư vấn đang hoạt động sẽ xuất hiện ở đây.");
+            } else if ("upcoming".equals(currentFilter)) {
+                txtDoctorMessagesEmptyTitle.setText("Chưa có lịch hẹn tư vấn sắp tới");
+                txtDoctorMessagesEmptySubtitle.setText("Các lịch hẹn mới được đặt sẽ xuất hiện ở đây.");
+            } else {
+                txtDoctorMessagesEmptyTitle.setText("Chưa có lịch sử tư vấn hoàn thành");
+                txtDoctorMessagesEmptySubtitle.setText("Các phiên tư vấn đã kết thúc sẽ được lưu tại đây.");
+            }
         }
     }
 

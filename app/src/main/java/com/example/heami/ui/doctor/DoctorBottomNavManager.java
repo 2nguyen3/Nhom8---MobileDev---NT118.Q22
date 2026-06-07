@@ -73,8 +73,8 @@ public class DoctorBottomNavManager {
 
         if (navAppointments != null) {
             navAppointments.setOnClickListener(v -> {
-                if (!(activity instanceof DoctorAppointmentsActivity)) {
-                    activity.startActivity(new Intent(activity, DoctorAppointmentsActivity.class));
+                if (!(activity instanceof DoctorScheduleManagementActivity)) {
+                    activity.startActivity(new Intent(activity, DoctorScheduleManagementActivity.class));
                     activity.overridePendingTransition(0, 0);
                     activity.finish();
                 }
