@@ -1,5 +1,10 @@
 package com.example.heami.ui.doctor;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.EditText;
@@ -28,7 +33,8 @@ public class SessionDetailActivity extends AppCompatActivity {
     private LinearLayout btnChat, btnCall, btnComplete;
 
     private FirebaseFirestore db;
-    private String currentSlotId = "slot_default";
+    private String slotId;
+    private String sessionId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,10 +43,15 @@ public class SessionDetailActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        if (getIntent().hasExtra("session_id")) {
-            currentSlotId = getIntent().getStringExtra("session_id");
-        } else if (getIntent().hasExtra("slot_id")) {
-            currentSlotId = getIntent().getStringExtra("slot_id");
+        // 🌟 FIX ĐỒNG BỘ: Nhận khóa chữ thường khớp 100% với DoctorHomeActivity bắn sang, bọc lót thêm chữ HOA nếu có
+        slotId = getIntent().getStringExtra("slot_id");
+        if (slotId == null || slotId.isEmpty()) {
+            slotId = getIntent().getStringExtra("SLOT_ID");
+        }
+
+        sessionId = getIntent().getStringExtra("session_id");
+        if (sessionId == null || sessionId.isEmpty()) {
+            sessionId = getIntent().getStringExtra("SESSION_ID");
         }
 
         initViews();
@@ -67,40 +78,38 @@ public class SessionDetailActivity extends AppCompatActivity {
     }
 
     private void loadSessionData() {
-        Log.d("HEAMI_CHECK", "Khởi chạy truy vấn an toàn với Intent ID: " + currentSlotId);
+
+        if (slotId == null || slotId.isEmpty()) {
+            Toast.makeText(this, "Thiếu slot_id!", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         db.collection("lich_hen")
-                .whereEqualTo("slot_id", currentSlotId)
+                .whereEqualTo("slot_id", slotId)
+                .limit(1)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        DocumentSnapshot documentSnapshot = queryDocumentSnapshots.getDocuments().get(0);
-                        currentSlotId = documentSnapshot.getId();
-                        Log.d("HEAMI_DETAIL", "Tìm thấy tài liệu lịch hẹn! ID thật trên Firestore: " + currentSlotId);
+                .addOnSuccessListener(query -> {
 
-                        bindLichHenData(documentSnapshot);
-                    } else {
-                        fetchLichHenDirectly(currentSlotId);
+                    if (query.isEmpty()) {
+                        Toast.makeText(this,
+                                "Thông tin phiên khám không tồn tại!",
+                                Toast.LENGTH_SHORT).show();
+                        finish();
+                        return;
                     }
+
+                    DocumentSnapshot doc = query.getDocuments().get(0);
+
+                    // Lưu lại Document ID thật
+                    slotId = doc.getId();
+
+                    bindLichHenData(doc);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e("HEAMI_DETAIL", "Lỗi bảng lich_hen: " + e.getMessage());
-                    Toast.makeText(this, "Không thể kết nối cơ sở dữ liệu!", Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private void fetchLichHenDirectly(String docId) {
-        db.collection("lich_hen")
-                .document(docId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        bindLichHenData(doc);
-                    } else {
-                        Log.e("HEAMI_DETAIL", "Thất bại! Không tìm thấy phiên khám ở cả 2 phương thức.");
-                        Toast.makeText(this, "Thông tin phiên khám không tồn tại!", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
     }
 
     private void bindLichHenData(DocumentSnapshot doc) {
@@ -117,30 +126,33 @@ public class SessionDetailActivity extends AppCompatActivity {
 
         Timestamp startTime = doc.getTimestamp("start_time");
         if (startTime != null) {
-            java.util.Date date = startTime.toDate();
-            // 🌟 ĐÃ FIX: Thêm dấu nháy đơn bọc chuỗi 'Hôm nay' để không bị văng app
             SimpleDateFormat displayFmt = new SimpleDateFormat("dd/MM, HH:mm", Locale.getDefault());
-            tvTime.setText(displayFmt.format(date));
+            tvTime.setText(displayFmt.format(startTime.toDate()));
         }
 
-        String sessionId = doc.getString("session_id");
-        Log.d("HEAMI_DIAGNOSE", "Mã liên kết session_id trích xuất thành công: [" + sessionId + "]");
+        // Nếu Intent chưa truyền session_id thì lấy trực tiếp từ trường liên kết của document lich_hen
+        if (sessionId == null || sessionId.isEmpty()) {
+            sessionId = doc.getString("session_id");
+        }
+
+        Log.d("HEAMI_DETAIL", "Đang xử lý với SESSION_ID = " + sessionId);
 
         if (sessionId != null && !sessionId.isEmpty()) {
             fetchConsultationDetails(sessionId);
         } else {
-            Log.e("HEAMI_DETAIL", "Cảnh báo: Trường session_id của tài liệu này đang trống!");
-            Toast.makeText(this, "Lịch hẹn chưa được liên kết với thông tin bệnh nhân!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lịch hẹn hiện chưa được liên kết phiên tư vấn!", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void fetchConsultationDetails(String sessionId) {
+    private void fetchConsultationDetails(String targetSessionId) {
         db.collection("consultations")
-                .document(sessionId)
+                .document(targetSessionId)
                 .get()
                 .addOnSuccessListener(doc -> {
+                    if (isFinishing() || isDestroyed()) return;
+
                     if (!doc.exists()) {
-                        Log.e("HEAMI_DETAIL", "Không tồn tại tài liệu [" + sessionId + "] trong bộ consultations");
+                        Log.e("HEAMI_DETAIL", "Không tìm thấy tài liệu ID [" + targetSessionId + "] trong bảng consultations");
                         return;
                     }
 
@@ -151,8 +163,8 @@ public class SessionDetailActivity extends AppCompatActivity {
                     String method = doc.getString("method_text");
                     String quote = doc.getString("mood_quote");
 
-                    String energy = doc.contains("energy") ? doc.get("energy").toString() : "35%";
-                    String bpm = doc.contains("bpm") ? doc.get("bpm").toString() : "78";
+                    String energy = doc.contains("energy") ? String.valueOf(doc.get("energy")) : "35%";
+                    String bpm = doc.contains("bpm") ? String.valueOf(doc.get("bpm")) : "78";
 
                     if (name != null) tvPatientName.setText(name);
                     if (moodText != null) tvMoodTitle.setText(moodText);
@@ -160,16 +172,16 @@ public class SessionDetailActivity extends AppCompatActivity {
                     if (duration != null) tvDuration.setText(duration);
                     if (method != null) tvType.setText(method);
 
-                    if (quote != null) {
+                    if (quote != null && !quote.isEmpty()) {
                         tvMoodQuote.setText("\"" + quote + "\"");
                     } else {
                         tvMoodQuote.setText("\"Cảm thấy mệt mỏi và không có động lực làm gì cả\"");
                     }
 
                     tvMoodStats.setText("Energy: " + energy + " · BPM: " + bpm);
-                    Log.d("HEAMI_DETAIL", "Đã đồng bộ thành công! Chào mừng bệnh nhân: " + name);
+                    Log.d("HEAMI_DETAIL", "Đồng bộ hoàn tất! Phiên khám của bệnh nhân: " + name);
                 })
-                .addOnFailureListener(e -> Log.e("HEAMI_DETAIL", "Lỗi bảng consultations: " + e.getMessage()));
+                .addOnFailureListener(e -> Log.e("HEAMI_DETAIL", "Lỗi truy vấn bảng consultations: " + e.getMessage()));
     }
 
     private void setupActionListeners() {
@@ -179,6 +191,8 @@ public class SessionDetailActivity extends AppCompatActivity {
         btnCall.setOnClickListener(v -> Toast.makeText(this, "Đang khởi tạo cuộc gọi tư vấn...", Toast.LENGTH_SHORT).show());
 
         btnComplete.setOnClickListener(v -> {
+            if (slotId == null || slotId.isEmpty()) return;
+
             String updatedNotes = etDoctorNotes.getText().toString().trim();
 
             Map<String, Object> updateData = new HashMap<>();
@@ -186,15 +200,13 @@ public class SessionDetailActivity extends AppCompatActivity {
             updateData.put("doctor_notes", updatedNotes);
 
             db.collection("lich_hen")
-                    .document(currentSlotId)
+                    .document(slotId)
                     .update(updateData)
                     .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Đã hoàn thành phiên tư vấn này!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Đã cập nhật trạng thái hoàn thành phiên tư vấn!", Toast.LENGTH_SHORT).show();
                         finish();
                     })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Lưu thất bại: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+                    .addOnFailureListener(e -> Toast.makeText(this, "Lưu thất bại: " + e.getMessage(), Toast.LENGTH_SHORT).show());
         });
     }
 }

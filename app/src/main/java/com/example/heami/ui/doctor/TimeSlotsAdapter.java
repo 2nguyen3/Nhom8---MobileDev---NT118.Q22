@@ -132,19 +132,21 @@ public class TimeSlotsAdapter extends RecyclerView.Adapter<TimeSlotsAdapter.View
         // ========================================================================
         // 3. LOGIC CLICK ITEM CHUYỂN QUA TRANG DETAIL TƯƠNG ỨNG
         // ========================================================================
-        holder.itemView.setOnClickListener(v -> {
-            // Kiểm tra xem tài liệu này ưu tiên slot_id hay session_id để làm khóa chính sang trang detail
-            String targetId = (model.getSlot_id() != null && !model.getSlot_id().isEmpty())
-                    ? model.getSlot_id()
-                    : model.getSession_id();
+        holder.itemView.setOnClickListener(view -> {
+            // 🌟 Đã chuyển Log debug xuống đúng vị trí an toàn
+            Log.d("HEAMI_DEBUG", "Đang nhấn chuyển trang: slot_id = " + model.getSlot_id());
+            Log.d("HEAMI_DEBUG", "Đang nhấn chuyển trang: session_id = " + model.getSession_id());
 
-            if (targetId != null && !targetId.isEmpty()) {
-                Intent intent = new Intent(context, SessionDetailActivity.class);
-                intent.putExtra("session_id", targetId);
-                context.startActivity(intent);
-            } else {
-                Toast.makeText(context, "Không tìm thấy mã phiên tư vấn này!", Toast.LENGTH_SHORT).show();
+            if (model.getSlot_id() == null || model.getSlot_id().isEmpty()) {
+                Toast.makeText(context, "Thiếu thông tin lịch hẹn!", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            Intent intent = new Intent(context, SessionDetailActivity.class);
+            // Đồng bộ khóa viết thường đồng nhất 100% toàn bộ hệ thống
+            intent.putExtra("slot_id", model.getSlot_id());
+            intent.putExtra("session_id", model.getSession_id());
+            context.startActivity(intent);
         });
     }
 

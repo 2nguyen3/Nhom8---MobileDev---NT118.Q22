@@ -2,12 +2,12 @@ package com.example.heami.ui.therapy;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
-import android.content.Intent; // Thêm dòng này
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.ImageButton; // Thêm dòng này
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -17,8 +17,6 @@ import com.example.heami.R;
 import com.example.heami.ui.consultation.DoctorActivity;
 import com.example.heami.ui.main.BottomNavManager;
 import com.example.heami.ui.main.HomeActivity;
-
-
 import com.example.heami.utils.ExitDialogHelper;
 
 public class TherapyActivity extends AppCompatActivity {
@@ -26,20 +24,19 @@ public class TherapyActivity extends AppCompatActivity {
     private TextView btnTatCa, btnAmThanh, btnHitTho, btnNhatKy, btnKeHoach;
     private LinearLayout layoutAmThanh, layoutHitTho, layoutNhatKy, layoutKeHoach;
     private ImageView imgCloud;
-    private ImageButton btnOpenMusic; // Khai báo ở đây
+    private ImageButton btnOpenMusic;
     private ImageButton btnOpenNatureSound;
 
-    private ImageButton btnOpenDiary;
+    // 🌟 ĐÃ FIX: Biến đổi kiểu dữ liệu thành ImageButton cho cả 2 chiếc nút Play riêng biệt
+    private ImageButton btnOpenDiary;          // Nút Play của Nhật ký tự do
+    private ImageButton btnGratitudeJournal;   // Nút Play của Nhật ký biết ơn
 
     private ImageButton btnOpen1Breath;
-
     private ImageButton btnOpen3Breath;
     private ImageButton btnOpen5Breath;
 
     private ImageButton btnOpenDoctor;
-
     private ImageButton btnOpenPodcast;
-
     private ImageButton btnOpenBinarual;
 
     @Override
@@ -52,27 +49,21 @@ public class TherapyActivity extends AppCompatActivity {
         initViews();
         setupFilterListeners();
 
-
         setupMusicButton();
 
+        // 🌟 ĐÃ FIX: Gọi 2 thiết lập logic độc lập
         setupDiaryButton();
+        setupGratitudeJournalButton();
 
         setupNatureButton();
-
         setup1BreathButton();
-
         setup3BreathButton();
-
         setup5BreathButton();
-
         setupDoctorButton();
-
         setupPodcast();
-
         setupBinarualButton();
 
         startCloudAnimation();
-
 
         BottomNavManager.setup(this, BottomNavManager.TAB_THERAPY);
 
@@ -115,23 +106,18 @@ public class TherapyActivity extends AppCompatActivity {
         layoutKeHoach = findViewById(R.id.layoutKeHoach);
 
         imgCloud = findViewById(R.id.imgCloud);
-
         btnOpenMusic = findViewById(R.id.btnOpenMusic);
-
         btnOpenNatureSound = findViewById(R.id.btnOpenNatureSound);
 
+        // 🌟 ĐÃ FIX: Ánh xạ chuẩn hai chiếc ImageButton (nút play hình tròn) từ layout XML sang
         btnOpenDiary = findViewById(R.id.btnOpenDiary);
+        btnGratitudeJournal = findViewById(R.id.btnGratitudeJournal);
 
         btnOpen1Breath = findViewById(R.id.btnOpen1Breath);
-
         btnOpen3Breath = findViewById(R.id.btnOpen3Breath);
-
         btnOpen5Breath = findViewById(R.id.btnOpen5Breath);
-
         btnOpenDoctor = findViewById(R.id.btnOpenDoctor);
-
         btnOpenPodcast = findViewById(R.id.btnOpenPodcast);
-
         btnOpenBinarual = findViewById(R.id.btnOpenBinarual);
     }
 
@@ -155,10 +141,24 @@ public class TherapyActivity extends AppCompatActivity {
         }
     }
 
+    // 🌟 NÚT PLAY 1: Cấu hình sự kiện cho nút Play của Nhật ký Tự do
     private void setupDiaryButton() {
         if (btnOpenDiary != null) {
             btnOpenDiary.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, DiaryActivity.class);
+                intent.putExtra("JOURNAL_TYPE", "FREE");
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+    }
+
+    // 🌟 NÚT PLAY 2: Cấu hình sự kiện cho nút Play của Nhật ký Biết ơn
+    private void setupGratitudeJournalButton() {
+        if (btnGratitudeJournal != null) {
+            btnGratitudeJournal.setOnClickListener(v -> {
+                Intent intent = new Intent(TherapyActivity.this, DiaryActivity.class);
+                intent.putExtra("JOURNAL_TYPE", "GRATITUDE");
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
@@ -169,7 +169,7 @@ public class TherapyActivity extends AppCompatActivity {
         if (btnOpen1Breath != null) {
             btnOpen1Breath.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
-                intent.putExtra("TARGET_TIME", 1); // Gửi số 1
+                intent.putExtra("TARGET_TIME", 1);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
@@ -180,7 +180,7 @@ public class TherapyActivity extends AppCompatActivity {
         if (btnOpen3Breath != null) {
             btnOpen3Breath.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
-                intent.putExtra("TARGET_TIME", 3); // Gửi số 3
+                intent.putExtra("TARGET_TIME", 3);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
@@ -191,7 +191,7 @@ public class TherapyActivity extends AppCompatActivity {
         if (btnOpen5Breath != null) {
             btnOpen5Breath.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, BreathingActivity.class);
-                intent.putExtra("TARGET_TIME", 5); // Gửi số 5
+                intent.putExtra("TARGET_TIME", 5);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
@@ -223,7 +223,6 @@ public class TherapyActivity extends AppCompatActivity {
             btnOpenBinarual.setOnClickListener(v -> {
                 Intent intent = new Intent(TherapyActivity.this, BinauralPlayerActivity.class);
                 startActivity(intent);
-
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
         }
@@ -302,7 +301,6 @@ public class TherapyActivity extends AppCompatActivity {
         for (TextView btn : allButtons) {
             if (btn == null) continue;
             if (btn == selectedButton) {
-                // Giữ nguyên logic màu sắc của các bạn
                 if (btn == btnAmThanh) {
                     btn.setBackgroundResource(R.drawable.bg_chip_active_teal);
                     btn.setTextColor(Color.parseColor("#33ABA0"));
