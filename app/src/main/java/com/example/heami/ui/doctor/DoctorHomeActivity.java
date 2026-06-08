@@ -1,74 +1,96 @@
 package com.example.heami.ui.doctor;
 
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.Typeface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.bumptech.glide.Glide;
 import com.example.heami.R;
+import com.example.heami.data.models.DoctorHomeSummaryModel;
+import com.example.heami.data.repositories.DoctorHomeRepository;
 import com.example.heami.utils.ExitDialogHelper;
-import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.ListenerRegistration;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Locale;
 
 public class DoctorHomeActivity extends AppCompatActivity {
-
-    private static final String TAG = "DoctorHomeActivity";
 
     private TextView txtDoctorGreetingTime;
     private TextView txtDoctorGreetingTitle;
     private ImageView imgDoctorAvatar;
-    private ImageView decorFlowerPinkTop, decorFlowerMintMid;
 
-    private TextView txtLichHomNay;
-    private TextView txtCaDaHoanThanh;
-    private TextView txtCaSapDienRa;
-    private TextView txtTinNhanMoi;
+    private TextView txtDoctorTodaySessions;
+    private TextView txtDoctorPendingSessions;
+    private TextView txtDoctorOngoingSessions;
+    private TextView txtDoctorUnreadMessages;
 
     private TextView btnDoctorSeeAll;
+    private LinearLayout layoutDoctorUpcomingContainer;
 
-    private LinearLayout containerUpcoming;
-    private LinearLayout containerAttention;
+    private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
+    private DoctorHomeRepository doctorHomeRepository;
 
-    private FirebaseFirestore db;
-    private String currentDoctorId = "DOC_001";
+    private ListenerRegistration doctorHomeListener;
+    private String currentDoctorId = "doc_001";
+    private LinearLayout layoutDoctorAttentionContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doctor_home);
 
-        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
+        doctorHomeRepository = new DoctorHomeRepository();
 
+        resolveCurrentDoctorId();
         initViews();
         setupActions();
-        startDecorAnimations();
-
         loadDoctorProfile();
-        loadRealtimeStatsAndAppointments();
 
         DoctorBottomNavManager.setup(this, DoctorBottomNavManager.TAB_OVERVIEW);
         ExitDialogHelper.registerExitHandler(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startDoctorHomeListener();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopDoctorHomeListener();
+    }
+
+    private void resolveCurrentDoctorId() {
+        SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
+        boolean isDoctor = prefs.getBoolean("is_doctor", false);
+
+        if (isDoctor) {
+            currentDoctorId = safeText(prefs.getString("doctor_id", "doc_001"), "doc_001");
+            return;
+        }
+
+        if (auth.getCurrentUser() != null) {
+            currentDoctorId = safeText(auth.getCurrentUser().getUid(), "doc_001");
+        } else {
+            currentDoctorId = "doc_001";
+        }
     }
 
     private void initViews() {
@@ -76,18 +98,14 @@ public class DoctorHomeActivity extends AppCompatActivity {
         txtDoctorGreetingTitle = findViewById(R.id.txtDoctorGreetingTitle);
         imgDoctorAvatar = findViewById(R.id.imgDoctorAvatar);
 
-        decorFlowerPinkTop = findViewById(R.id.decorFlowerPinkTop);
-        decorFlowerMintMid = findViewById(R.id.decorFlowerMintMid);
-
-        txtLichHomNay = findViewById(R.id.txtLichHomNay);
-        txtCaDaHoanThanh = findViewById(R.id.txtCaDaHoanThanh);
-        txtCaSapDienRa = findViewById(R.id.txtCaSapDienRa);
-        txtTinNhanMoi = findViewById(R.id.txtTinNhanMoi);
+        txtDoctorTodaySessions = findViewById(R.id.txtDoctorTodaySessions);
+        txtDoctorPendingSessions = findViewById(R.id.txtDoctorPendingSessions);
+        txtDoctorOngoingSessions = findViewById(R.id.txtDoctorOngoingSessions);
+        txtDoctorUnreadMessages = findViewById(R.id.txtDoctorUnreadMessages);
 
         btnDoctorSeeAll = findViewById(R.id.btnDoctorSeeAll);
-
-        containerUpcoming = findViewById(R.id.containerUpcoming);
-        containerAttention = findViewById(R.id.containerAttention);
+        layoutDoctorUpcomingContainer = findViewById(R.id.layoutDoctorUpcomingContainer);
+        layoutDoctorAttentionContainer = findViewById(R.id.layoutDoctorAttentionContainer);
     }
 
     private void setupActions() {
@@ -95,7 +113,7 @@ public class DoctorHomeActivity extends AppCompatActivity {
 
         if (btnDoctorSeeAll != null) {
             btnDoctorSeeAll.setOnClickListener(v -> {
-                Intent intent = new Intent(DoctorHomeActivity.this, DoctorAppointmentsActivity.class);
+                Intent intent = new Intent(this, DoctorScheduleManagementActivity.class);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
@@ -103,345 +121,371 @@ public class DoctorHomeActivity extends AppCompatActivity {
     }
 
     private void loadDoctorProfile() {
-        android.content.SharedPreferences prefs = getSharedPreferences("HeamiData", MODE_PRIVATE);
-        currentDoctorId = prefs.getString("doctor_id", "DOC_001");
-
-        if (currentDoctorId == null || currentDoctorId.isEmpty() || currentDoctorId.equalsIgnoreCase("doc_001")) {
-            currentDoctorId = "DOC_001";
-        }
-
-        db.collection("doctors").document(currentDoctorId).get()
+        firestore.collection("doctors")
+                .document(currentDoctorId)
+                .get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    if (isFinishing() || isDestroyed()) return;
+                    if (isFinishing() || isDestroyed()) {
+                        return;
+                    }
 
                     if (documentSnapshot.exists()) {
                         String fullName = documentSnapshot.getString("full_name");
                         String avatarUrl = documentSnapshot.getString("avatar_url");
 
-                        if (fullName != null && !fullName.isEmpty()) {
-                            txtDoctorGreetingTitle.setText(fullName);
-                        }
-                        if (avatarUrl != null && !avatarUrl.isEmpty() && imgDoctorAvatar != null) {
+                        txtDoctorGreetingTitle.setText(
+                                fullName != null && !fullName.trim().isEmpty()
+                                        ? fullName.trim()
+                                        : "Bác sĩ Heami"
+                        );
+
+                        if (avatarUrl != null && !avatarUrl.trim().isEmpty() && imgDoctorAvatar != null) {
                             Glide.with(DoctorHomeActivity.this)
                                     .load(avatarUrl)
                                     .placeholder(R.drawable.img_doctor_1)
+                                    .error(R.drawable.img_doctor_1)
                                     .into(imgDoctorAvatar);
                         }
+                    } else {
+                        txtDoctorGreetingTitle.setText("Bác sĩ Heami");
                     }
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "Lỗi khi lấy thông tin bác sĩ: ", e));
-    }
-
-    private void loadRealtimeStatsAndAppointments() {
-        Calendar calStart = Calendar.getInstance();
-        calStart.set(Calendar.DAY_OF_MONTH, 1);
-        calStart.set(Calendar.HOUR_OF_DAY, 0);
-        calStart.set(Calendar.MINUTE, 0);
-        calStart.set(Calendar.SECOND, 0);
-        Timestamp startPeriod = new Timestamp(calStart.getTime());
-
-        Calendar calEnd = Calendar.getInstance();
-        calEnd.set(Calendar.DAY_OF_MONTH, calEnd.getActualMaximum(Calendar.DAY_OF_MONTH));
-        calEnd.set(Calendar.HOUR_OF_DAY, 23);
-        calEnd.set(Calendar.MINUTE, 59);
-        calEnd.set(Calendar.SECOND, 59);
-        Timestamp endPeriod = new Timestamp(calEnd.getTime());
-
-        db.collection("lich_hen")
-                .whereEqualTo("doctor_id", currentDoctorId)
-                .whereGreaterThanOrEqualTo("start_time", startPeriod)
-                .whereLessThanOrEqualTo("start_time", endPeriod)
-                .addSnapshotListener((snapshots, e) -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    if (e != null) {
-                        Log.e(TAG, "Lỗi Snapshot Lịch hẹn: ", e);
+                .addOnFailureListener(e -> {
+                    if (isFinishing() || isDestroyed()) {
                         return;
                     }
-                    if (snapshots == null) return;
 
-                    if (containerUpcoming != null) containerUpcoming.removeAllViews();
-
-                    int countLichHomNay = 0;
-                    int countCompleted = 0;
-                    int countBooked = 0;
-
-                    SimpleDateFormat dayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                    String todayStr = dayFormat.format(Calendar.getInstance().getTime());
-
-                    for (QueryDocumentSnapshot doc : snapshots) {
-                        String status = doc.getString("status");
-                        Timestamp startTimeTok = doc.getTimestamp("start_time");
-
-                        String itemDateStr = "";
-                        if (startTimeTok != null) {
-                            itemDateStr = dayFormat.format(startTimeTok.toDate());
-                        }
-
-                        if (todayStr.equals(itemDateStr) && "booked".equalsIgnoreCase(status)) {
-                            countLichHomNay++;
-                        }
-
-                        if ("completed".equalsIgnoreCase(status)) {
-                            countCompleted++;
-                        }
-
-                        if ("booked".equalsIgnoreCase(status)) {
-                            countBooked++;
-                            fetchAndRenderUpcomingCard(doc);
-                        }
-                    }
-
-                    if (txtLichHomNay != null) txtLichHomNay.setText(countLichHomNay + " ca");
-                    if (txtCaDaHoanThanh != null) txtCaDaHoanThanh.setText(countCompleted + " ca");
-                    if (txtCaSapDienRa != null) txtCaSapDienRa.setText(countBooked + " ca");
-                    if (txtTinNhanMoi != null) txtTinNhanMoi.setText("0 tin");
-
-                    generateAttentionItemProgrammatically();
+                    txtDoctorGreetingTitle.setText("Bác sĩ Heami");
                 });
     }
 
-    private void fetchAndRenderUpcomingCard(QueryDocumentSnapshot slotDoc) {
-        final String slotId = slotDoc.getString("slot_id");
-        final String sessionId = slotDoc.getString("session_id");
+    private void startDoctorHomeListener() {
+        stopDoctorHomeListener();
 
-        if (sessionId == null || sessionId.isEmpty()) return;
+        doctorHomeListener = doctorHomeRepository.observeDoctorHomeSummary(
+                currentDoctorId,
+                new DoctorHomeRepository.DoctorHomeCallback() {
+                    @Override
+                    public void onChanged(@NonNull DoctorHomeSummaryModel summary) {
+                        bindSummary(summary);
+                    }
 
-        db.collection("consultations")
-                .document(sessionId)
-                .get()
-                .addOnSuccessListener(sessionDoc -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    renderUpcomingCardView(slotDoc, sessionDoc, slotId, sessionId);
-                })
-                .addOnFailureListener(err -> Log.e(TAG, "Lỗi fetch consultation: " + sessionId, err));
+                    @Override
+                    public void onError(@NonNull String message) {
+                        bindSummary(new DoctorHomeSummaryModel());
+                    }
+                }
+        );
     }
 
-    private void renderUpcomingCardView(QueryDocumentSnapshot slotDoc, DocumentSnapshot sessionDoc, String slotId, String sessionId) {
-        if (containerUpcoming == null) return;
+    private void stopDoctorHomeListener() {
+        if (doctorHomeListener != null) {
+            doctorHomeListener.remove();
+            doctorHomeListener = null;
+        }
+    }
 
-        String patientName = "Bệnh nhân Heami";
-        String moodText = "Tư vấn";
-        String moodEmoji = "🦋";
-        String duration = "30 phút";
-
-        if (sessionDoc.exists()) {
-            String name = sessionDoc.getString("patient_name");
-            if (name != null && !name.isEmpty()) patientName = name;
-
-            String mood = sessionDoc.getString("mood_text");
-            if (mood != null && !mood.isEmpty()) moodText = mood;
-
-            String emoji = sessionDoc.getString("mood_emoji");
-            if (emoji != null && !emoji.isEmpty()) moodEmoji = emoji;
-
-            String dur = sessionDoc.getString("duration");
-            if (dur != null && !dur.isEmpty()) duration = dur;
+    private void bindSummary(@NonNull DoctorHomeSummaryModel summary) {
+        if (txtDoctorTodaySessions != null) {
+            txtDoctorTodaySessions.setText(summary.getTodaySessions() + " phiên");
         }
 
-        Timestamp startTime = slotDoc.getTimestamp("start_time");
-        String timeDisplay = "00:00";
-        if (startTime != null) {
-            timeDisplay = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(startTime.toDate());
+        if (txtDoctorPendingSessions != null) {
+            txtDoctorPendingSessions.setText(summary.getPendingSessions() + " phiên");
         }
 
-        CardView cardView = new CardView(this);
+        if (txtDoctorOngoingSessions != null) {
+            txtDoctorOngoingSessions.setText(summary.getOngoingSessions() + " phiên");
+        }
+
+        if (txtDoctorUnreadMessages != null) {
+            txtDoctorUnreadMessages.setText(summary.getUnreadMessages() + " tin");
+        }
+
+        renderUpcomingSessions(summary);
+        renderAttentionPatients(summary);
+    }
+
+    private void renderUpcomingSessions(@NonNull DoctorHomeSummaryModel summary) {
+        if (layoutDoctorUpcomingContainer == null) {
+            return;
+        }
+
+        layoutDoctorUpcomingContainer.removeAllViews();
+
+        if (summary.getUpcomingSessions() == null || summary.getUpcomingSessions().isEmpty()) {
+            layoutDoctorUpcomingContainer.addView(createEmptyStateView(
+                    "Hôm nay chưa có lịch sắp tới",
+                    "Khi người dùng đặt lịch tư vấn, phiên gần nhất sẽ hiển thị ở đây."
+            ));
+            return;
+        }
+
+        for (DoctorHomeSummaryModel.UpcomingSessionItem item : summary.getUpcomingSessions()) {
+            layoutDoctorUpcomingContainer.addView(createUpcomingSessionView(item));
+        }
+    }
+
+    private void renderAttentionPatients(@NonNull DoctorHomeSummaryModel summary) {
+        if (layoutDoctorAttentionContainer == null) {
+            return;
+        }
+
+        layoutDoctorAttentionContainer.removeAllViews();
+
+        if (summary.getAttentionPatients() == null || summary.getAttentionPatients().isEmpty()) {
+            layoutDoctorAttentionContainer.addView(createEmptyStateView(
+                    "Chưa có bệnh nhân cần chú ý",
+                    "Các bệnh nhân có mood tiêu cực hoặc năng lượng thấp sẽ hiển thị tại đây."
+            ));
+            return;
+        }
+
+        for (DoctorHomeSummaryModel.AttentionPatientItem item : summary.getAttentionPatients()) {
+            layoutDoctorAttentionContainer.addView(createAttentionPatientView(item));
+        }
+    }
+
+    @NonNull
+    private View createAttentionPatientView(@NonNull DoctorHomeSummaryModel.AttentionPatientItem item) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(16), dp(16), dp(16), dp(16));
+        card.setBackgroundResource(resolveAttentionCardBg(item.getPriority()));
+
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, 0, 0, 24);
-        cardView.setLayoutParams(cardParams);
-        cardView.setRadius(32);
-        cardView.setCardElevation(0);
-        cardView.setCardBackgroundColor(Color.WHITE);
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardParams.setMargins(0, 0, 0, dp(12));
+        card.setLayoutParams(cardParams);
 
-        // 🌟 SỬA CHUẨN TRUYỀN ID: Gửi chính xác trường dữ liệu viết thường theo cách hứng của SessionDetailActivity
-        cardView.setOnClickListener(v -> {
+        View dot = new View(this);
+        LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dp(8), dp(8));
+        dot.setLayoutParams(dotParams);
+        dot.setBackgroundResource(resolveAttentionDotBg(item.getPriority()));
 
-            Log.d("HEAMI_DEBUG", "slot_id = " + slotId);
-            Log.d("HEAMI_DEBUG", "session_id = " + sessionId);
+        LinearLayout infoBox = new LinearLayout(this);
+        infoBox.setOrientation(LinearLayout.VERTICAL);
 
-            Intent intent = new Intent(
-                    DoctorHomeActivity.this,
-                    SessionDetailActivity.class);
+        LinearLayout.LayoutParams infoParams = new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        );
+        infoParams.setMargins(dp(14), 0, dp(10), 0);
+        infoBox.setLayoutParams(infoParams);
 
-            intent.putExtra("slot_id", slotId);
-            intent.putExtra("session_id", sessionId);
+        TextView name = new TextView(this);
+        name.setText(item.getAvatarEmoji() + " " + safeText(item.getPatientName(), "Bệnh nhân Heami"));
+        name.setTextColor(android.graphics.Color.parseColor("#1A2530"));
+        name.setTextSize(15);
+        name.setTypeface(null, android.graphics.Typeface.BOLD);
 
+        TextView reason = new TextView(this);
+        reason.setText(safeText(item.getReasonText(), "Cần theo dõi trạng thái gần đây"));
+        reason.setTextColor(android.graphics.Color.parseColor("#7F8C8D"));
+        reason.setTextSize(13);
+        reason.setPadding(0, dp(2), 0, 0);
+
+        infoBox.addView(name);
+        infoBox.addView(reason);
+
+        TextView badge = new TextView(this);
+        badge.setText(item.getPriority() >= 3 ? "Ưu tiên" : "Theo dõi");
+        badge.setTextColor(android.graphics.Color.parseColor(item.getPriority() >= 3 ? "#FF5A5F" : "#D97706"));
+        badge.setTextSize(12);
+        badge.setTypeface(null, android.graphics.Typeface.BOLD);
+        badge.setBackgroundResource(item.getPriority() >= 3
+                ? R.drawable.bg_attention_card_pink
+                : R.drawable.bg_attention_card_yellow);
+        badge.setPadding(dp(10), dp(6), dp(10), dp(6));
+
+        card.addView(dot);
+        card.addView(infoBox);
+        card.addView(badge);
+
+        card.setOnClickListener(v -> {
+            Intent intent = new Intent(this, DoctorPatientDetailActivity.class);
+            intent.putExtra("patient_user_id", item.getUserId());
             startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.HORIZONTAL);
-        root.setGravity(Gravity.CENTER_VERTICAL);
-        root.setPadding(32, 32, 32, 32);
-
-        FrameLayout emojiFrame = new FrameLayout(this);
-        emojiFrame.setLayoutParams(new LinearLayout.LayoutParams(96, 96));
-        emojiFrame.setBackgroundResource(R.drawable.bg_stat_icon_blue);
-
-        TextView tvEmoji = new TextView(this);
-        tvEmoji.setText(moodEmoji);
-        tvEmoji.setTextSize(20);
-        tvEmoji.setGravity(Gravity.CENTER);
-        emojiFrame.addView(tvEmoji);
-        root.addView(emojiFrame);
-
-        LinearLayout textBox = new LinearLayout(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
-        lp.setMargins(24, 0, 24, 0);
-        textBox.setLayoutParams(lp);
-        textBox.setOrientation(LinearLayout.VERTICAL);
-
-        TextView tvName = new TextView(this);
-        tvName.setText(patientName);
-        tvName.setTextSize(15);
-        tvName.setTextColor(Color.parseColor("#1A2530"));
-        tvName.setTypeface(null, Typeface.BOLD);
-
-        TextView tvDesc = new TextView(this);
-        tvDesc.setText(moodText + " · " + duration);
-        tvDesc.setTextSize(12);
-        tvDesc.setTextColor(Color.parseColor("#9EA8B6"));
-
-        textBox.addView(tvName);
-        textBox.addView(tvDesc);
-        root.addView(textBox);
-
-        TextView tvTime = new TextView(this);
-        tvTime.setText(timeDisplay);
-        tvTime.setTextColor(Color.parseColor("#09A38C"));
-        tvTime.setTextSize(13);
-        tvTime.setTypeface(null, Typeface.BOLD);
-        tvTime.setBackgroundResource(R.drawable.bg_stat_icon_green);
-        tvTime.setPadding(32, 16, 32, 16);
-        tvTime.setGravity(Gravity.CENTER);
-        root.addView(tvTime);
-
-        cardView.addView(root);
-        containerUpcoming.addView(cardView);
+        return card;
     }
 
-    private void generateAttentionItemProgrammatically() {
-        if (containerAttention == null) return;
+    private int resolveAttentionCardBg(int priority) {
+        if (priority >= 3) {
+            return R.drawable.bg_attention_card_pink;
+        }
 
-        containerAttention.removeAllViews();
-        final java.util.HashSet<String> displayedUsers = new java.util.HashSet<>();
+        return R.drawable.bg_attention_card_yellow;
+    }
 
-        db.collection("consultations")
-                .get()
-                .addOnSuccessListener(querySnapshots -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    if (querySnapshots == null || querySnapshots.isEmpty()) return;
+    private int resolveAttentionDotBg(int priority) {
+        if (priority >= 3) {
+            return R.drawable.bg_dot_pink_small;
+        }
 
-                    int count = 0;
+        return R.drawable.bg_dot_yellow_small;
+    }
 
-                    for (QueryDocumentSnapshot consultDoc : querySnapshots) {
-                        if (count >= 3) break;
+    @NonNull
+    private View createUpcomingSessionView(@NonNull DoctorHomeSummaryModel.UpcomingSessionItem item) {
+        CardView cardView = new CardView(this);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardParams.setMargins(0, 0, 0, dp(12));
+        cardView.setLayoutParams(cardParams);
+        cardView.setRadius(dp(16));
+        cardView.setCardElevation(0);
+        cardView.setCardBackgroundColor(android.graphics.Color.WHITE);
+        cardView.setUseCompatPadding(false);
 
-                        String uId = consultDoc.getString("user_id");
-                        String noteText = consultDoc.getString("note");
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(14), dp(14), dp(14), dp(14));
 
-                        if (uId == null || uId.isEmpty()) continue;
+        FrameLayout avatarBox = new FrameLayout(this);
+        LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(dp(48), dp(48));
+        avatarBox.setLayoutParams(avatarParams);
+        avatarBox.setBackgroundResource(resolveAvatarBg(item.getFormatType()));
 
-                        if (displayedUsers.contains(uId)) {
-                            continue;
-                        }
+        TextView emoji = new TextView(this);
+        emoji.setText(safeText(item.getAvatarEmoji(), "😊"));
+        emoji.setTextSize(22);
+        FrameLayout.LayoutParams emojiParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+        );
+        avatarBox.addView(emoji, emojiParams);
 
-                        displayedUsers.add(uId);
-                        count++;
+        LinearLayout infoBox = new LinearLayout(this);
+        infoBox.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams infoParams = new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        );
+        infoParams.setMargins(dp(14), 0, dp(10), 0);
+        infoBox.setLayoutParams(infoParams);
 
-                        db.collection("users").document(uId).get()
-                                .addOnSuccessListener(userDoc -> {
-                                    if (isFinishing() || isDestroyed()) return;
-                                    if (!userDoc.exists()) return;
+        TextView name = new TextView(this);
+        name.setText(safeText(item.getPatientName(), "Bệnh nhân Heami"));
+        name.setTextColor(android.graphics.Color.parseColor("#1A2530"));
+        name.setTextSize(15);
+        name.setTypeface(null, android.graphics.Typeface.BOLD);
 
-                                    String pNickname = userDoc.getString("nickname");
-                                    if (pNickname == null || pNickname.isEmpty()) {
-                                        pNickname = "Bệnh nhân ẩn danh";
-                                    }
+        TextView subtitle = new TextView(this);
+        subtitle.setText(safeText(item.getFormatText(), "Phiên tư vấn"));
+        subtitle.setTextColor(android.graphics.Color.parseColor("#9EA8B6"));
+        subtitle.setTextSize(12);
+        subtitle.setPadding(0, dp(2), 0, 0);
 
-                                    LinearLayout row = new LinearLayout(this);
-                                    LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                                    rowParams.setMargins(0, 0, 0, 24);
-                                    row.setLayoutParams(rowParams);
-                                    row.setOrientation(LinearLayout.HORIZONTAL);
-                                    row.setGravity(Gravity.CENTER_VERTICAL);
-                                    row.setPadding(32, 32, 32, 32);
+        infoBox.addView(name);
+        infoBox.addView(subtitle);
 
-                                    if (pNickname.equalsIgnoreCase("Nini") || (noteText != null && noteText.contains("áp lực"))) {
-                                        row.setBackgroundColor(Color.parseColor("#FFF0F1"));
-                                    } else {
-                                        row.setBackgroundColor(Color.parseColor("#FFF9E6"));
-                                    }
+        TextView time = new TextView(this);
+        time.setText(safeText(item.getTimeText(), "--:--"));
+        time.setTextColor(android.graphics.Color.parseColor("#09A38C"));
+        time.setTextSize(13);
+        time.setTypeface(null, android.graphics.Typeface.BOLD);
+        time.setBackgroundResource(R.drawable.bg_stat_icon_green);
+        time.setPadding(dp(16), dp(8), dp(16), dp(8));
 
-                                    View dot = new View(this);
-                                    dot.setLayoutParams(new LinearLayout.LayoutParams(16, 16));
-                                    int dotColor = pNickname.equalsIgnoreCase("Nini") ? Color.parseColor("#FF5A5F") : Color.parseColor("#FFA000");
-                                    android.graphics.drawable.GradientDrawable dotDrawable = new android.graphics.drawable.GradientDrawable();
-                                    dotDrawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-                                    dotDrawable.setColor(dotColor);
-                                    dot.setBackground(dotDrawable);
-                                    row.addView(dot);
+        row.addView(avatarBox);
+        row.addView(infoBox);
+        row.addView(time);
 
-                                    LinearLayout tBox = new LinearLayout(this);
-                                    LinearLayout.LayoutParams tBoxParams = new LinearLayout.LayoutParams(
-                                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                                    tBoxParams.setMargins(28, 0, 0, 0);
-                                    tBox.setLayoutParams(tBoxParams);
-                                    tBox.setOrientation(LinearLayout.VERTICAL);
+        cardView.addView(row);
 
-                                    TextView nText = new TextView(this);
-                                    nText.setText(pNickname);
-                                    nText.setTextColor(Color.parseColor("#1A2530"));
-                                    nText.setTextSize(15);
-                                    nText.setTypeface(null, Typeface.BOLD);
-                                    tBox.addView(nText);
+        cardView.setOnClickListener(v -> {
+            Intent intent = new Intent(this, DoctorChatDetailActivity.class);
+            intent.putExtra(DoctorMessagesActivity.EXTRA_SESSION_ID, item.getSessionId());
+            intent.putExtra(DoctorMessagesActivity.EXTRA_PARTNER_NAME, item.getPatientName());
+            intent.putExtra(DoctorMessagesActivity.EXTRA_USER_ID, item.getUserId());
+            intent.putExtra(DoctorMessagesActivity.EXTRA_FORMAT_TYPE, item.getFormatType());
+            intent.putExtra(DoctorMessagesActivity.EXTRA_ROOM_STATUS, item.getStatus());
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
 
-                                    TextView dText = new TextView(this);
-                                    LinearLayout.LayoutParams dParams = new LinearLayout.LayoutParams(
-                                            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                                    dParams.setMargins(0, 4, 0, 0);
-                                    dText.setLayoutParams(dParams);
-                                    dText.setText(noteText != null && !noteText.isEmpty() ? noteText : "Tâm trạng tiêu cực kéo dài, cần theo dõi sát sao.");
-                                    dText.setTextColor(Color.parseColor("#7F8C8D"));
-                                    dText.setTextSize(13);
-                                    tBox.addView(dText);
+        return cardView;
+    }
 
-                                    row.addView(tBox);
+    @NonNull
+    private View createEmptyStateView(@NonNull String title, @NonNull String subtitle) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER);
+        box.setPadding(dp(18), dp(20), dp(18), dp(20));
+        box.setBackgroundResource(R.drawable.bg_doctor_card);
 
-                                    row.setOnClickListener(v -> {
-                                        Intent intent = new Intent(DoctorHomeActivity.this, DoctorPatientDetailActivity.class);
-                                        intent.putExtra("patient_user_id", uId);
-                                        intent.putExtra("session_id", consultDoc.getId());
-                                        startActivity(intent);
-                                        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                                    });
+        TextView txtTitle = new TextView(this);
+        txtTitle.setText(title);
+        txtTitle.setTextColor(android.graphics.Color.parseColor("#1A2530"));
+        txtTitle.setTextSize(15);
+        txtTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        txtTitle.setGravity(Gravity.CENTER);
 
-                                    containerAttention.addView(row);
-                                });
-                    }
-                })
-                .addOnFailureListener(err -> Log.e("HEAMI_DEBUG", "Lỗi tải danh sách consultations chú ý: ", err));
+        TextView txtSubtitle = new TextView(this);
+        txtSubtitle.setText(subtitle);
+        txtSubtitle.setTextColor(android.graphics.Color.parseColor("#7D8BB7"));
+        txtSubtitle.setTextSize(12);
+        txtSubtitle.setGravity(Gravity.CENTER);
+        txtSubtitle.setPadding(0, dp(6), 0, 0);
+
+        box.addView(txtTitle);
+        box.addView(txtSubtitle);
+
+        return box;
+    }
+
+    private int resolveAvatarBg(String formatType) {
+        String normalized = safeText(formatType, "").toLowerCase();
+
+        if (normalized.contains("call") || normalized.contains("video") || normalized.contains("gọi")) {
+            return R.drawable.bg_stat_icon_pink;
+        }
+
+        return R.drawable.bg_stat_icon_blue;
     }
 
     private void updateTimeGreeting() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        String greeting = "Chào buổi tối";
-        if (hour >= 4 && hour < 10) greeting = "Chào buổi sáng";
-        else if (hour >= 10 && hour < 13) greeting = "Chào buổi trưa";
-        else if (hour >= 13 && hour < 18) greeting = "Chào buổi chiều";
+        String greeting;
 
-        if (txtDoctorGreetingTime != null) txtDoctorGreetingTime.setText(greeting);
+        if (hour >= 4 && hour < 10) {
+            greeting = "Chào buổi sáng";
+        } else if (hour >= 10 && hour < 13) {
+            greeting = "Chào buổi trưa";
+        } else if (hour >= 13 && hour < 18) {
+            greeting = "Chào buổi chiều";
+        } else {
+            greeting = "Chào buổi tối";
+        }
+
+        if (txtDoctorGreetingTime != null) {
+            txtDoctorGreetingTime.setText(greeting);
+        }
     }
 
-    private void startDecorAnimations() {
-        if (decorFlowerPinkTop != null) {
-            ObjectAnimator animator = ObjectAnimator.ofFloat(decorFlowerPinkTop, "translationY", 0f, -15f);
-            animator.setDuration(1500);
-            animator.setRepeatMode(ValueAnimator.REVERSE);
-            animator.setRepeatCount(ValueAnimator.INFINITE);
-            animator.setInterpolator(new AccelerateDecelerateInterpolator());
-            animator.start();
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    @NonNull
+    private String safeText(String value, @NonNull String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
         }
+
+        return value.trim();
     }
 }
